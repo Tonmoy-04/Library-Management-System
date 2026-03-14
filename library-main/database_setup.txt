@@ -1,0 +1,26 @@
+To connect your Laravel application to your 'campusmart' database, please follow these steps:
+
+1.  **Open your `.env` file** in your project root directory (D:\CampusMart\cse-3100\.env).
+
+2.  **Update your database settings.** Find the following lines and update them to match your 'campusmart' database configuration:
+
+    ```
+    DB_CONNECTION=mysql
+    DB_HOST=127.0.0.1
+    DB_PORT=3306
+    DB_DATABASE=campusmart
+    DB_USERNAME=your_mysql_username
+    DB_PASSWORD=your_mysql_password
+    ```
+
+    Replace `your_mysql_username` and `your_mysql_password` with your actual MySQL credentials.
+
+3.  **Save the `.env` file.**
+
+4.  **Clear Laravel's configuration cache** by running the following command in your terminal:
+
+    ```bash
+    php artisan config:clear
+    ```
+
+Once you have completed these steps, your application will be configured to use your 'campusmart' database.

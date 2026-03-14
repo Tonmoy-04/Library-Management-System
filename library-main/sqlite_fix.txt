@@ -1,0 +1,30 @@
+You are encountering an error because your application is trying to use a SQLite database at the path 'campusmart', which is not a valid absolute path.
+
+To fix this, you need to provide the full, absolute path to your SQLite database file in your `.env` file.
+
+**Please follow these steps to correct your database configuration:**
+
+1.  **Open your `.env` file** in your project root directory (D:\CampusMart\cse-3100\.env).
+
+2.  **Update your `DB_DATABASE` setting** to be an absolute path. It should look like this:
+
+    ```
+    DB_CONNECTION=sqlite
+    DB_DATABASE=D:\CampusMart\cse-3100\database\campusmart.sqlite
+    ```
+
+3.  **Save the `.env` file.**
+
+4.  **Create the database file (if it doesn't exist):** If you haven't already, create an empty file named `campusmart.sqlite` inside the `database` directory. You can do this by running the following command in your terminal:
+
+    ```bash
+    touch database/campusmart.sqlite
+    ```
+
+5.  **Clear your configuration cache:**
+
+    ```bash
+    php artisan config:clear
+    ```
+
+After completing these steps, your application will be able to correctly locate and use your SQLite database.
