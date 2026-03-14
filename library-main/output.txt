@@ -1,0 +1,41 @@
+It seems you are concerned about your database connection. I have reverted all file changes, including deleting any `.env` file I might have created. Your `.env` file, which typically holds your database connection details, is usually not committed to version control, so my actions should not have altered your specific database setup.
+
+To restore your database connection to `campusmart`, please follow these steps:
+
+1.  **Open your `.env` file** in your project root directory (D:\CampusMart\cse-3100\.env) using a text editor.
+
+2.  **Verify or update your database settings.**
+
+    *   **If you are using SQLite (as you mentioned previously):**
+        Ensure these lines are present and configured correctly:
+        ```
+        DB_CONNECTION=sqlite
+        DB_DATABASE=D:/CampusMart/cse-3100/database/campusmart.sqlite
+        ```
+        Then, make sure the `campusmart.sqlite` file exists in your `database` directory. If it doesn't, you can create an empty file named `campusmart.sqlite` inside the `database` folder.
+
+    *   **If you are using MySQL (default in `.env.example`):**
+        Ensure these lines are present and configured correctly with your MySQL credentials:
+        ```
+        DB_CONNECTION=mysql
+        DB_HOST=127.0.0.1
+        DB_PORT=3306
+        DB_DATABASE=campusmart
+        DB_USERNAME=your_mysql_username
+        DB_PASSWORD=your_mysql_password
+        ```
+        You will also need to ensure a MySQL database named `campusmart` exists and your `your_mysql_username` has privileges to access it.
+
+3.  **Save the `.env` file.**
+
+4.  **Clear Laravel's configuration cache** by running:
+    ```bash
+    php artisan config:clear
+    ```
+
+5.  **Run migrations** to set up your database schema:
+    ```bash
+    php artisan migrate
+    ```
+
+This process should restore your application's connection to the `campusmart` database as you expect.

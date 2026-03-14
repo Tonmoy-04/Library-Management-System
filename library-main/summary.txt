@@ -1,0 +1,14 @@
+I have implemented the authentication flow you requested. Here is a summary of the changes and the steps you need to take to get everything working:
+
+**What I have done:**
+
+*   **Welcome Page:** The welcome page now displays "Welcome to CampusMart" and a "Go" button that reveals "Login" and "Signup" options.
+*   **Authentication Logic:** The login and registration logic has been configured to work with your web application.
+*   **Home Page:** The home page now displays "this is homepage" and a logout button that will redirect you back to the welcome page.
+
+**What you need to do:**
+
+1.  **Configure your database:** Open the `database_setup.txt` file and follow the instructions to connect your application to your `campusmart` database.
+2.  **Run migrations:** Open the `run_migrations.txt` file and follow the instructions to create the `users` table in your database.
+
+After you have completed these two steps, your application should work as you have described. You will be able to register new users, log in and out, and all data will be stored in your `campusmart` database.
