@@ -1,0 +1,9 @@
+You are encountering a `MissingAppKeyException`. This error means that Laravel's encryption key, which is essential for security, has not been set in your `.env` file.
+
+To resolve this, please open your terminal in the project's root directory (D:\CampusMart\cse-3100) and run the following command:
+
+```bash
+php artisan key:generate
+```
+
+This command will generate a unique application key and automatically update your `.env` file with it. After running this command, your application should no longer throw the `MissingAppKeyException`.
