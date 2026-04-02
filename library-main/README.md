@@ -1,17 +1,16 @@
 # Project Proposal
 
-## Project Name : CampusMart
+## Project Name: Library Management System
 
 ---
 
 ## Team Members
 
-| Roll Number | Name | Email | Role |
-|------------|------|-------|------|
-| 20230104097 | Yousha Shahid | yousha.cse.20230104097@aust.edu | Frontend Developer |
-| 20230104088 | Abdullah Al Noman | noman.cse.20230104088@aust.edu | Backend Developer |
-| 20230104094 | Aaheed Bin Ashraf | aaheed.cse.20230104094@aust.edu | Lead & Backend Developer |
-| 20230104092 | Golam Rabbani Miraz | miraz.cse.20230104092@aust.edu | Frontend Developer |
+| Name | Role |
+|------|------|
+| Md. Ahnaf Siam | Backend Developer |
+| Noman Ahmed Tonmoy | Lead & Backend Developer |
+| Ayesha Siddiqui Turna | Frontend Developer |
 
 ---
 
@@ -19,23 +18,23 @@
 
 ### Objective
 
-CampusMart is a campus-exclusive online marketplace designed for university students to buy and sell used items securely.
+Library Management System is a digital platform designed to streamline the interaction between readers and publishers, making book access and distribution efficient and user-friendly.
 
-The platform ensures that only verified campus students can access and participate in transactions.
+The system enables users to browse and issue books from a comprehensive library catalog, while providing publishers with tools to publish and manage their books within the platform.
 
-By restricting access and using a trust-based system, CampusMart aims to reduce online scams and fraudulent activities.
-
-The project seeks to create a safe, reliable, and convenient trading environment within the university community.
+The project seeks to create a seamless book management experience that benefits both readers seeking knowledge and publishers distributing their work.
 
 ---
 
 ### Target Audience
 
-Verified university students looking for a safe and trusted way to buy and sell items within their campus
+Readers looking to browse, search, and access a wide range of books
 
-On-campus residents who frequently trade essentials such as books, electronics, and daily-use items
+Publishers and authors seeking a platform to distribute and manage their published works
 
-Student clubs and campus communities seeking a localized platform to exchange, promote, or resell resources
+Library administrators managing book inventory and transactions
+
+Educational institutions requiring efficient book management systems
 
 ---
 
@@ -58,50 +57,51 @@ Student clubs and campus communities seeking a localized platform to exchange, p
 
 ## UI Design
 
-### Mock UI
-
-The user interface mockups have been carefully crafted using Figma to ensure a clean, intuitive, and user-friendly design.
-
-🔗 **Figma Design Link (Demo):**  
-https://www.figma.com/make/xnFoKLSAeXRlCtaRUyNFAb/CampusMart?t=LDgXAxIu7ZHUevRE-0
+The user interface has been designed to provide a clean, intuitive, and user-friendly experience for all users (Readers, Publishers, and Administrators).
 
 ---
 
 ## Project Features
 
-https://www.figma.com/make/xnFoKLSAeXRlCtaRUyNFAb/CampusMart?t=LDgXAxIu7ZHUevRE-0
-
 ---
 
 ### Core Features
 
-- Campus-restricted onboarding allowing registration only through verified university email addresses
-- Secure user authentication and role-based access control to ensure platform integrity
-- Peer-to-peer marketplace for buying and selling pre-owned items within the campus
-- Advanced search and smart filtering for quick discovery of relevant listings
-- Real-time in-app messaging system enabling direct communication between buyers and sellers
+- User authentication and role-based access control (Reader, Publisher, Admin)
+- Comprehensive book catalog with detailed metadata and classifications
+- Advanced search and smart filtering for discovering books by title, author, genre, and publisher
+- Book issue and return system with transaction tracking
+- Publisher dashboard for publishing and managing books
+- User ratings and reviews for books and publishers
+- Real-time inventory management and availability tracking
 
 ---
 
 ### Exclusive Features
 
-- AI-powered price intelligence that suggests fair market prices based on similar listings
-- Reputation-driven trust system with user ratings and reviews to promote safe transactions
-- Automated scam detection and reporting mechanism to identify and prevent fraudulent activity
+- Publisher performance analytics and sales insights
+- Personalized book recommendations based on user reading history
+- Multi-format book support (physical, digital, audio)
+- Automated notification system for book availability and reservations
+- Advanced reporting and analytics dashboard for administrators
 
 ---
 
 ## Authentication
 
 - JWT-based secure authentication for session management
-- University email verification workflow to restrict access to legitimate campus users
+- Role-based access control for Readers, Publishers, and Administrators
+- Email verification workflow for account security
 
 ---
 
-## CRUD Operations
+## Core Operations
 
-- **User Profiles:** Create, view, update, and delete user accounts
-- **Marketplace Listings:** Full CRUD operations for item postings
+- **Book Management:** Publishers can create, update, and delete book listings
+- **Book Issuance:** Readers can browse, search, and issue books with transaction tracking
+- **User Profiles:** Create, view, update, and delete user accounts with role-specific dashboards
+- **Inventory Management:** Real-time tracking of book availability and stock levels
+- **Reviews & Ratings:** Readers can review books and publishers
 - **Messaging Module:** Create and read private messages
 - **Feedback System:** Create, view, and update reviews and ratings
 

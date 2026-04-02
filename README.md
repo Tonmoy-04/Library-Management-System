@@ -1,6 +1,6 @@
-# Library Frontend
+# Library Management System
 
-This is a simple React-based frontend for the Library Management project.
+A comprehensive digital platform connecting readers and publishers for efficient book access, distribution, and management.
 
 ## Structure
 
