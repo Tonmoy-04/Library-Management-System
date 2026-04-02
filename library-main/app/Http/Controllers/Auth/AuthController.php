@@ -47,7 +47,7 @@ class AuthController extends Controller
      * Handle a login request to the application.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\JsonResponse
      */
     public function login(Request $request)
     {
@@ -59,18 +59,21 @@ class AuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (! $token = Auth::attempt($credentials)) {
-            return redirect()->back()->with('error', 'Invalid email or password. Please try again.');
+            return response()->json(['message' => 'Invalid email or password'], 401);
         }
 
-        // Set the JWT token in a cookie and go to home
-        return redirect('/home')->withCookie(cookie('token', $token, config('jwt.ttl')));
+        return response()->json([
+            'message' => 'Login successful',
+            'token' => $token,
+            'user' => Auth::user()
+        ], 200);
     }
 
     /**
      * Handle a registration request for the application.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\JsonResponse
      */
     public function register(Request $request)
     {
@@ -90,29 +93,59 @@ class AuthController extends Controller
             'password.min' => 'The password must be at least 8 characters.'
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        // Redirect to login page with a success message instead of logging in automatically
-        return redirect()->route('login')->with('success', 'Registration successful! Please login.');
+        return response()->json([
+            'message' => 'Registration successful! Please login.',
+            'user' => $user
+        ], 201);
     }
 
     /**
      * Log the user out of the application.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
     public function logout(Request $request)
     {
         Auth::logout();
 
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Logout successful'], 200);
+        }
+
         // Expire the JWT token cookie
         $cookie = cookie()->forget('token');
 
         return redirect('/')->withCookie($cookie);
+    }
+
+    /**
+     * Get the authenticated user.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function me()
+    {
+        return response()->json(Auth::user());
+    }
+
+    /**
+     * Refresh the JWT token.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function refresh()
+    {
+        return response()->json([
+            'message' => 'Token refreshed',
+            'token' => Auth::refresh(),
+            'user' => Auth::user()
+        ]);
     }
 }

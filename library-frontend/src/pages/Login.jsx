@@ -72,6 +72,15 @@ const Login = ({ onLogin }) => {
         </form>
 
         <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+            Don't have an account?{' '}
+            <a
+              href="/register"
+              style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}
+            >
+              Register here
+            </a>
+          </p>
           <a href="#" style={{ color: 'var(--primary-color)', fontSize: '0.875rem' }}>Forgot password?</a>
         </div>
       </div>
