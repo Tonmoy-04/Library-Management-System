@@ -51,20 +51,44 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
+        if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json($validator->errors(), 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
         $credentials = $request->only('email', 'password');
 
-        if (! $token = Auth::attempt($credentials)) {
-            return redirect()->back()->with('error', 'Invalid email or password. Please try again.');
+        if (! $token = Auth::guard('api')->attempt($credentials)) {
+            if ($request->expectsJson()) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+            return redirect()->back()->with('error', 'Invalid email or password.');
+        }
+
+        if ($request->expectsJson()) {
+            return $this->respondWithToken($token);
         }
 
         // Set the JWT token in a cookie and go to home
         return redirect('/home')->withCookie(cookie('token', $token, config('jwt.ttl')));
     }
+
+    protected function respondWithToken($token)
+    {
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60
+        ]);
+    }
+
 
     /**
      * Handle a registration request for the application.
@@ -74,31 +98,41 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => [
                 'required', 
                 'string', 
                 'email', 
                 'max:255', 
-                'unique:users', 
-                'regex:/^[A-Za-z0-9._%+-]+@aust\.edu$/i'
+                'unique:users'
             ],
             'password' => 'required|string|min:8|confirmed',
-        ], [
-            'email.regex' => 'The email must be a valid @aust.edu address.',
-            'password.min' => 'The password must be at least 8 characters.'
         ]);
 
-        User::create([
+        if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json($validator->errors(), 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        // Redirect to login page with a success message instead of logging in automatically
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Registration successful!',
+                'user' => $user
+            ], 201);
+        }
+
         return redirect()->route('login')->with('success', 'Registration successful! Please login.');
     }
+
 
     /**
      * Log the user out of the application.
@@ -108,11 +142,25 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        Auth::logout();
+        Auth::guard('api')->logout();
+
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Successfully logged out']);
+        }
 
         // Expire the JWT token cookie
         $cookie = cookie()->forget('token');
-
         return redirect('/')->withCookie($cookie);
     }
+
+    public function me(Request $request)
+    {
+        return response()->json(Auth::guard('api')->user());
+    }
+
+    public function refresh()
+    {
+        return $this->respondWithToken(Auth::guard('api')->refresh());
+    }
+
 }
