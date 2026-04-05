@@ -1,8 +1,17 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import '../styles/global.css';
 
 const Sidebar = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
+  };
+
   const navItems = [
     { path: '/', label: 'Dashboard', icon: '📊' },
     { path: '/books', label: 'Books', icon: '📚' },
@@ -57,7 +66,9 @@ const Sidebar = () => {
         ))}
       </ul>
       <div style={{ marginTop: 'auto', padding: '1rem' }}>
-        <button style={{
+        <button
+          onClick={handleLogout}
+          style={{
           width: '100%',
           padding: '0.75rem',
           borderRadius: 'var(--radius)',
@@ -66,7 +77,8 @@ const Sidebar = () => {
           alignItems: 'center',
           gap: '0.75rem',
           fontWeight: '600',
-          marginTop: '2rem'
+          marginTop: '2rem',
+          cursor: 'pointer'
         }}>
           <span>🚪</span> Logout
         </button>

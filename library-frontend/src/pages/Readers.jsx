@@ -22,7 +22,6 @@ const Readers = () => {
           <h1>Readers Management</h1>
           <p>Manage library members and their information.</p>
         </div>
-        <button className="btn btn-primary">+ Register Reader</button>
       </div>
 
       <Table

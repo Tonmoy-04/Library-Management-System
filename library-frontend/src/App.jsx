@@ -15,8 +15,15 @@ import './styles/global.css';
 import './styles/dashboard.css';
 
 function App() {
-  const { user } = useAuth();
-  const isAuthenticated = !!user;
+  const { isAuthenticated, initializing } = useAuth();
+
+  if (initializing) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        Loading application...
+      </div>
+    );
+  }
 
   const DashboardLayout = ({ children }) => (
     <div className="app-container">

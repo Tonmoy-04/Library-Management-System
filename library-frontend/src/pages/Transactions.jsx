@@ -1,14 +1,42 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Table from '../components/Table';
+import { transactionAPI } from '../services/api';
 import '../styles/dashboard.css';
 
 const Transactions = () => {
-  const transactionsData = [
-    { id: 'T001', reader: 'Alice Johnson', book: 'Clean Code', issueDate: '2023-10-01', returnDate: '2023-10-15', status: <span className="status-badge status-returned">Returned</span> },
-    { id: 'T002', reader: 'Bob Smith', book: 'The Pragmatic Programmer', issueDate: '2023-10-05', returnDate: '2023-10-20', status: <span className="status-badge status-issued">Issued</span> },
-    { id: 'T003', reader: 'Charlie Brown', book: 'Building Microservices', issueDate: '2023-10-10', returnDate: '2023-10-24', status: <span className="status-badge status-overdue">Overdue</span> },
-    { id: 'T004', reader: 'Diana Prince', book: 'Head First Design Patterns', issueDate: '2023-10-12', returnDate: '2023-10-26', status: <span className="status-badge status-reserved">Reserved</span> },
-  ];
+  const [transactionsData, setTransactionsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const response = await transactionAPI.getAll();
+        const rows = (response.data?.data || []).map((tx) => ({
+          id: `T${tx.id}`,
+          reader: tx.reader,
+          book: tx.book,
+          issueDate: tx.issued_at ? new Date(tx.issued_at).toLocaleDateString() : 'N/A',
+          returnDate: tx.returned_at ? new Date(tx.returned_at).toLocaleDateString() : 'Not returned',
+          status: (
+            <span className={`status-badge ${tx.status === 'returned' ? 'status-returned' : 'status-issued'}`}>
+              {tx.status || 'issued'}
+            </span>
+          ),
+        }));
+        setTransactionsData(rows);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to load transactions.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
 
   return (
     <div className="transactions-page">
@@ -18,15 +46,22 @@ const Transactions = () => {
           <p>Track book issuance, returns, and reservations.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn btn-success">Issue Book</button>
-          <button className="btn btn-primary">Return Book</button>
+          <button className="btn btn-success" disabled>Issue Book</button>
+          <button className="btn btn-primary" disabled>Return Book</button>
         </div>
       </div>
 
-      <Table
-        columns={['Transaction ID', 'Reader', 'Book', 'Issue Date', 'Return Date', 'Status']}
-        data={transactionsData}
-      />
+      {loading && <p>Loading transactions...</p>}
+      {error && <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{error}</p>}
+
+      {transactionsData.length > 0 ? (
+        <Table
+          columns={['Transaction ID', 'Reader', 'Book', 'Issue Date', 'Return Date', 'Status']}
+          data={transactionsData}
+        />
+      ) : (
+        !loading && <p>No transactions found in the database.</p>
+      )}
     </div>
   );
 };
