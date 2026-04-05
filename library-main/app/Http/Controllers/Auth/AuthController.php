@@ -58,14 +58,18 @@ class AuthController extends Controller
 
         $credentials = $request->only('email', 'password');
 
-        if (! $token = Auth::attempt($credentials)) {
+        // Try to get JWT token using credentials
+        if (!$token = auth('api')->attempt($credentials)) {
             return response()->json(['message' => 'Invalid email or password'], 401);
         }
+
+        // Get the authenticated user
+        $user = auth('api')->user();
 
         return response()->json([
             'message' => 'Login successful',
             'token' => $token,
-            'user' => Auth::user()
+            'user' => $user
         ], 200);
     }
 
@@ -113,16 +117,13 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        Auth::logout();
+        auth('api')->logout();
 
         if ($request->expectsJson()) {
             return response()->json(['message' => 'Logout successful'], 200);
         }
 
-        // Expire the JWT token cookie
-        $cookie = cookie()->forget('token');
-
-        return redirect('/')->withCookie($cookie);
+        return redirect('/');
     }
 
     /**
@@ -132,7 +133,7 @@ class AuthController extends Controller
      */
     public function me()
     {
-        return response()->json(Auth::user());
+        return response()->json(auth('api')->user());
     }
 
     /**
@@ -142,10 +143,12 @@ class AuthController extends Controller
      */
     public function refresh()
     {
+        $token = auth('api')->refresh();
+        
         return response()->json([
             'message' => 'Token refreshed',
-            'token' => Auth::refresh(),
-            'user' => Auth::user()
+            'token' => $token,
+            'user' => auth('api')->user()
         ]);
     }
 }

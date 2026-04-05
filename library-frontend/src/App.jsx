@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { RouterProvider, createBrowserRouter, Navigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Footer from './components/Footer';
@@ -14,7 +15,8 @@ import './styles/global.css';
 import './styles/dashboard.css';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
 
   const DashboardLayout = ({ children }) => (
     <div className="app-container">
@@ -93,7 +95,7 @@ function App() {
       },
       {
         path: '/login',
-        element: <Login onLogin={() => setIsAuthenticated(true)} />,
+        element: <Login />,
       },
       {
         path: '/register',
