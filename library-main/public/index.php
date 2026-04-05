@@ -31,7 +31,29 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
 |
 */
 
-require __DIR__.'/../vendor/autoload.php';
+// Handle setup.php and setup_sqlserver.php first
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+if (strpos($uri, '/setup') !== false) {
+    $setupFile = __DIR__ . '/setup_sqlserver.php';
+    if (file_exists($setupFile) && strpos($uri, 'setup_sqlserver') !== false) {
+        require $setupFile;
+        exit;
+    }
+}
+
+// Check if vendor/autoload.php exists
+if (!file_exists($autoloadPath = __DIR__.'/../vendor/autoload.php')) {
+    http_response_code(503);
+    echo json_encode([
+        'error' => 'Service Unavailable',
+        'message' => 'Backend dependencies not installed. Run: composer install',
+        'status' => 'dependencies_missing'
+    ]);
+    exit;
+}
+
+require $autoloadPath;
 
 /*
 |--------------------------------------------------------------------------

@@ -13,9 +13,12 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes
 Route::get('/', function () {
-    return view('welcome');
+    return response()->json(['message' => 'Library Management System API']);
 });
 
+// Note: Web routes are disabled since this is an API backend
+// Use the React frontend at http://localhost:5173 and API routes in routes/api.php
+/*
 // Authentication Routes (Guest only)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -26,6 +29,7 @@ Route::middleware('guest')->group(function () {
 
 // Logout (Needs to be accessible to logged-in users)
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+*/
 
 /*
 |--------------------------------------------------------------------------
