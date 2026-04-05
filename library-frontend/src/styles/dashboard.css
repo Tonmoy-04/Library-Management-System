@@ -24,6 +24,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  gap: 1rem;
+  animation: slideUp 0.45s ease;
 }
 
 .page-title h1 {
@@ -34,6 +36,126 @@
 .page-title p {
   color: var(--text-muted);
   font-size: 0.875rem;
+}
+
+.stats-grid .card {
+  animation: floatIn 0.45s ease;
+}
+
+.table-container {
+  animation: fadePanel 0.5s ease;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(19, 33, 68, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2500;
+  backdrop-filter: blur(3px);
+}
+
+.issue-modal {
+  width: min(520px, 92vw);
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-hover);
+  padding: 1.25rem;
+  animation: popIn 0.25s ease;
+}
+
+.issue-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.issue-modal-header h3 {
+  font-size: 1.1rem;
+}
+
+.issue-modal-header button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #f1f5ff;
+  color: #3f4f73;
+}
+
+.issue-book-title {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.issue-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.issue-message {
+  font-size: 0.88rem;
+  margin-bottom: 0.75rem;
+}
+
+.issue-error {
+  color: #b42318;
+}
+
+.issue-success {
+  color: #027a48;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadePanel {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes floatIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 1024px) {
@@ -48,4 +170,9 @@
   .sidebar { display: none; }
   .main-content { margin-left: 0; }
   .footer { margin-left: 0; width: 100%; }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
