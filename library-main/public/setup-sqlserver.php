@@ -113,6 +113,19 @@ try {
         )",
         
         "CREATE INDEX idx_users_email ON users(email)",
+
+        "CREATE TABLE readers (
+            id BIGINT IDENTITY(1,1) PRIMARY KEY,
+            name NVARCHAR(255) NOT NULL,
+            email NVARCHAR(255) NOT NULL UNIQUE,
+            phone NVARCHAR(50) NOT NULL,
+            address NVARCHAR(MAX) NOT NULL,
+            password NVARCHAR(255) NOT NULL,
+            created_at DATETIME DEFAULT GETDATE(),
+            updated_at DATETIME DEFAULT GETDATE()
+        )",
+
+        "CREATE INDEX idx_readers_email ON readers(email)",
         
         "CREATE TABLE publishers (
             id BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -160,6 +173,7 @@ try {
         
         "INSERT INTO migrations (migration, batch) VALUES 
             ('2014_10_12_000000_create_users_table', 1),
+            ('2026_04_09_000000_create_readers_table', 1),
             ('2024_01_01_000000_create_books_table', 1),
             ('2024_01_01_000001_create_publishers_table', 1),
             ('2024_01_01_000002_create_book_issues_table', 1)",
@@ -204,6 +218,10 @@ try {
     $result = sqlsrv_query($conn, "SELECT COUNT(*) as cnt FROM users");
     $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
     $userCount = $row['cnt'];
+
+    $result = sqlsrv_query($conn, "SELECT COUNT(*) as cnt FROM readers");
+    $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
+    $readerCount = $row['cnt'];
     
     $result = sqlsrv_query($conn, "SELECT COUNT(*) as cnt FROM books");
     $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
@@ -212,6 +230,7 @@ try {
     $output[] = ['step' => 5, 'status' => 'success', 'message' => 'Setup verified', 'data' => [
         'tables' => $tables,
         'user_count' => $userCount,
+        'reader_count' => $readerCount,
         'book_count' => $bookCount
     ]];
     

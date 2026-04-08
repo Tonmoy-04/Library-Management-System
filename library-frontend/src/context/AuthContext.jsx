@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useEffect, useState } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, readerAuthAPI } from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -9,20 +9,25 @@ export function AuthProvider({ children }) {
     return storedUser ? JSON.parse(storedUser) : null;
   });
   const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [role, setRole] = useState(() => localStorage.getItem('role') || 'admin');
   const [initializing, setInitializing] = useState(true);
 
   const clearAuth = useCallback(() => {
     setUser(null);
     setToken(null);
+    setRole('admin');
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    localStorage.removeItem('role');
   }, []);
 
-  const login = (userData, authToken) => {
+  const login = (userData, authToken, authRole = 'admin') => {
     setUser(userData);
     setToken(authToken);
+    setRole(authRole);
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('token', authToken);
+    localStorage.setItem('role', authRole);
   };
 
   const refreshUser = useCallback(async () => {
@@ -32,7 +37,7 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const response = await authAPI.me();
+      const response = role === 'reader' ? await readerAuthAPI.me() : await authAPI.me();
       setUser(response.data);
       localStorage.setItem('user', JSON.stringify(response.data));
       return response.data;
@@ -40,19 +45,23 @@ export function AuthProvider({ children }) {
       clearAuth();
       return null;
     }
-  }, [token, clearAuth]);
+  }, [token, role, clearAuth]);
 
   const logout = useCallback(async () => {
     try {
       if (token) {
-        await authAPI.logout();
+        if (role === 'reader') {
+          await readerAuthAPI.logout();
+        } else {
+          await authAPI.logout();
+        }
       }
     } catch (error) {
       // Ignore API logout errors and clear local state regardless.
     } finally {
       clearAuth();
     }
-  }, [token, clearAuth]);
+  }, [token, role, clearAuth]);
 
   useEffect(() => {
     let mounted = true;
@@ -83,6 +92,9 @@ export function AuthProvider({ children }) {
         logout,
         refreshUser,
         initializing,
+        role,
+        isAdmin: !token || role !== 'reader',
+        isReader: role === 'reader',
         isAuthenticated: Boolean(token),
       }}
     >

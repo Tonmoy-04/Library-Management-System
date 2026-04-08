@@ -28,6 +28,13 @@ export const authAPI = {
   me: () => api.get('/auth/me'),
 };
 
+export const readerAuthAPI = {
+  register: (payload) => api.post('/reader/register', payload),
+  login: (payload) => api.post('/reader/login', payload),
+  logout: () => api.post('/reader/logout'),
+  me: () => api.get('/reader/me'),
+};
+
 export const bookAPI = {
   getAll: () => api.get('/books'),
   create: (payload) => api.post('/books', payload),

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { readerAuthAPI } from '../services/api';
 import '../styles/global.css';
 import '../styles/form.css';
 
@@ -9,6 +9,8 @@ const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
+    address: '',
     password: '',
     password_confirmation: '',
   });
@@ -27,7 +29,7 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
-    if (!formData.name || !formData.email || !formData.password || !formData.password_confirmation) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.address || !formData.password || !formData.password_confirmation) {
       setError('Please fill in all fields');
       return;
     }
@@ -49,9 +51,11 @@ const Register = () => {
 
     setLoading(true);
     try {
-      const response = await api.post('/auth/register', {
+      const response = await readerAuthAPI.register({
         name: formData.name,
         email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
         password: formData.password,
         password_confirmation: formData.password_confirmation,
       });
@@ -138,6 +142,32 @@ const Register = () => {
               className="form-control"
               placeholder="user@aust.edu"
               value={formData.email}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="phone">Phone Number</label>
+            <input
+              type="text"
+              id="phone"
+              name="phone"
+              className="form-control"
+              placeholder="017XXXXXXXX"
+              value={formData.phone}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="address">Address</label>
+            <input
+              type="text"
+              id="address"
+              name="address"
+              className="form-control"
+              placeholder="Your address"
+              value={formData.address}
               onChange={handleChange}
             />
           </div>

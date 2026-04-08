@@ -39,8 +39,25 @@ CREATE TABLE users (
 );
 GO
 
+-- Create readers table
+CREATE TABLE readers (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    name NVARCHAR(255) NOT NULL,
+    email NVARCHAR(255) NOT NULL UNIQUE,
+    phone NVARCHAR(50) NOT NULL,
+    address NVARCHAR(MAX) NOT NULL,
+    password NVARCHAR(255) NOT NULL,
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE()
+);
+GO
+
 -- Create index on email for better query performance
 CREATE INDEX idx_users_email ON users(email);
+GO
+
+-- Create index on reader email for faster reader lookups
+CREATE INDEX idx_readers_email ON readers(email);
 GO
 
 -- Create books table
@@ -100,6 +117,7 @@ GO
 -- Insert migration records
 INSERT INTO migrations (migration, batch) VALUES
     ('2014_10_12_000000_create_users_table', 1),
+    ('2026_04_09_000000_create_readers_table', 1),
     ('2014_10_12_100000_create_password_reset_tokens_table', 1),
     ('2019_08_19_000000_create_failed_jobs_table', 1),
     ('2019_12_14_000001_create_personal_access_tokens_table', 1),
@@ -131,6 +149,8 @@ GO
 
 -- Show record counts
 SELECT 'users' AS TableName, COUNT(*) AS RecordCount FROM users
+UNION ALL
+SELECT 'readers', COUNT(*) FROM readers
 UNION ALL
 SELECT 'books', COUNT(*) FROM books
 UNION ALL

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import api from '../services/api';
+import api, { readerAuthAPI } from '../services/api';
 import '../styles/global.css';
 import '../styles/form.css';
 
@@ -10,6 +10,7 @@ const Login = () => {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('admin');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -24,10 +25,16 @@ const Login = () => {
 
     setLoading(true);
     try {
-      const response = await api.post('/auth/login', {
+      const loginPayload = {
         email: email,
         password: password,
-      });
+      };
+
+      const response = role === 'reader'
+        ? await readerAuthAPI.login(loginPayload)
+        : await api.post('/auth/login', loginPayload);
+
+      const activeRole = response.data.role || role;
 
       console.log('Login successful', response.data);
       
@@ -35,13 +42,14 @@ const Login = () => {
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('role', activeRole);
       }
 
       // Call login from context
-      login(response.data.user, response.data.token);
+      login(response.data.user, response.data.token, activeRole);
       
-      // Redirect to dashboard
-      navigate('/');
+      // Redirect based on selected role
+      navigate(activeRole === 'reader' ? '/reader/home' : '/dashboard');
     } catch (err) {
       console.error('Full error:', err);
       console.error('Error response:', err.response);
@@ -97,6 +105,51 @@ const Login = () => {
               {error}
             </div>
           )}
+
+          <div className="form-group">
+            <label>Login Role</label>
+            <div style={{
+              display: 'flex',
+              gap: '0.5rem',
+              padding: '0.25rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.45)',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(148, 163, 184, 0.35)'
+            }}>
+              {['admin', 'reader'].map((option) => (
+                <label
+                  key={option}
+                  htmlFor={`role-${option}`}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '0.4rem',
+                    cursor: 'pointer',
+                    backgroundColor: role === option ? 'var(--primary-color)' : 'transparent',
+                    color: role === option ? '#ffffff' : 'var(--text-color)',
+                    fontWeight: 600,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <input
+                    id={`role-${option}`}
+                    type="radio"
+                    name="loginRole"
+                    value={option}
+                    checked={role === option}
+                    onChange={() => setRole(option)}
+                    disabled={loading}
+                    style={{ margin: 0 }}
+                  />
+                  <span>{option === 'admin' ? 'Admin' : 'Reader'}</span>
+                </label>
+              ))}
+            </div>
+          </div>
           
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
