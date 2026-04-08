@@ -1,6 +1,7 @@
 <?php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\ReaderAuthController;
 use App\Http\Controllers\Api\LibraryDataController;
 
 Route::prefix('auth')->group(function () {
@@ -11,6 +12,16 @@ Route::prefix('auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::get('me', [AuthController::class, 'me']);
+    });
+});
+
+Route::prefix('reader')->group(function () {
+    Route::post('register', [ReaderAuthController::class, 'register']);
+    Route::post('login', [ReaderAuthController::class, 'login']);
+
+    Route::middleware('auth:reader')->group(function () {
+        Route::post('logout', [ReaderAuthController::class, 'logout']);
+        Route::get('me', [ReaderAuthController::class, 'me']);
     });
 });
 

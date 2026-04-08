@@ -137,6 +137,33 @@ try {
     }
     
     echo "<p style='color: green;'>✅ Users table created</p>";
+
+    // Create readers table
+    $sql = "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'readers')
+            CREATE TABLE [readers] (
+                [id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+                [name] NVARCHAR(255) NOT NULL,
+                [email] NVARCHAR(255) NOT NULL UNIQUE,
+                [phone] NVARCHAR(50) NOT NULL,
+                [address] NVARCHAR(MAX) NOT NULL,
+                [password] NVARCHAR(255) NOT NULL,
+                [created_at] DATETIME DEFAULT GETDATE(),
+                [updated_at] DATETIME DEFAULT GETDATE()
+            );";
+
+    if ($useOdbc) {
+        $result = odbc_exec($conn, $sql);
+        if (!$result) {
+            throw new Exception("Error creating readers table: " . odbc_errormsg());
+        }
+    } else {
+        $result = sqlsrv_query($conn, $sql);
+        if ($result === false) {
+            throw new Exception("Error creating readers table: " . print_r(sqlsrv_errors(), true));
+        }
+    }
+
+    echo "<p style='color: green;'>✅ Readers table created</p>";
     
     // Create index on email
     $sql = "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_email' AND object_id = OBJECT_ID('[users]'))
@@ -149,6 +176,18 @@ try {
     }
     
     echo "<p style='color: green;'>✅ Email index created</p>";
+
+    // Create index on reader email
+    $sql = "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_reader_email' AND object_id = OBJECT_ID('[readers]'))
+            CREATE INDEX [idx_reader_email] ON [readers]([email]);";
+
+    if ($useOdbc) {
+        odbc_exec($conn, $sql);
+    } else {
+        sqlsrv_query($conn, $sql);
+    }
+
+    echo "<p style='color: green;'>✅ Reader email index created</p>";
     
     // Clear existing migrations (to avoid duplicates)
     $sql = "TRUNCATE TABLE [migrations];";
@@ -161,6 +200,7 @@ try {
     // Insert migration records
     $sql = "INSERT INTO [migrations] ([migration], [batch]) VALUES 
             ('2014_10_12_000000_create_users_table', 1),
+            ('2026_04_09_000000_create_readers_table', 1),
             ('2014_10_12_100000_create_password_reset_tokens_table', 1),
             ('2019_08_19_000000_create_failed_jobs_table', 1),
             ('2019_12_14_000001_create_personal_access_tokens_table', 1);";
@@ -217,6 +257,20 @@ try {
     }
     
     echo "<p><strong>Total users in database:</strong> $count</p>";
+
+    $sql = "SELECT COUNT(*) AS count FROM [readers];";
+
+    if ($useOdbc) {
+        $result = odbc_exec($conn, $sql);
+        $row = odbc_fetch_array($result);
+        $readerCount = $row['count'];
+    } else {
+        $result = sqlsrv_query($conn, $sql);
+        $row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
+        $readerCount = $row['count'];
+    }
+
+    echo "<p><strong>Total readers in database:</strong> $readerCount</p>";
     
     // Close connection
     if ($useOdbc) {
