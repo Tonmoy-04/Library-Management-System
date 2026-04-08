@@ -17,6 +17,7 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:api')->group(function () {
     Route::get('readers', [LibraryDataController::class, 'readers']);
     Route::get('books', [LibraryDataController::class, 'books']);
+    Route::post('books', [LibraryDataController::class, 'storeBook']);
     Route::get('transactions', [LibraryDataController::class, 'transactions']);
     Route::post('transactions/issue', [LibraryDataController::class, 'issueBook']);
     Route::get('dashboard/summary', [LibraryDataController::class, 'dashboardSummary']);
