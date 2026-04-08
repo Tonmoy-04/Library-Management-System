@@ -22,6 +22,8 @@ class LibraryDataController extends Controller
 
     public function books(): JsonResponse
     {
+        $this->seedDemoBooksIfNeeded();
+
         $books = DB::table('books as b')
             ->leftJoin('publishers as p', 'b.publisher_id', '=', 'p.id')
             ->select(
@@ -37,6 +39,65 @@ class LibraryDataController extends Controller
             ->get();
 
         return response()->json(['data' => $books]);
+    }
+
+    public function storeBook(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'author' => 'required|string|max:255',
+            'isbn' => 'nullable|string|max:13|unique:books,isbn',
+            'publisher' => 'nullable|string|max:255',
+            'quantity' => 'required|integer|min:1|max:9999',
+        ]);
+
+        $now = now();
+        $publisherId = null;
+
+        if (! empty($validated['publisher'])) {
+            $publisherName = trim($validated['publisher']);
+            $publisherId = DB::table('publishers')
+                ->where('name', $publisherName)
+                ->value('id');
+
+            if (! $publisherId) {
+                $publisherId = DB::table('publishers')->insertGetId([
+                    'name' => $publisherName,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+        }
+
+        $bookId = DB::table('books')->insertGetId([
+            'title' => $validated['title'],
+            'author' => $validated['author'],
+            'publisher_id' => $publisherId,
+            'isbn' => $validated['isbn'] ?? null,
+            'quantity' => $validated['quantity'],
+            'available' => $validated['quantity'],
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $book = DB::table('books as b')
+            ->leftJoin('publishers as p', 'b.publisher_id', '=', 'p.id')
+            ->select(
+                'b.id',
+                'b.isbn',
+                'b.title',
+                'b.author',
+                'b.quantity',
+                'b.available',
+                DB::raw("COALESCE(p.name, 'N/A') as publisher")
+            )
+            ->where('b.id', $bookId)
+            ->first();
+
+        return response()->json([
+            'message' => 'Book added successfully.',
+            'data' => $book,
+        ], 201);
     }
 
     public function transactions(): JsonResponse
@@ -159,5 +220,47 @@ class LibraryDataController extends Controller
             ],
             'recent_transactions' => $recentTransactions,
         ]);
+    }
+
+    private function seedDemoBooksIfNeeded(): void
+    {
+        if (DB::table('books')->exists()) {
+            return;
+        }
+
+        $now = now();
+
+        $demoBooks = [
+            ['title' => 'Clean Code', 'author' => 'Robert C. Martin', 'publisher' => 'Prentice Hall', 'isbn' => '9780132350884', 'quantity' => 4],
+            ['title' => 'The Pragmatic Programmer', 'author' => 'Andrew Hunt', 'publisher' => 'Addison-Wesley', 'isbn' => '9780135957059', 'quantity' => 3],
+            ['title' => 'Introduction to Algorithms', 'author' => 'Thomas H. Cormen', 'publisher' => 'MIT Press', 'isbn' => '9780262046305', 'quantity' => 2],
+            ['title' => 'Design Patterns', 'author' => 'Erich Gamma', 'publisher' => 'Addison-Wesley', 'isbn' => '9780201633610', 'quantity' => 5],
+            ['title' => 'Refactoring', 'author' => 'Martin Fowler', 'publisher' => 'Addison-Wesley', 'isbn' => '9780134757599', 'quantity' => 3],
+        ];
+
+        foreach ($demoBooks as $book) {
+            $publisherId = DB::table('publishers')
+                ->where('name', $book['publisher'])
+                ->value('id');
+
+            if (! $publisherId) {
+                $publisherId = DB::table('publishers')->insertGetId([
+                    'name' => $book['publisher'],
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+
+            DB::table('books')->insert([
+                'title' => $book['title'],
+                'author' => $book['author'],
+                'publisher_id' => $publisherId,
+                'isbn' => $book['isbn'],
+                'quantity' => $book['quantity'],
+                'available' => $book['quantity'],
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
     }
 }

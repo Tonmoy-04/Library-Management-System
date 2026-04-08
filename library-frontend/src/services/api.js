@@ -30,6 +30,7 @@ export const authAPI = {
 
 export const bookAPI = {
   getAll: () => api.get('/books'),
+  create: (payload) => api.post('/books', payload),
   issueBook: (payload) => api.post('/transactions/issue', payload),
 };
 
