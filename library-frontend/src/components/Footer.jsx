@@ -1,9 +1,7 @@
 import React from 'react';
 import '../styles/global.css';
 
-const Footer = ({ offsetLeft = 260 }) => {
-  const footerWidth = offsetLeft > 0 ? `calc(100% - ${offsetLeft}px)` : '100%';
-
+const Footer = () => {
   return (
     <footer className="footer" style={{
       padding: '1.5rem 2rem',
@@ -14,9 +12,7 @@ const Footer = ({ offsetLeft = 260 }) => {
       alignItems: 'center',
       color: 'var(--text-muted)',
       fontSize: '0.875rem',
-      position: 'relative',
-      marginLeft: `${offsetLeft}px`,
-      width: footerWidth
+      position: 'relative'
     }}>
       <p style={{ margin: 0 }}>&copy; {new Date().getFullYear()} Library Management System. All rights reserved.</p>
     </footer>

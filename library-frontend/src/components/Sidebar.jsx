@@ -3,22 +3,22 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/global.css';
 
-const Sidebar = () => {
+const defaultNavItems = [
+  { path: '/', label: 'Dashboard', icon: '📊' },
+  { path: '/books', label: 'Books', icon: '📚' },
+  { path: '/readers', label: 'Readers', icon: '👥' },
+  { path: '/publishers', label: 'Publishers', icon: '🏢' },
+  { path: '/transactions', label: 'Transactions', icon: '🔄' },
+];
+
+const Sidebar = ({ navItems = defaultNavItems, logoutRedirectPath = '/login', logoutLabel = 'Logout' }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login', { replace: true });
+    navigate(logoutRedirectPath, { replace: true });
   };
-
-  const navItems = [
-    { path: '/', label: 'Dashboard', icon: '📊' },
-    { path: '/books', label: 'Books', icon: '📚' },
-    { path: '/readers', label: 'Readers', icon: '👥' },
-    { path: '/publishers', label: 'Publishers', icon: '🏢' },
-    { path: '/transactions', label: 'Transactions', icon: '🔄' },
-  ];
 
   return (
     <aside className="sidebar" style={{
@@ -80,7 +80,7 @@ const Sidebar = () => {
           marginTop: '2rem',
           cursor: 'pointer'
         }}>
-          <span>🚪</span> Logout
+          <span>🚪</span> {logoutLabel}
         </button>
       </div>
     </aside>
