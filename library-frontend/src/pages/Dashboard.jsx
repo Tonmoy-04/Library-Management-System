@@ -1,16 +1,26 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import Table from '../components/Table';
 import { dashboardAPI } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
 import '../styles/dashboard.css';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const { token, logout } = useAuth();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchDashboard = async () => {
+      if (!token) {
+        setError('Please login again.');
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError('');
 
@@ -18,6 +28,13 @@ const Dashboard = () => {
         const response = await dashboardAPI.getSummary();
         setSummary(response.data);
       } catch (err) {
+        if (err.response?.status === 401) {
+          setError('Session expired. Please login again.');
+          await logout();
+          navigate('/login', { replace: true });
+          return;
+        }
+
         setError(err.response?.data?.message || 'Failed to load dashboard data.');
       } finally {
         setLoading(false);
@@ -25,7 +42,7 @@ const Dashboard = () => {
     };
 
     fetchDashboard();
-  }, []);
+  }, [navigate, logout, token]);
 
   const stats = useMemo(() => {
     const values = summary?.stats || {};

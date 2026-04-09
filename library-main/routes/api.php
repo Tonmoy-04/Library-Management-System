@@ -27,8 +27,17 @@ Route::prefix('reader')->group(function () {
 
 Route::middleware('auth:api')->group(function () {
     Route::get('readers', [LibraryDataController::class, 'readers']);
+    Route::post('readers', [LibraryDataController::class, 'storeReader']);
+    Route::put('readers/{id}', [LibraryDataController::class, 'updateReader']);
+    Route::delete('readers/{id}', [LibraryDataController::class, 'destroyReader']);
+    Route::get('publishers', [LibraryDataController::class, 'publishers']);
+    Route::post('publishers', [LibraryDataController::class, 'storePublisher']);
+    Route::put('publishers/{id}', [LibraryDataController::class, 'updatePublisher']);
+    Route::delete('publishers/{id}', [LibraryDataController::class, 'destroyPublisher']);
     Route::get('books', [LibraryDataController::class, 'books']);
     Route::post('books', [LibraryDataController::class, 'storeBook']);
+    Route::put('books/{id}', [LibraryDataController::class, 'updateBook']);
+    Route::delete('books/{id}', [LibraryDataController::class, 'destroyBook']);
     Route::get('transactions', [LibraryDataController::class, 'transactions']);
     Route::post('transactions/issue', [LibraryDataController::class, 'issueBook']);
     Route::get('dashboard/summary', [LibraryDataController::class, 'dashboardSummary']);

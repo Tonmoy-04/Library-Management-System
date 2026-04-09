@@ -13,7 +13,7 @@ const Sidebar = () => {
   };
 
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { path: '/', label: 'Dashboard', icon: '📊' },
     { path: '/books', label: 'Books', icon: '📚' },
     { path: '/readers', label: 'Readers', icon: '👥' },
     { path: '/publishers', label: 'Publishers', icon: '🏢' },

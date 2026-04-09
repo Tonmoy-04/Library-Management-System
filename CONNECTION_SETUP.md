@@ -7,7 +7,7 @@
 - ✅ Registration page created at `/register`
 - ✅ Validation rules updated to match backend:
   - Email must be @aust.edu domain
-  - Password minimum 8 characters
+  - Passsword minimum 8 characters
   - Password confirmation required
 
 ### Backend Updates:

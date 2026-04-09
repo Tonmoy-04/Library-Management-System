@@ -64,24 +64,20 @@ export function AuthProvider({ children }) {
   }, [token, role, clearAuth]);
 
   useEffect(() => {
-    let mounted = true;
-
     const bootstrap = async () => {
-      if (token && !user) {
-        await refreshUser();
-      }
-
-      if (mounted) {
+      try {
+        if (token) {
+          await refreshUser();
+        }
+      } catch (error) {
+        clearAuth();
+      } finally {
         setInitializing(false);
       }
     };
 
     bootstrap();
-
-    return () => {
-      mounted = false;
-    };
-  }, [token, user, refreshUser]);
+  }, [token, refreshUser, clearAuth]);
 
   return (
     <AuthContext.Provider

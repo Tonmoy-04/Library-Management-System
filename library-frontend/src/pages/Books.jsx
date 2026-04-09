@@ -10,9 +10,17 @@ const Books = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingBook, setEditingBook] = useState(null);
   const [addingBook, setAddingBook] = useState(false);
   const [addError, setAddError] = useState('');
   const [addSuccess, setAddSuccess] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState(null);
+  const [deletingBook, setDeletingBook] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteSuccess, setDeleteSuccess] = useState('');
+  const [deleteNoHover, setDeleteNoHover] = useState(false);
+  const [deleteYesHover, setDeleteYesHover] = useState(false);
   const [issuing, setIssuing] = useState(false);
   const [issueError, setIssueError] = useState('');
   const [issueSuccess, setIssueSuccess] = useState('');
@@ -94,6 +102,7 @@ const Books = () => {
   const openAddModal = () => {
     setAddError('');
     setAddSuccess('');
+    setEditingBook(null);
     setBookForm({
       title: '',
       author: '',
@@ -109,6 +118,42 @@ const Books = () => {
 
     setShowAddModal(false);
     setAddError('');
+    setEditingBook(null);
+  };
+
+  const openEditModal = (book) => {
+    if (!book) return;
+
+    setAddError('');
+    setAddSuccess('');
+    setEditingBook(book);
+    setBookForm({
+      title: book.title || '',
+      author: book.author || '',
+      isbn: book.isbn === 'N/A' ? '' : (book.isbn || ''),
+      publisher: book.publisher === 'N/A' ? '' : (book.publisher || ''),
+      quantity: book.quantity || 1,
+    });
+    setShowAddModal(true);
+  };
+
+  const openDeleteModal = (book) => {
+    if (!book) return;
+
+    setDeleteError('');
+    setDeleteSuccess('');
+    setBookToDelete(book);
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    if (deletingBook) return;
+
+    setShowDeleteModal(false);
+    setBookToDelete(null);
+    setDeleteError('');
+    setDeleteNoHover(false);
+    setDeleteYesHover(false);
   };
 
   const closeIssueModal = () => {
@@ -185,13 +230,19 @@ const Books = () => {
         quantity: Number(bookForm.quantity) || 1,
       };
 
-      const response = await bookAPI.create(payload);
+      const response = editingBook
+        ? await bookAPI.update(editingBook.id, payload)
+        : await bookAPI.create(payload);
+
       await fetchBooks();
 
-      setAddSuccess(response.data?.message || 'Book added successfully.');
+      setAddSuccess(
+        response.data?.message || (editingBook ? 'Book updated successfully.' : 'Book added successfully.')
+      );
       setTimeout(() => {
         setShowAddModal(false);
         setAddSuccess('');
+        setEditingBook(null);
       }, 900);
     } catch (err) {
       const validationMessage = err.response?.data?.errors
@@ -204,6 +255,30 @@ const Books = () => {
     }
   };
 
+  const handleDeleteBook = async () => {
+    if (!bookToDelete) return;
+
+    setDeleteError('');
+    setDeleteSuccess('');
+    setDeletingBook(true);
+
+    try {
+      const response = await bookAPI.remove(bookToDelete.id);
+      await fetchBooks();
+      setDeleteSuccess(response.data?.message || 'Book deleted successfully.');
+
+      setTimeout(() => {
+        setShowDeleteModal(false);
+        setBookToDelete(null);
+        setDeleteSuccess('');
+      }, 800);
+    } catch (err) {
+      setDeleteError(err.response?.data?.message || 'Failed to delete the book.');
+    } finally {
+      setDeletingBook(false);
+    }
+  };
+
   const actions = [
     {
       label: 'Issue Book',
@@ -212,8 +287,8 @@ const Books = () => {
       isDisabled: (_row, rowIndex) => Number(books[rowIndex]?.available ?? 0) <= 0,
       disabledTitle: 'Book unavailable for issue',
     },
-    { label: 'Edit', type: 'edit', onClick: (row) => console.log('Edit', row) },
-    { label: 'Delete', type: 'delete', onClick: (row) => console.log('Delete', row) },
+    { label: 'Edit', type: 'edit', onClick: (_row, rowIndex) => openEditModal(books[rowIndex]) },
+    { label: 'Delete', type: 'delete', onClick: (_row, rowIndex) => openDeleteModal(books[rowIndex]) },
   ];
 
   return (
@@ -231,6 +306,12 @@ const Books = () => {
       {issueError && !showIssueModal && (
         <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{issueError}</p>
       )}
+      {deleteError && !showDeleteModal && (
+        <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{deleteError}</p>
+      )}
+      {deleteSuccess && !showDeleteModal && (
+        <p style={{ color: '#166534', marginBottom: '1rem' }}>{deleteSuccess}</p>
+      )}
 
       {booksData.length > 0 ? (
         <Table
@@ -246,7 +327,7 @@ const Books = () => {
         <div className="modal-backdrop" onClick={closeAddModal}>
           <div className="issue-modal" onClick={(e) => e.stopPropagation()}>
             <div className="issue-modal-header">
-              <h3>Add New Book</h3>
+              <h3>{editingBook ? 'Edit Book' : 'Add New Book'}</h3>
               <button type="button" onClick={closeAddModal} disabled={addingBook}>
                 x
               </button>
@@ -318,10 +399,61 @@ const Books = () => {
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-success" disabled={addingBook}>
-                  {addingBook ? 'Saving...' : 'Save Book'}
+                  {addingBook ? 'Saving...' : (editingBook ? 'Update Book' : 'Save Book')}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && bookToDelete && (
+        <div className="modal-backdrop" onClick={closeDeleteModal}>
+          <div className="issue-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="issue-modal-header">
+              <h3>Delete Book</h3>
+              <button type="button" onClick={closeDeleteModal} disabled={deletingBook}>
+                x
+              </button>
+            </div>
+
+            <p className="issue-book-title" style={{ marginBottom: '1rem' }}>
+              Do you want to delete "{bookToDelete.title}"?
+            </p>
+
+            {deleteError && <p className="issue-message issue-error">{deleteError}</p>}
+            {deleteSuccess && <p className="issue-message issue-success">{deleteSuccess}</p>}
+
+            <div className="issue-modal-actions">
+              <button
+                type="button"
+                className="btn"
+                onClick={closeDeleteModal}
+                disabled={deletingBook}
+                onMouseEnter={() => setDeleteNoHover(true)}
+                onMouseLeave={() => setDeleteNoHover(false)}
+                style={{
+                  backgroundColor: deleteNoHover ? '#374151' : '#6b7280',
+                  color: '#fff',
+                }}
+              >
+                No
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={handleDeleteBook}
+                disabled={deletingBook}
+                onMouseEnter={() => setDeleteYesHover(true)}
+                onMouseLeave={() => setDeleteYesHover(false)}
+                style={{
+                  backgroundColor: deleteYesHover ? '#b91c1c' : '#ef4444',
+                  color: '#fff',
+                }}
+              >
+                {deletingBook ? 'Deleting...' : 'Yes'}
+              </button>
+            </div>
           </div>
         </div>
       )}

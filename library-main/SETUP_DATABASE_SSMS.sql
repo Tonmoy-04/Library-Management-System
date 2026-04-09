@@ -79,8 +79,8 @@ CREATE TABLE publishers (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     name NVARCHAR(255) NOT NULL UNIQUE,
     email NVARCHAR(255),
-    phone NVARCHAR(20),
-    address NVARCHAR(500),
+    website NVARCHAR(255),
+    location NVARCHAR(500),
     created_at DATETIME DEFAULT GETDATE(),
     updated_at DATETIME DEFAULT GETDATE()
 );
@@ -127,10 +127,10 @@ INSERT INTO migrations (migration, batch) VALUES
 GO
 
 -- Insert sample publishers
-INSERT INTO publishers (name, email, phone, address) VALUES
-    ('Penguin Books', 'contact@penguin.com', '1-800-PENGUIN', '80 Strand, London WC2R 0RL, UK'),
-    ('Oxford University Press', 'sales@oup.com', '1-800-451-7556', 'Great Clarendon Street, Oxford OX2 6DP, UK'),
-    ('Cambridge University Press', 'info@cambridge.org', '1-800-872-7423', '32 Avenue of the Americas, New York, NY 10013, USA');
+INSERT INTO publishers (name, email, website, location) VALUES
+    ('Penguin Books', 'contact@penguin.com', 'https://www.penguin.co.uk', '80 Strand, London WC2R 0RL, UK'),
+    ('Oxford University Press', 'sales@oup.com', 'https://global.oup.com', 'Great Clarendon Street, Oxford OX2 6DP, UK'),
+    ('Cambridge University Press', 'info@cambridge.org', 'https://www.cambridge.org', '32 Avenue of the Americas, New York, NY 10013, USA');
 GO
 
 -- Insert sample books
