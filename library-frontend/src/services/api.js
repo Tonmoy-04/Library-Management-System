@@ -35,6 +35,20 @@ export const readerAuthAPI = {
   me: () => api.get('/reader/me'),
 };
 
+export const readerPortalAPI = {
+  getDashboard: () => api.get('/reader/dashboard'),
+  getBooks: (params) => api.get('/reader/books', { params }),
+  getBookDetails: (bookId) => api.get(`/reader/books/${bookId}`),
+  purchaseBook: (bookId) => api.post(`/reader/books/${bookId}/purchase`),
+  downloadBook: (bookId) => api.post(`/reader/books/${bookId}/download`),
+  saveProgress: (bookId, payload) => api.post(`/reader/books/${bookId}/progress`, payload),
+  continueReading: (bookId) => api.post(`/reader/books/${bookId}/continue`),
+  getBookmarks: () => api.get('/reader/bookmarks'),
+  addBookmark: (payload) => api.post('/reader/bookmarks', payload),
+  removeBookmark: (bookmarkId) => api.delete(`/reader/bookmarks/${bookmarkId}`),
+  getActivity: () => api.get('/reader/activity'),
+};
+
 export const publisherAuthAPI = {
   register: (payload) => api.post('/publisher/register', payload),
   login: (payload) => api.post('/publisher/login', payload),

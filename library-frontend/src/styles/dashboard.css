@@ -12,10 +12,15 @@
 
 .main-content {
   flex: 1;
-  margin-left: 0;
+  margin-left: 260px;
   padding: 2rem;
   background-color: var(--bg-main);
   min-height: calc(100vh - 64px);
+}
+
+.footer {
+  margin-left: 260px;
+  width: calc(100% - 260px);
 }
 
 .stats-grid {
@@ -175,8 +180,8 @@
 
   .sidebar { width: 80px; }
   .sidebar span:last-child { display: none; }
-  .main-content { margin-left: 0; }
-  .footer { margin-left: 0; width: 100%; }
+  .main-content { margin-left: 80px; }
+  .footer { margin-left: 80px; width: calc(100% - 80px); }
   .nav-brand { font-size: 1.2rem; }
 }
 

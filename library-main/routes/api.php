@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\ReaderAuthController;
 use App\Http\Controllers\Auth\PublisherAuthController;
 use App\Http\Controllers\Api\LibraryDataController;
 use App\Http\Controllers\Api\PublisherPortalController;
+use App\Http\Controllers\Api\ReaderPortalController;
 
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
@@ -24,6 +25,17 @@ Route::prefix('reader')->group(function () {
     Route::middleware('auth:reader')->group(function () {
         Route::post('logout', [ReaderAuthController::class, 'logout']);
         Route::get('me', [ReaderAuthController::class, 'me']);
+        Route::get('dashboard', [ReaderPortalController::class, 'dashboard']);
+        Route::get('books', [ReaderPortalController::class, 'books']);
+        Route::get('books/{bookId}', [ReaderPortalController::class, 'bookDetails']);
+        Route::post('books/{bookId}/purchase', [ReaderPortalController::class, 'purchase']);
+        Route::post('books/{bookId}/download', [ReaderPortalController::class, 'download']);
+        Route::post('books/{bookId}/progress', [ReaderPortalController::class, 'upsertProgress']);
+        Route::post('books/{bookId}/continue', [ReaderPortalController::class, 'continueReading']);
+        Route::get('bookmarks', [ReaderPortalController::class, 'bookmarks']);
+        Route::post('bookmarks', [ReaderPortalController::class, 'addBookmark']);
+        Route::delete('bookmarks/{bookmarkId}', [ReaderPortalController::class, 'removeBookmark']);
+        Route::get('activity', [ReaderPortalController::class, 'activity']);
     });
 });
 
