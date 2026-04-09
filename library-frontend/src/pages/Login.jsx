@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import api, { readerAuthAPI } from '../services/api';
+import api, { readerAuthAPI, publisherAuthAPI } from '../services/api';
 import '../styles/global.css';
 import '../styles/form.css';
 
@@ -30,9 +30,14 @@ const Login = () => {
         password: password,
       };
 
-      const response = role === 'reader'
-        ? await readerAuthAPI.login(credentials)
-        : await api.post('/auth/login', credentials);
+      let response;
+      if (role === 'reader') {
+        response = await readerAuthAPI.login(credentials);
+      } else if (role === 'publisher') {
+        response = await publisherAuthAPI.login(credentials);
+      } else {
+        response = await api.post('/auth/login', credentials);
+      }
 
       console.log('Login successful', response.data);
       
@@ -47,7 +52,13 @@ const Login = () => {
       login(response.data.user, response.data.token, role);
       
       // Redirect based on role
-      navigate(role === 'reader' ? '/reader/home' : '/');
+      if (role === 'reader') {
+        navigate('/reader/home');
+      } else if (role === 'publisher') {
+        navigate('/publisher/portal');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       console.error('Full error:', err);
       console.error('Error response:', err.response);
@@ -107,7 +118,7 @@ const Login = () => {
           <div className="form-group">
             <label>Login As</label>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              {['admin', 'reader'].map((option) => (
+              {['admin', 'publisher', 'reader'].map((option) => (
                 <button
                   key={option}
                   type="button"
@@ -123,7 +134,7 @@ const Login = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  {option === 'admin' ? 'Admin' : 'Reader'}
+                  {option === 'admin' ? 'Admin' : option === 'publisher' ? 'Publisher' : 'Reader'}
                 </button>
               ))}
             </div>
@@ -169,7 +180,7 @@ const Login = () => {
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
             Don't have an account?{' '}
             <Link
-              to={role === 'reader' ? '/register?role=reader' : '/register?role=admin'}
+              to={role === 'reader' ? '/register?role=reader' : role === 'publisher' ? '/register?role=publisher' : '/register?role=admin'}
               style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}
             >
               Register here

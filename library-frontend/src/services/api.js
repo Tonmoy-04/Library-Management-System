@@ -35,8 +35,16 @@ export const readerAuthAPI = {
   me: () => api.get('/reader/me'),
 };
 
+export const publisherAuthAPI = {
+  register: (payload) => api.post('/publisher/register', payload),
+  login: (payload) => api.post('/publisher/login', payload),
+  logout: () => api.post('/publisher/logout'),
+  me: () => api.get('/publisher/me'),
+};
+
 export const bookAPI = {
   getAll: () => api.get('/books'),
+  getByPublisher: (publisherId) => api.get(`/publishers/${publisherId}/books`),
   create: (payload) => api.post('/books', payload),
   update: (id, payload) => api.put(`/books/${id}`, payload),
   remove: (id) => api.delete(`/books/${id}`),
@@ -59,6 +67,13 @@ export const publisherAPI = {
   create: (payload) => api.post('/publishers', payload),
   update: (id, payload) => api.put(`/publishers/${id}`, payload),
   remove: (id) => api.delete(`/publishers/${id}`),
+  // Publisher Portal APIs
+  getBooks: (publisherId) => api.get(`/publisher-portal/${publisherId}/books`),
+  getDashboard: (publisherId) => api.get(`/publisher-portal/${publisherId}/dashboard`),
+  getReports: (publisherId, params) => api.get(`/publisher-portal/${publisherId}/reports`, { params }),
+  getFeedback: (publisherId, params) => api.get(`/publisher-portal/${publisherId}/feedback`, { params }),
+  replyToFeedback: (feedbackId, payload) => api.post(`/publisher-portal/feedback/${feedbackId}/reply`, payload),
+  updateFeedbackStatus: (feedbackId, payload) => api.put(`/publisher-portal/feedback/${feedbackId}/status`, payload),
 };
 
 export const dashboardAPI = {

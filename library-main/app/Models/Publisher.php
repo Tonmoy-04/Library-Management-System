@@ -7,23 +7,21 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable implements JWTSubject
+class Publisher extends Authenticatable implements JWTSubject
 {
     use HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
         'email',
+        'phone',
+        'address',
         'password',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
-    ];
-
-    protected $casts = [
-        'email_verified_at' => 'datetime',
     ];
 
     public function getJWTIdentifier()
@@ -36,11 +34,13 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
-    // app/Models/User.php
-
-    public function profile()
+    public function books()
     {
-    // This connects the User to the Profile table
-    return $this->hasOne(Profile::class);
+        return $this->hasMany(Book::class);
+    }
+
+    public function feedback()
+    {
+        return $this->hasMany(Feedback::class);
     }
 }
