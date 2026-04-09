@@ -5,10 +5,10 @@ import '../styles/dashboard.css';
 
 const Dashboard = () => {
   const stats = [
-    { title: 'Total Books', value: '1,250', icon: '📚', color: '#2563eb' },
-    { title: 'Total Readers', value: '450', icon: '👥', color: '#10b981' },
-    { title: 'Books Issued', value: '320', icon: '📖', color: '#f59e0b' },
-    { title: 'Overdue Books', value: '12', icon: '⚠️', color: '#ef4444' },
+    { title: 'Total Books', value: '0', icon: '📚', color: '#2563eb' },
+    { title: 'Total Readers', value: '0', icon: '👥', color: '#10b981' },
+    { title: 'Books Issued', value: '0', icon: '📖', color: '#f59e0b' },
+    { title: 'Overdue Books', value: '0', icon: '⚠️', color: '#ef4444' },
   ];
 
   const recentTransactions = [
@@ -25,7 +25,6 @@ const Dashboard = () => {
           <h1>Dashboard</h1>
           <p>Welcome back! Here's what's happening today.</p>
         </div>
-        <button className="btn btn-primary">+ Issue Book</button>
       </div>
 
       <div className="stats-grid">
