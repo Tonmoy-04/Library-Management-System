@@ -9,7 +9,7 @@ const Register = () => {
   const [searchParams] = useSearchParams();
   const initialRole = useMemo(() => {
     const queryRole = searchParams.get('role');
-    return ['reader', 'publisher'].includes(queryRole) ? queryRole : 'admin';
+    return ['reader', 'publisher'].includes(queryRole) ? queryRole : 'reader';
   }, [searchParams]);
   const [role, setRole] = useState(initialRole);
   const [formData, setFormData] = useState({
@@ -58,7 +58,7 @@ const Register = () => {
       return;
     }
 
-    if (isPublisher && (!formData.description || !formData.city || !formData.country)) {
+    if (isPublisher && (!formData.name || !formData.phone || !formData.description || !formData.city || !formData.country)) {
       setError('Please fill in all publisher information');
       return;
     }
@@ -92,12 +92,11 @@ const Register = () => {
       } else if (isPublisher) {
         response = await publisherAuthAPI.register({
           ...payload,
+          phone: formData.phone,
           description: formData.description,
           city: formData.city,
           country: formData.country,
         });
-      } else {
-        response = await api.post('/auth/register', payload);
       }
 
       console.log('Registration successful', response.data);
@@ -152,7 +151,7 @@ const Register = () => {
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <h1 style={{ color: 'var(--primary-color)', fontSize: '2rem', marginBottom: '0.5rem' }}>LibraryMS</h1>
           <p style={{ color: 'var(--text-muted)' }}>
-            {role === 'reader' ? 'Create a reader account to get started.' : role === 'publisher' ? 'Create a publisher account to get started.' : 'Create a new admin account to get started.'}
+            {role === 'reader' ? 'Create a reader account to get started.' : 'Create a publisher account to get started.'}
           </p>
         </div>
 
@@ -180,7 +179,7 @@ const Register = () => {
           <div className="form-group">
             <label>Register As</label>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              {['admin', 'reader', 'publisher'].map((option) => (
+              {['reader', 'publisher'].map((option) => (
                 <button
                   key={option}
                   type="button"
@@ -196,7 +195,7 @@ const Register = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  {option === 'admin' ? 'Admin' : option === 'reader' ? 'Reader' : 'Publisher'}
+                  {option === 'reader' ? 'Reader' : 'Publisher'}
                 </button>
               ))}
             </div>
@@ -262,6 +261,32 @@ const Register = () => {
 
           {role === 'publisher' && (
             <>
+              <div className="form-group">
+                <label htmlFor="name">Full Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  className="form-control"
+                  placeholder="John Doe"
+                  value={formData.name}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="phone">Phone Number</label>
+                <input
+                  type="text"
+                  id="phone"
+                  name="phone"
+                  className="form-control"
+                  placeholder="017XXXXXXXX"
+                  value={formData.phone}
+                  onChange={handleChange}
+                />
+              </div>
+
               <div className="form-group">
                 <label htmlFor="description">Publisher Description</label>
                 <textarea

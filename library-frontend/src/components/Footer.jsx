@@ -9,14 +9,16 @@ const Footer = ({ offsetLeft = 260 }) => {
       padding: '1.5rem 2rem',
       backgroundColor: 'var(--bg-card)',
       borderTop: '1px solid var(--border-color)',
-      textAlign: 'center',
+      display: 'flex',
+      justifyContent: 'flex-start',
+      alignItems: 'center',
       color: 'var(--text-muted)',
       fontSize: '0.875rem',
       position: 'relative',
       marginLeft: `${offsetLeft}px`,
       width: footerWidth
     }}>
-      <p>&copy; {new Date().getFullYear()} Library Management System. All rights reserved.</p>
+      <p style={{ margin: 0 }}>&copy; {new Date().getFullYear()} Library Management System. All rights reserved.</p>
     </footer>
   );
 };

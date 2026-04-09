@@ -14,10 +14,9 @@ const Bookshelf = ({ publisherId }) => {
   const [bookForm, setBookForm] = useState({
     title: '',
     author: '',
-    isbn: '',
     description: '',
-    quantity: 0,
     price: 0,
+    pdf: null,
   });
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
@@ -54,18 +53,8 @@ const Bookshelf = ({ publisherId }) => {
       filtered = filtered.filter(
         (book) =>
           book.title.toLowerCase().includes(query) ||
-          book.author?.toLowerCase().includes(query) ||
-          book.isbn?.toLowerCase().includes(query)
+          book.author?.toLowerCase().includes(query)
       );
-    }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((book) => {
-        if (statusFilter === 'published') return book.available_quantity > 0;
-        if (statusFilter === 'out-of-stock') return book.available_quantity === 0;
-        return true;
-      });
     }
 
     setFilteredBooks(filtered);
@@ -81,19 +70,34 @@ const Bookshelf = ({ publisherId }) => {
       return;
     }
 
+    if (!editingBook && !bookForm.pdf) {
+      setFormError('Book PDF is required');
+      return;
+    }
+
     setSavingBook(true);
     try {
-      const payload = {
-        ...bookForm,
-        publisher_id: publisherId,
-        available_quantity: bookForm.quantity,
-      };
-
       if (editingBook) {
-        await bookAPI.update(editingBook.id, payload);
+        const payload = {
+          title: bookForm.title,
+          author: bookForm.author,
+          description: bookForm.description,
+          price: bookForm.price,
+          publisher_id: publisherId,
+        };
+        await publisherAPI.updateBook(publisherId, editingBook.id, payload);
         setFormSuccess('Book updated successfully!');
       } else {
-        await bookAPI.create(payload);
+        const formData = new FormData();
+        formData.append('title', bookForm.title);
+        formData.append('author', bookForm.author);
+        formData.append('description', bookForm.description);
+        formData.append('price', bookForm.price);
+        formData.append('publisher_id', publisherId);
+        if (bookForm.pdf) {
+          formData.append('pdf', bookForm.pdf);
+        }
+        await publisherAPI.createBook(publisherId, formData);
         setFormSuccess('Book added successfully!');
       }
 
@@ -110,7 +114,7 @@ const Bookshelf = ({ publisherId }) => {
     if (!window.confirm('Are you sure you want to delete this book?')) return;
 
     try {
-      await bookAPI.remove(bookId);
+      await publisherAPI.deleteBook(publisherId, bookId);
       setFormSuccess('Book deleted successfully!');
       await fetchBooks();
     } catch (err) {
@@ -125,10 +129,9 @@ const Bookshelf = ({ publisherId }) => {
     setBookForm({
       title: book.title,
       author: book.author || '',
-      isbn: book.isbn || '',
       description: book.description || '',
-      quantity: book.quantity,
       price: book.price || 0,
+      pdf: null,
     });
     setShowAddModal(true);
   };
@@ -140,10 +143,9 @@ const Bookshelf = ({ publisherId }) => {
     setBookForm({
       title: '',
       author: '',
-      isbn: '',
       description: '',
-      quantity: 0,
       price: 0,
+      pdf: null,
     });
     setShowAddModal(true);
   };
@@ -174,7 +176,7 @@ const Bookshelf = ({ publisherId }) => {
         <div className="search-box">
           <input
             type="text"
-            placeholder="🔍 Search by title, author, or ISBN..."
+            placeholder="🔍 Search by title or author..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="search-input"
@@ -182,14 +184,13 @@ const Bookshelf = ({ publisherId }) => {
         </div>
 
         <div className="filter-box">
-          <select 
-            value={statusFilter} 
+          <select
+            value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="filter-select"
           >
             <option value="all">All Books</option>
             <option value="published">Published</option>
-            <option value="out-of-stock">Out of Stock</option>
           </select>
         </div>
 
@@ -212,62 +213,47 @@ const Bookshelf = ({ publisherId }) => {
           <div className="results-info">
             Showing {filteredBooks.length} of {books.length} books
           </div>
-          <div className="books-grid">
-            {filteredBooks.map((book) => (
-              <div key={book.id} className="book-card">
-                <div className="book-card-header">
-                  <h3 className="book-title">{book.title}</h3>
-                  <span className={`book-status ${book.available_quantity > 0 ? 'published' : 'out-of-stock'}`}>
-                    {book.available_quantity > 0 ? '✓ Published' : '✗ Out of Stock'}
-                  </span>
-                </div>
-
-                <div className="book-card-body">
-                  <p className="book-author">by {book.author || 'Unknown'}</p>
-                  {book.isbn && <p className="book-isbn">ISBN: {book.isbn}</p>}
-                  {book.description && <p className="book-description">{book.description.substring(0, 120)}...</p>}
-                </div>
-
-                <div className="book-card-stats">
-                  <div className="stat">
-                    <span className="label">Quantity</span>
-                    <span className="value">{book.quantity}</span>
-                  </div>
-                  <div className="stat">
-                    <span className="label">Available</span>
-                    <span className="value">{book.available_quantity}</span>
-                  </div>
-                  <div className="stat">
-                    <span className="label">Price</span>
-                    <span className="value">${parseFloat(book.price || 0).toFixed(2)}</span>
-                  </div>
-                </div>
-
-                <div className="book-card-actions">
-                  <button 
-                    className="action-btn edit-btn" 
-                    onClick={() => openEditModal(book)}
-                    title="Edit book"
-                  >
-                    ✏️ Edit
-                  </button>
-                  <button 
-                    className="action-btn delete-btn" 
-                    onClick={() => handleDeleteBook(book.id)}
-                    title="Delete book"
-                  >
-                    🗑️ Delete
-                  </button>
-                  <button 
-                    className="action-btn view-btn" 
-                    title="View details"
-                  >
-                    👁️ View
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <table className="books-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredBooks.map((book) => (
+                <tr key={book.id} className="book-row">
+                  <td className="book-title-cell">{book.title}</td>
+                  <td className="book-author-cell">{book.author || 'Unknown'}</td>
+                  <td className="book-price-cell">${parseFloat(book.price || 0).toFixed(2)}</td>
+                  <td className="book-status-cell">
+                    <span className="book-status published">
+                      ✓ Published
+                    </span>
+                  </td>
+                  <td className="book-actions-cell">
+                    <button 
+                      className="action-btn edit-btn" 
+                      onClick={() => openEditModal(book)}
+                      title="Edit book"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button 
+                      className="action-btn delete-btn" 
+                      onClick={() => handleDeleteBook(book.id)}
+                      title="Delete book"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </>
       )}
 
@@ -294,50 +280,28 @@ const Bookshelf = ({ publisherId }) => {
                 />
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Author *</label>
-                  <input
-                    type="text"
-                    value={bookForm.author}
-                    onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
-                    placeholder="Enter author name"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>ISBN</label>
-                  <input
-                    type="text"
-                    value={bookForm.isbn}
-                    onChange={(e) => setBookForm({ ...bookForm, isbn: e.target.value })}
-                    placeholder="Enter ISBN"
-                  />
-                </div>
+              <div className="form-group">
+                <label>Author *</label>
+                <input
+                  type="text"
+                  value={bookForm.author}
+                  onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
+                  placeholder="Enter author name"
+                  required
+                />
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Quantity</label>
-                  <input
-                    type="number"
-                    value={bookForm.quantity}
-                    onChange={(e) => setBookForm({ ...bookForm, quantity: parseInt(e.target.value) || 0 })}
-                    placeholder="0"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Price ($)</label>
-                  <input
-                    type="number"
-                    value={bookForm.price}
-                    onChange={(e) => setBookForm({ ...bookForm, price: parseFloat(e.target.value) || 0 })}
-                    placeholder="0.00"
-                    step="0.01"
-                  />
-                </div>
+              <div className="form-group">
+                <label>Price ($) *</label>
+                <input
+                  type="number"
+                  value={bookForm.price === 0 ? '' : bookForm.price}
+                  onChange={(e) => setBookForm({ ...bookForm, price: parseFloat(e.target.value) || 0 })}
+                  placeholder="Enter price"
+                  step="0.01"
+                  min="0"
+                  required
+                />
               </div>
 
               <div className="form-group">
@@ -347,6 +311,17 @@ const Bookshelf = ({ publisherId }) => {
                   onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
                   placeholder="Enter book description"
                   rows="4"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Book PDF *</label>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setBookForm({ ...bookForm, pdf: e.target.files[0] || null })}
+                  placeholder="Select PDF file"
+                  required
                 />
               </div>
 

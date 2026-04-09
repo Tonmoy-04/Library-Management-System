@@ -61,6 +61,9 @@ Route::middleware('auth:publisher')->group(function () {
     Route::prefix('publisher-portal')->group(function () {
         Route::get('{publisherId}/dashboard', [PublisherPortalController::class, 'dashboard']);
         Route::get('{publisherId}/books', [PublisherPortalController::class, 'getPublisherBooks']);
+        Route::post('{publisherId}/books', [PublisherPortalController::class, 'createBook']);
+        Route::put('{publisherId}/books/{bookId}', [PublisherPortalController::class, 'updateBook']);
+        Route::delete('{publisherId}/books/{bookId}', [PublisherPortalController::class, 'deleteBook']);
         Route::get('{publisherId}/reports', [PublisherPortalController::class, 'reports']);
         Route::get('{publisherId}/feedback', [PublisherPortalController::class, 'feedback']);
         Route::post('feedback/{feedbackId}/reply', [PublisherPortalController::class, 'replyToFeedback']);
