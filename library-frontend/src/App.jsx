@@ -11,12 +11,20 @@ import Publishers from './pages/Publishers';
 import Transactions from './pages/Transactions';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ReaderHome from './pages/reader/Home';
 import './styles/global.css';
 import './styles/dashboard.css';
 
 function App() {
-  const { user } = useAuth();
-  const isAuthenticated = !!user;
+  const { isAuthenticated, initializing, isReader } = useAuth();
+
+  if (initializing) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        Loading application...
+      </div>
+    );
+  }
 
   const DashboardLayout = ({ children }) => (
     <div className="app-container">
@@ -31,83 +39,78 @@ function App() {
     </div>
   );
 
-  const ProtectedRoute = ({ component: Component }) => {
-    return isAuthenticated ? (
-      <DashboardLayout>
-        <Component />
-      </DashboardLayout>
-    ) : (
-      <Navigate to="/login" replace />
-    );
-  };
-
   const router = createBrowserRouter(
     [
       {
         path: '/',
-        element: isAuthenticated ? (
+        element: isAuthenticated && !isReader ? (
           <DashboardLayout>
             <Dashboard />
           </DashboardLayout>
         ) : (
-          <Navigate to="/login" replace />
+          <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
         ),
       },
       {
         path: '/books',
-        element: isAuthenticated ? (
+        element: isAuthenticated && !isReader ? (
           <DashboardLayout>
             <Books />
           </DashboardLayout>
         ) : (
-          <Navigate to="/login" replace />
+          <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
         ),
       },
       {
         path: '/readers',
-        element: isAuthenticated ? (
+        element: isAuthenticated && !isReader ? (
           <DashboardLayout>
             <Readers />
           </DashboardLayout>
         ) : (
-          <Navigate to="/login" replace />
+          <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
         ),
       },
       {
         path: '/publishers',
-        element: isAuthenticated ? (
+        element: isAuthenticated && !isReader ? (
           <DashboardLayout>
             <Publishers />
           </DashboardLayout>
         ) : (
-          <Navigate to="/login" replace />
+          <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
         ),
       },
       {
         path: '/transactions',
-        element: isAuthenticated ? (
+        element: isAuthenticated && !isReader ? (
           <DashboardLayout>
             <Transactions />
           </DashboardLayout>
         ) : (
-          <Navigate to="/login" replace />
+          <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
         ),
       },
       {
+        path: '/reader/home',
+        element: isAuthenticated && isReader ? <ReaderHome /> : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
+      },
+      {
         path: '/login',
-        element: <Login />,
+        element: isAuthenticated ? <Navigate to={isReader ? '/reader/home' : '/'} replace /> : <Login />,
       },
       {
         path: '/register',
-        element: <Register />,
+        element: isAuthenticated ? <Navigate to={isReader ? '/reader/home' : '/'} replace /> : <Register />,
       },
       {
         path: '*',
-        element: <Navigate to="/" replace />,
+        element: isAuthenticated ? <Navigate to={isReader ? '/reader/home' : '/'} replace /> : <Navigate to="/login" replace />,
       },
     ],
     {
       future: {
+        v7_startTransition: true,
         v7_relativeSplatPath: true,
       },
     }

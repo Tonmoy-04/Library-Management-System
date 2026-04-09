@@ -46,6 +46,11 @@ return [
         'driver' => 'jwt',
         'provider' => 'users',
     ],
+
+    'reader' => [
+        'driver' => 'jwt',
+        'provider' => 'readers',
+    ],
 ],
 
     /*
@@ -69,6 +74,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => App\Models\User::class,
+        ],
+
+        'readers' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Reader::class,
         ],
 
         // 'users' => [

@@ -1,7 +1,13 @@
 import React from 'react';
+import { useAuth } from '../hooks/useAuth';
 import '../styles/global.css';
 
 const Navbar = () => {
+  const { user } = useAuth();
+  const displayName = user?.name || 'User';
+  const subtitle = user?.email || 'Library Member';
+  const initial = displayName.charAt(0).toUpperCase();
+
   return (
     <nav className="navbar" style={{
       height: '64px',
@@ -30,8 +36,8 @@ const Navbar = () => {
         gap: '1rem'
       }}>
         <div className="user-info" style={{ textAlign: 'right' }}>
-          <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>Admin User</div>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Librarian</div>
+          <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{displayName}</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{subtitle}</div>
         </div>
         <div className="avatar" style={{
           width: '40px',
@@ -44,7 +50,7 @@ const Navbar = () => {
           justifyContent: 'center',
           fontWeight: 'bold'
         }}>
-          A
+          {initial}
         </div>
       </div>
     </nav>

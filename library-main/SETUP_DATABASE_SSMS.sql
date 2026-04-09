@@ -39,8 +39,25 @@ CREATE TABLE users (
 );
 GO
 
+-- Create readers table
+CREATE TABLE readers (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    name NVARCHAR(255) NOT NULL,
+    email NVARCHAR(255) NOT NULL UNIQUE,
+    phone NVARCHAR(50) NOT NULL,
+    address NVARCHAR(MAX) NOT NULL,
+    password NVARCHAR(255) NOT NULL,
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE()
+);
+GO
+
 -- Create index on email for better query performance
 CREATE INDEX idx_users_email ON users(email);
+GO
+
+-- Create index on reader email for faster reader lookups
+CREATE INDEX idx_readers_email ON readers(email);
 GO
 
 -- Create books table
@@ -62,8 +79,8 @@ CREATE TABLE publishers (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     name NVARCHAR(255) NOT NULL UNIQUE,
     email NVARCHAR(255),
-    phone NVARCHAR(20),
-    address NVARCHAR(500),
+    website NVARCHAR(255),
+    location NVARCHAR(500),
     created_at DATETIME DEFAULT GETDATE(),
     updated_at DATETIME DEFAULT GETDATE()
 );
@@ -100,6 +117,7 @@ GO
 -- Insert migration records
 INSERT INTO migrations (migration, batch) VALUES
     ('2014_10_12_000000_create_users_table', 1),
+    ('2026_04_09_000000_create_readers_table', 1),
     ('2014_10_12_100000_create_password_reset_tokens_table', 1),
     ('2019_08_19_000000_create_failed_jobs_table', 1),
     ('2019_12_14_000001_create_personal_access_tokens_table', 1),
@@ -109,10 +127,10 @@ INSERT INTO migrations (migration, batch) VALUES
 GO
 
 -- Insert sample publishers
-INSERT INTO publishers (name, email, phone, address) VALUES
-    ('Penguin Books', 'contact@penguin.com', '1-800-PENGUIN', '80 Strand, London WC2R 0RL, UK'),
-    ('Oxford University Press', 'sales@oup.com', '1-800-451-7556', 'Great Clarendon Street, Oxford OX2 6DP, UK'),
-    ('Cambridge University Press', 'info@cambridge.org', '1-800-872-7423', '32 Avenue of the Americas, New York, NY 10013, USA');
+INSERT INTO publishers (name, email, website, location) VALUES
+    ('Penguin Books', 'contact@penguin.com', 'https://www.penguin.co.uk', '80 Strand, London WC2R 0RL, UK'),
+    ('Oxford University Press', 'sales@oup.com', 'https://global.oup.com', 'Great Clarendon Street, Oxford OX2 6DP, UK'),
+    ('Cambridge University Press', 'info@cambridge.org', 'https://www.cambridge.org', '32 Avenue of the Americas, New York, NY 10013, USA');
 GO
 
 -- Insert sample books
@@ -131,6 +149,8 @@ GO
 
 -- Show record counts
 SELECT 'users' AS TableName, COUNT(*) AS RecordCount FROM users
+UNION ALL
+SELECT 'readers', COUNT(*) FROM readers
 UNION ALL
 SELECT 'books', COUNT(*) FROM books
 UNION ALL

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import api from '../services/api';
+import api, { readerAuthAPI } from '../services/api';
 import '../styles/global.css';
 import '../styles/form.css';
 
@@ -10,6 +10,7 @@ const Login = () => {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('admin');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -24,10 +25,14 @@ const Login = () => {
 
     setLoading(true);
     try {
-      const response = await api.post('/auth/login', {
+      const credentials = {
         email: email,
         password: password,
-      });
+      };
+
+      const response = role === 'reader'
+        ? await readerAuthAPI.login(credentials)
+        : await api.post('/auth/login', credentials);
 
       console.log('Login successful', response.data);
       
@@ -35,13 +40,14 @@ const Login = () => {
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('role', role);
       }
 
       // Call login from context
-      login(response.data.user, response.data.token);
+      login(response.data.user, response.data.token, role);
       
-      // Redirect to dashboard
-      navigate('/');
+      // Redirect based on role
+      navigate(role === 'reader' ? '/reader/home' : '/');
     } catch (err) {
       console.error('Full error:', err);
       console.error('Error response:', err.response);
@@ -97,6 +103,31 @@ const Login = () => {
               {error}
             </div>
           )}
+
+          <div className="form-group">
+            <label>Login As</label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {['admin', 'reader'].map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setRole(option)}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid var(--border-color)',
+                    backgroundColor: role === option ? 'var(--primary-color)' : 'transparent',
+                    color: role === option ? '#fff' : 'var(--text-main)',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {option === 'admin' ? 'Admin' : 'Reader'}
+                </button>
+              ))}
+            </div>
+          </div>
           
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
@@ -117,7 +148,7 @@ const Login = () => {
               type="password"
               id="password"
               className="form-control"
-              placeholder="••••••••"
+              placeholder="********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
@@ -137,14 +168,26 @@ const Login = () => {
         <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
             Don't have an account?{' '}
-            <a
-              href="/register"
+            <Link
+              to={role === 'reader' ? '/register?role=reader' : '/register?role=admin'}
               style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}
             >
               Register here
-            </a>
+            </Link>
           </p>
-          <a href="#" style={{ color: 'var(--primary-color)', fontSize: '0.875rem' }}>Forgot password?</a>
+          <button
+            type="button"
+            style={{
+              color: 'var(--primary-color)',
+              fontSize: '0.875rem',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer'
+            }}
+          >
+            Forgot password?
+          </button>
         </div>
       </div>
     </div>

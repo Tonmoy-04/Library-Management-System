@@ -1,10 +1,19 @@
 .table-container {
   width: 100%;
   margin-top: 1.5rem;
+  border: 1px solid var(--border-color);
 }
 
 .custom-table {
   border-spacing: 0;
+}
+
+.custom-table tbody tr {
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.custom-table tbody tr:hover {
+  transform: translateX(2px);
 }
 
 .custom-table th {
@@ -26,3 +35,7 @@
 .status-returned { background-color: #e0f2fe; color: #075985; }
 .status-reserved { background-color: #fef9c3; color: #854d0e; }
 .status-overdue { background-color: #fee2e2; color: #991b1b; }
+
+.custom-table button:hover {
+  box-shadow: 0 6px 14px rgba(15, 103, 248, 0.14);
+}

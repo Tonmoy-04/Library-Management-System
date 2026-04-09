@@ -9,12 +9,13 @@ import Transactions from '../pages/Transactions';
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<Dashboard />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/books" element={<Books />} />
       <Route path="/readers" element={<Readers />} />
       <Route path="/publishers" element={<Publishers />} />
       <Route path="/transactions" element={<Transactions />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };
