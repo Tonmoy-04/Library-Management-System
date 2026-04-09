@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useEffect, useState } from 'react';
-import { authAPI, readerAuthAPI } from '../services/api';
+import { authAPI, readerAuthAPI, publisherAuthAPI } from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -37,7 +37,14 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const response = role === 'reader' ? await readerAuthAPI.me() : await authAPI.me();
+      let response;
+      if (role === 'reader') {
+        response = await readerAuthAPI.me();
+      } else if (role === 'publisher') {
+        response = await publisherAuthAPI.me();
+      } else {
+        response = await authAPI.me();
+      }
       setUser(response.data);
       localStorage.setItem('user', JSON.stringify(response.data));
       return response.data;
@@ -52,6 +59,8 @@ export function AuthProvider({ children }) {
       if (token) {
         if (role === 'reader') {
           await readerAuthAPI.logout();
+        } else if (role === 'publisher') {
+          await publisherAuthAPI.logout();
         } else {
           await authAPI.logout();
         }
@@ -89,8 +98,9 @@ export function AuthProvider({ children }) {
         refreshUser,
         initializing,
         role,
-        isAdmin: !token || role !== 'reader',
+        isAdmin: !token || (role !== 'reader' && role !== 'publisher'),
         isReader: role === 'reader',
+        isPublisher: role === 'publisher',
         isAuthenticated: Boolean(token),
       }}
     >

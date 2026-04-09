@@ -572,4 +572,15 @@ class LibraryDataController extends Controller
             ]);
         }
     }
+
+    public function getBooksByPublisher($publisherId): JsonResponse
+    {
+        $books = DB::table('books')
+            ->where('publisher_id', $publisherId)
+            ->select('id', 'title', 'author', 'isbn', 'description', 'quantity', 'available_quantity', 'price', 'created_at', 'updated_at')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json(['data' => $books]);
+    }
 }

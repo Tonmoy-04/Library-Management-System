@@ -12,11 +12,12 @@ import Transactions from './pages/Transactions';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ReaderHome from './pages/reader/Home';
+import PublisherPortal from './pages/publishers/PublisherPortal';
 import './styles/global.css';
 import './styles/dashboard.css';
 
 function App() {
-  const { isAuthenticated, initializing, isReader } = useAuth();
+  const { isAuthenticated, initializing, isReader, isPublisher } = useAuth();
 
   if (initializing) {
     return (
@@ -96,8 +97,12 @@ function App() {
         element: isAuthenticated && isReader ? <ReaderHome /> : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
       {
+        path: '/publisher/portal',
+        element: isAuthenticated && isPublisher ? <PublisherPortal /> : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
+      },
+      {
         path: '/login',
-        element: isAuthenticated ? <Navigate to={isReader ? '/reader/home' : '/'} replace /> : <Login />,
+        element: isAuthenticated ? <Navigate to={isReader ? '/reader/home' : isPublisher ? '/publisher/portal' : '/'} replace /> : <Login />,
       },
       {
         path: '/register',
@@ -105,7 +110,7 @@ function App() {
       },
       {
         path: '*',
-        element: isAuthenticated ? <Navigate to={isReader ? '/reader/home' : '/'} replace /> : <Navigate to="/login" replace />,
+        element: isAuthenticated ? <Navigate to={isReader ? '/reader/home' : isPublisher ? '/publisher/portal' : '/'} replace /> : <Navigate to="/login" replace />,
       },
     ],
     {

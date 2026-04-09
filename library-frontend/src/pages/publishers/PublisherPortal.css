@@ -1,0 +1,137 @@
+/* Publisher Portal Sidebar Navigation */
+.publisher-sidebar {
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-color);
+  padding: 1rem 0;
+  min-height: calc(100vh - 140px);
+  overflow-y: auto;
+  flex: 0 0 250px;
+  min-width: 250px;
+}
+
+.portal-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 1rem;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.tab-button:hover {
+  background: transparent;
+  color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.tab-button.active {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.tab-icon {
+  font-size: 1.25rem;
+}
+
+.tab-label {
+  display: inline;
+}
+
+/* Loading and Error States */
+.dashboard-loading,
+.bookshelf-loading,
+.reports-loading,
+.feedback-loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.1rem;
+  color: #64748b;
+  animation: pulse 1.5s infinite;
+}
+
+.dashboard-error,
+.bookshelf-error,
+.reports-error,
+.error-message {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.form-success,
+.success-message {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #166534;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .publisher-sidebar {
+    flex: 0 0 200px;
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .publisher-sidebar {
+    flex: 0 0 100%;
+    min-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    min-height: auto;
+    padding: 0.5rem 0;
+  }
+
+  .portal-tabs {
+    gap: 0;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0.5rem;
+    border-bottom: none;
+  }
+
+  .tab-button {
+    flex: 0 0 auto;
+    padding: 0.75rem 1rem;
+    white-space: nowrap;
+  }
+
+  .tab-label {
+    display: none;
+  }
+
+  .tab-icon {
+    font-size: 1.5rem;
+  }
+}
