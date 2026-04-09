@@ -38,6 +38,8 @@ export const readerAuthAPI = {
 export const bookAPI = {
   getAll: () => api.get('/books'),
   create: (payload) => api.post('/books', payload),
+  update: (id, payload) => api.put(`/books/${id}`, payload),
+  remove: (id) => api.delete(`/books/${id}`),
   issueBook: (payload) => api.post('/transactions/issue', payload),
 };
 
@@ -47,6 +49,16 @@ export const transactionAPI = {
 
 export const readerAPI = {
   getAll: () => api.get('/readers'),
+  create: (payload) => api.post('/readers', payload),
+  update: (id, payload) => api.put(`/readers/${id}`, payload),
+  remove: (id) => api.delete(`/readers/${id}`),
+};
+
+export const publisherAPI = {
+  getAll: () => api.get('/publishers'),
+  create: (payload) => api.post('/publishers', payload),
+  update: (id, payload) => api.put(`/publishers/${id}`, payload),
+  remove: (id) => api.delete(`/publishers/${id}`),
 };
 
 export const dashboardAPI = {

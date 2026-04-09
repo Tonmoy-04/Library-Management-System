@@ -12,12 +12,222 @@ class LibraryDataController extends Controller
 {
     public function readers(): JsonResponse
     {
-        $readers = DB::table('users')
-            ->select('id', 'name', 'email')
-            ->orderBy('name')
+        $readers = DB::table('readers')
+            ->select('id', 'name', 'email', 'phone', 'address')
+            ->orderByDesc('id')
             ->get();
 
         return response()->json(['data' => $readers]);
+    }
+
+    public function storeReader(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:readers,name',
+            'email' => 'nullable|email|max:255|unique:readers,email',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
+        ]);
+
+        $now = now();
+
+        $readerId = DB::table('readers')->insertGetId([
+            'name' => trim($validated['name']),
+            'email' => $validated['email'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $reader = DB::table('readers')
+            ->select('id', 'name', 'email', 'phone', 'address')
+            ->where('id', $readerId)
+            ->first();
+
+        return response()->json([
+            'message' => 'Reader added successfully.',
+            'data' => $reader,
+        ], 201);
+    }
+
+    public function updateReader(Request $request, int $id): JsonResponse
+    {
+        $reader = DB::table('readers')->where('id', $id)->first();
+
+        if (! $reader) {
+            return response()->json(['message' => 'Reader not found.'], 404);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:readers,name,' . $id,
+            'email' => 'nullable|email|max:255|unique:readers,email,' . $id,
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
+        ]);
+
+        DB::table('readers')
+            ->where('id', $id)
+            ->update([
+                'name' => trim($validated['name']),
+                'email' => $validated['email'] ?? null,
+                'phone' => $validated['phone'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'updated_at' => now(),
+            ]);
+
+        $updatedReader = DB::table('readers')
+            ->select('id', 'name', 'email', 'phone', 'address')
+            ->where('id', $id)
+            ->first();
+
+        return response()->json([
+            'message' => 'Reader updated successfully.',
+            'data' => $updatedReader,
+        ]);
+    }
+
+    public function destroyReader(int $id): JsonResponse
+    {
+        $reader = DB::table('readers')->where('id', $id)->first();
+
+        if (! $reader) {
+            return response()->json(['message' => 'Reader not found.'], 404);
+        }
+
+        DB::transaction(function () use ($id) {
+            DB::table('book_issues')
+                ->where('reader_id', $id)
+                ->delete();
+
+            DB::table('readers')->where('id', $id)->delete();
+        });
+
+        return response()->json([
+            'message' => 'Reader deleted successfully.',
+        ]);
+    }
+
+    public function publishers(): JsonResponse
+    {
+        $publishers = DB::table('publishers')
+            ->select('id', 'name', 'email', 'website', 'location')
+            ->orderByDesc('id')
+            ->get();
+
+        return response()->json(['data' => $publishers]);
+    }
+
+    public function storePublisher(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255|unique:publishers,name',
+                'email' => 'nullable|email|max:255',
+                'website' => 'nullable|url|max:255',
+                'location' => 'nullable|string|max:500',
+            ]);
+
+            $now = now();
+
+            $publisherId = DB::table('publishers')->insertGetId([
+                'name' => trim($validated['name']),
+                'email' => $validated['email'] ?? null,
+                'website' => $validated['website'] ?? null,
+                'location' => $validated['location'] ?? null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+
+            $publisher = DB::table('publishers')
+                ->select('id', 'name', 'email', 'website', 'location')
+                ->where('id', $publisherId)
+                ->first();
+
+            return response()->json([
+                'message' => 'Publisher added successfully.',
+                'data' => $publisher,
+            ], 201);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Failed to save publisher.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function updatePublisher(Request $request, int $id): JsonResponse
+    {
+        try {
+            $publisher = DB::table('publishers')->where('id', $id)->first();
+
+            if (! $publisher) {
+                return response()->json(['message' => 'Publisher not found.'], 404);
+            }
+
+            $validated = $request->validate([
+                'name' => 'required|string|max:255|unique:publishers,name,' . $id,
+                'email' => 'nullable|email|max:255',
+                'website' => 'nullable|url|max:255',
+                'location' => 'nullable|string|max:500',
+            ]);
+
+            DB::table('publishers')
+                ->where('id', $id)
+                ->update([
+                    'name' => trim($validated['name']),
+                    'email' => $validated['email'] ?? null,
+                    'website' => $validated['website'] ?? null,
+                    'location' => $validated['location'] ?? null,
+                    'updated_at' => now(),
+                ]);
+
+            $updatedPublisher = DB::table('publishers')
+                ->select('id', 'name', 'email', 'website', 'location')
+                ->where('id', $id)
+                ->first();
+
+            return response()->json([
+                'message' => 'Publisher updated successfully.',
+                'data' => $updatedPublisher,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Failed to update publisher.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function destroyPublisher(int $id): JsonResponse
+    {
+        try {
+            $publisher = DB::table('publishers')->where('id', $id)->first();
+
+            if (! $publisher) {
+                return response()->json(['message' => 'Publisher not found.'], 404);
+            }
+
+            DB::transaction(function () use ($id) {
+                DB::table('books')
+                    ->where('publisher_id', $id)
+                    ->update([
+                        'publisher_id' => null,
+                        'updated_at' => now(),
+                    ]);
+
+                DB::table('publishers')->where('id', $id)->delete();
+            });
+
+            return response()->json([
+                'message' => 'Publisher deleted successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Failed to delete publisher.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function books(): JsonResponse
@@ -98,6 +308,105 @@ class LibraryDataController extends Controller
             'message' => 'Book added successfully.',
             'data' => $book,
         ], 201);
+    }
+
+    public function updateBook(Request $request, int $id): JsonResponse
+    {
+        $book = DB::table('books')->where('id', $id)->first();
+
+        if (! $book) {
+            return response()->json(['message' => 'Book not found.'], 404);
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'author' => 'required|string|max:255',
+            'isbn' => 'nullable|string|max:13|unique:books,isbn,' . $id,
+            'publisher' => 'nullable|string|max:255',
+            'quantity' => 'required|integer|min:1|max:9999',
+        ]);
+
+        $now = now();
+        $publisherId = null;
+
+        if (! empty($validated['publisher'])) {
+            $publisherName = trim($validated['publisher']);
+            $publisherId = DB::table('publishers')
+                ->where('name', $publisherName)
+                ->value('id');
+
+            if (! $publisherId) {
+                $publisherId = DB::table('publishers')->insertGetId([
+                    'name' => $publisherName,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+        }
+
+        $issuedCount = max(0, (int) $book->quantity - (int) $book->available);
+        $newQuantity = (int) $validated['quantity'];
+
+        if ($newQuantity < $issuedCount) {
+            return response()->json([
+                'message' => 'Quantity cannot be lower than currently issued copies (' . $issuedCount . ').',
+            ], 422);
+        }
+
+        $newAvailable = $newQuantity - $issuedCount;
+
+        DB::table('books')
+            ->where('id', $id)
+            ->update([
+                'title' => $validated['title'],
+                'author' => $validated['author'],
+                'publisher_id' => $publisherId,
+                'isbn' => $validated['isbn'] ?? null,
+                'quantity' => $newQuantity,
+                'available' => $newAvailable,
+                'updated_at' => $now,
+            ]);
+
+        $updatedBook = DB::table('books as b')
+            ->leftJoin('publishers as p', 'b.publisher_id', '=', 'p.id')
+            ->select(
+                'b.id',
+                'b.isbn',
+                'b.title',
+                'b.author',
+                'b.quantity',
+                'b.available',
+                DB::raw("COALESCE(p.name, 'N/A') as publisher")
+            )
+            ->where('b.id', $id)
+            ->first();
+
+        return response()->json([
+            'message' => 'Book updated successfully.',
+            'data' => $updatedBook,
+        ]);
+    }
+
+    public function destroyBook(int $id): JsonResponse
+    {
+        $book = DB::table('books')->where('id', $id)->first();
+
+        if (! $book) {
+            return response()->json(['message' => 'Book not found.'], 404);
+        }
+
+        $hasIssueHistory = DB::table('book_issues')->where('book_id', $id)->exists();
+        if ($hasIssueHistory) {
+            return response()->json([
+                'message' => 'This book cannot be deleted because it has issue history.',
+            ], 422);
+        }
+
+        DB::table('books')->where('id', $id)->delete();
+
+        return response()->json([
+            'message' => 'Book deleted successfully.',
+        ]);
     }
 
     public function transactions(): JsonResponse

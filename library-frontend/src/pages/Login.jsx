@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import api, { readerAuthAPI } from '../services/api';
 import '../styles/global.css';
@@ -25,16 +25,14 @@ const Login = () => {
 
     setLoading(true);
     try {
-      const loginPayload = {
+      const credentials = {
         email: email,
         password: password,
       };
 
       const response = role === 'reader'
-        ? await readerAuthAPI.login(loginPayload)
-        : await api.post('/auth/login', loginPayload);
-
-      const activeRole = response.data.role || role;
+        ? await readerAuthAPI.login(credentials)
+        : await api.post('/auth/login', credentials);
 
       console.log('Login successful', response.data);
       
@@ -42,14 +40,14 @@ const Login = () => {
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        localStorage.setItem('role', activeRole);
+        localStorage.setItem('role', role);
       }
 
       // Call login from context
-      login(response.data.user, response.data.token, activeRole);
+      login(response.data.user, response.data.token, role);
       
-      // Redirect based on selected role
-      navigate(activeRole === 'reader' ? '/reader/home' : '/dashboard');
+      // Redirect based on role
+      navigate(role === 'reader' ? '/reader/home' : '/');
     } catch (err) {
       console.error('Full error:', err);
       console.error('Error response:', err.response);
@@ -107,46 +105,26 @@ const Login = () => {
           )}
 
           <div className="form-group">
-            <label>Login Role</label>
-            <div style={{
-              display: 'flex',
-              gap: '0.5rem',
-              padding: '0.25rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.45)',
-              borderRadius: '0.5rem',
-              border: '1px solid rgba(148, 163, 184, 0.35)'
-            }}>
+            <label>Login As</label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
               {['admin', 'reader'].map((option) => (
-                <label
+                <button
                   key={option}
-                  htmlFor={`role-${option}`}
+                  type="button"
+                  onClick={() => setRole(option)}
                   style={{
                     flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem',
-                    padding: '0.6rem 0.75rem',
-                    borderRadius: '0.4rem',
-                    cursor: 'pointer',
+                    padding: '0.75rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid var(--border-color)',
                     backgroundColor: role === option ? 'var(--primary-color)' : 'transparent',
-                    color: role === option ? '#ffffff' : 'var(--text-color)',
+                    color: role === option ? '#fff' : 'var(--text-main)',
                     fontWeight: 600,
-                    transition: 'all 0.2s ease'
+                    cursor: 'pointer'
                   }}
                 >
-                  <input
-                    id={`role-${option}`}
-                    type="radio"
-                    name="loginRole"
-                    value={option}
-                    checked={role === option}
-                    onChange={() => setRole(option)}
-                    disabled={loading}
-                    style={{ margin: 0 }}
-                  />
-                  <span>{option === 'admin' ? 'Admin' : 'Reader'}</span>
-                </label>
+                  {option === 'admin' ? 'Admin' : 'Reader'}
+                </button>
               ))}
             </div>
           </div>
@@ -170,7 +148,7 @@ const Login = () => {
               type="password"
               id="password"
               className="form-control"
-              placeholder="••••••••"
+              placeholder="********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
@@ -190,14 +168,26 @@ const Login = () => {
         <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
             Don't have an account?{' '}
-            <a
-              href="/register"
+            <Link
+              to={role === 'reader' ? '/register?role=reader' : '/register?role=admin'}
               style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}
             >
               Register here
-            </a>
+            </Link>
           </p>
-          <a href="#" style={{ color: 'var(--primary-color)', fontSize: '0.875rem' }}>Forgot password?</a>
+          <button
+            type="button"
+            style={{
+              color: 'var(--primary-color)',
+              fontSize: '0.875rem',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer'
+            }}
+          >
+            Forgot password?
+          </button>
         </div>
       </div>
     </div>
