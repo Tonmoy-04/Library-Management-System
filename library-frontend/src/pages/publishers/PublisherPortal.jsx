@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import Dashboard from './components/Dashboard';
@@ -9,6 +11,8 @@ import './PublisherPortal.css';
 
 const PublisherPortal = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const publisherId = JSON.parse(localStorage.getItem('user'))?.id;
 
   const tabs = [
@@ -33,6 +37,11 @@ const PublisherPortal = () => {
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
   return (
     <div className="app-container">
       <Navbar />
@@ -51,6 +60,13 @@ const PublisherPortal = () => {
               </button>
             ))}
           </nav>
+          <button 
+            onClick={handleLogout}
+            className="logout-btn"
+            title="Logout"
+          >
+            🚪 Logout
+          </button>
         </aside>
         <main className="main-content">
           {renderContent()}

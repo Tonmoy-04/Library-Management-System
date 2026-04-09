@@ -263,4 +263,98 @@ class PublisherPortalController extends Controller
             'feedback' => $feedback,
         ]);
     }
+
+    /**
+     * Create a new book for the publisher
+     */
+    public function createBook($publisherId, Request $request)
+    {
+        try {
+            $request->validate([
+                'title' => 'required|string|max:255',
+                'author' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'price' => 'required|numeric|min:0',
+            ]);
+
+            $book = Book::create([
+                'title' => $request->title,
+                'author' => $request->author,
+                'publisher_id' => $publisherId,
+                'description' => $request->description,
+                'price' => $request->price,
+                'quantity' => 1,
+                'available' => 1,
+            ]);
+
+            return response()->json([
+                'message' => 'Book created successfully',
+                'data' => $book,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to create book',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Update a book for the publisher
+     */
+    public function updateBook($publisherId, $bookId, Request $request)
+    {
+        try {
+            $request->validate([
+                'title' => 'required|string|max:255',
+                'author' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'price' => 'required|numeric|min:0',
+            ]);
+
+            $book = Book::where('id', $bookId)
+                ->where('publisher_id', $publisherId)
+                ->firstOrFail();
+
+            $book->update([
+                'title' => $request->title,
+                'author' => $request->author,
+                'description' => $request->description,
+                'price' => $request->price,
+            ]);
+
+            return response()->json([
+                'message' => 'Book updated successfully',
+                'data' => $book,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to update book',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a book for the publisher
+     */
+    public function deleteBook($publisherId, $bookId)
+    {
+        try {
+            $book = Book::where('id', $bookId)
+                ->where('publisher_id', $publisherId)
+                ->firstOrFail();
+
+            $book->delete();
+
+            return response()->json([
+                'message' => 'Book deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to delete book',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

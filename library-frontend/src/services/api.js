@@ -16,6 +16,10 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Don't set Content-Type for FormData - let browser set it
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -69,6 +73,9 @@ export const publisherAPI = {
   remove: (id) => api.delete(`/publishers/${id}`),
   // Publisher Portal APIs
   getBooks: (publisherId) => api.get(`/publisher-portal/${publisherId}/books`),
+  createBook: (publisherId, payload) => api.post(`/publisher-portal/${publisherId}/books`, payload),
+  updateBook: (publisherId, bookId, payload) => api.put(`/publisher-portal/${publisherId}/books/${bookId}`, payload),
+  deleteBook: (publisherId, bookId) => api.delete(`/publisher-portal/${publisherId}/books/${bookId}`),
   getDashboard: (publisherId) => api.get(`/publisher-portal/${publisherId}/dashboard`),
   getReports: (publisherId, params) => api.get(`/publisher-portal/${publisherId}/reports`, { params }),
   getFeedback: (publisherId, params) => api.get(`/publisher-portal/${publisherId}/feedback`, { params }),

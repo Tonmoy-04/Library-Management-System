@@ -69,6 +69,8 @@ CREATE TABLE books (
     isbn NVARCHAR(13) UNIQUE,
     quantity INT DEFAULT 1,
     available INT DEFAULT 1,
+    price DECIMAL(10, 2) DEFAULT 0,
+    description NVARCHAR(MAX) NULL,
     created_at DATETIME DEFAULT GETDATE(),
     updated_at DATETIME DEFAULT GETDATE()
 );
