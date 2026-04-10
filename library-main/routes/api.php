@@ -66,6 +66,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('transactions', [LibraryDataController::class, 'transactions']);
     Route::post('transactions/issue', [LibraryDataController::class, 'issueBook']);
     Route::get('dashboard/summary', [LibraryDataController::class, 'dashboardSummary']);
+    Route::get('publisher-bookshelf', [LibraryDataController::class, 'publisherBookshelf']);
+    Route::post('publisher-bookshelf/{bookId}/review', [LibraryDataController::class, 'reviewPublisherBook']);
 });
 
 // Publisher Portal Routes - Protected with publisher guard

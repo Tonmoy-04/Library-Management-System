@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdminActionLog;
+use App\Models\Book;
+use App\Models\Bookshelf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -10,6 +13,79 @@ use Illuminate\Validation\ValidationException;
 
 class LibraryDataController extends Controller
 {
+    public function publisherBookshelf(Request $request): JsonResponse
+    {
+        $status = $request->query('status', 'pending');
+        $allowedStatuses = ['pending', 'accepted', 'declined', 'all'];
+
+        if (! in_array($status, $allowedStatuses, true)) {
+            return response()->json(['message' => 'Invalid status filter.'], 422);
+        }
+
+        $query = Bookshelf::query()->orderByDesc('created_at');
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        return response()->json([
+            'data' => $query->get(),
+        ]);
+    }
+
+    public function reviewPublisherBook(Request $request, int $bookId): JsonResponse
+    {
+        $validated = $request->validate([
+            'action' => 'required|in:accepted,declined',
+        ]);
+
+        $submission = Bookshelf::query()->find($bookId);
+        if (! $submission) {
+            return response()->json(['message' => 'Submission not found.'], 404);
+        }
+
+        DB::transaction(function () use ($submission, $validated) {
+            $action = $validated['action'];
+
+            if ($action === 'accepted') {
+                $alreadyExists = Book::query()
+                    ->where('title', $submission->title)
+                    ->where('author', $submission->author)
+                    ->where('publisher_id', $submission->publisher_id)
+                    ->exists();
+
+                if (! $alreadyExists) {
+                    Book::query()->create([
+                        'title' => $submission->title,
+                        'author' => $submission->author,
+                        'publisher_id' => $submission->publisher_id,
+                        'description' => $submission->description,
+                        'price' => $submission->price,
+                        'quantity' => 1,
+                        'available' => 1,
+                    ]);
+                }
+            }
+
+            $submission->status = $action;
+            $submission->save();
+
+            AdminActionLog::query()->create([
+                'book_id' => $submission->id,
+                'action' => $action,
+                'admin_id' => optional(auth('api')->user())->id,
+                'action_date' => now(),
+            ]);
+        });
+
+        $submission->refresh();
+
+        return response()->json([
+            'message' => 'Submission updated successfully.',
+            'data' => $submission,
+        ]);
+    }
+
     public function readers(): JsonResponse
     {
         $readers = DB::table('readers')

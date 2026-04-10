@@ -1,4 +1,24 @@
 /* Publisher Portal Sidebar Navigation */
+.publisher-portal .dashboard-layout {
+  display: flex;
+  min-height: calc(100vh - 140px);
+  padding-top: 64px;
+  gap: 0;
+}
+
+.publisher-portal .main-content {
+  flex: 1;
+  margin-left: 0;
+  padding: 2rem;
+  background-color: var(--bg-main);
+  min-height: calc(100vh - 140px);
+}
+
+.publisher-portal .footer {
+  margin-left: 0;
+  width: 100%;
+}
+
 .publisher-sidebar {
   background: var(--bg-card);
   border-right: 1px solid var(--border-color);

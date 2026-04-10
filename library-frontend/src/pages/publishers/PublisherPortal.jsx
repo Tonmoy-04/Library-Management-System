@@ -43,7 +43,7 @@ const PublisherPortal = () => {
   };
 
   return (
-    <div className="app-container">
+    <div className="app-container publisher-portal">
       <Navbar />
       <div className="dashboard-layout">
         <aside className="publisher-sidebar">
