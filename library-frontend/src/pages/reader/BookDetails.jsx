@@ -12,6 +12,7 @@ const ReaderBookDetails = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
 
   const progressPayload = useMemo(() => ({
     progress_percent: Math.min(100, Math.max(0, Number(book?.progress_percent || 0))),
@@ -114,6 +115,9 @@ const ReaderBookDetails = () => {
               <>
                 <button type="button" className="btn btn-primary" onClick={download} disabled={saving}>Download</button>
                 <button type="button" className="btn btn-success" onClick={continueReading} disabled={saving}>Continue Reading</button>
+                {book.pdf_url && (
+                  <button type="button" className="btn btn-info" onClick={() => setShowPdfViewer(true)}>View PDF</button>
+                )}
               </>
             ) : (
               <button type="button" className="btn btn-primary" onClick={purchase} disabled={saving}>Purchase</button>
@@ -124,6 +128,28 @@ const ReaderBookDetails = () => {
           </div>
         </div>
       </section>
+
+      {showPdfViewer && book.pdf_url && (
+        <div className="pdf-viewer-modal" onClick={() => setShowPdfViewer(false)}>
+          <div className="pdf-viewer-content" onClick={(e) => e.stopPropagation()}>
+            <div className="pdf-viewer-header">
+              <h3>{book.title}</h3>
+              <button type="button" className="pdf-viewer-close" onClick={() => setShowPdfViewer(false)}>✕</button>
+            </div>
+            <div className="pdf-viewer-body">
+              <iframe
+                src={`${book.pdf_url}#toolbar=1&navpanes=0&scrollbar=1`}
+                title={book.title}
+                className="pdf-iframe"
+              />
+            </div>
+            <div className="pdf-viewer-footer">
+              <a href={book.pdf_url} download className="btn btn-primary">Download PDF</a>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowPdfViewer(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -12,13 +12,15 @@ const Bookshelf = ({ publisherId }) => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('All Books');
   const [formData, setFormData] = useState({
     title: '',
     author: '',
     description: '',
     price: '',
-    file_url: '',
-    cover_url: '',
+    pdf: null,
   });
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
@@ -41,14 +43,53 @@ const Bookshelf = ({ publisherId }) => {
   }, [publisherId]);
 
   const orderedSubmissions = useMemo(() => {
-    const list = [...submissions];
+    let list = [...submissions];
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      list = list.filter(book => 
+        book.title.toLowerCase().includes(query) || 
+        book.author.toLowerCase().includes(query)
+      );
+    }
+
+    // Filter by status
+    if (filterStatus !== 'All Books') {
+      const statusKey = filterStatus.toLowerCase();
+      list = list.filter(book => book.status === statusKey);
+    }
+
+    // Sort by creation date
     list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
     return list;
-  }, [submissions]);
+  }, [submissions, searchQuery, filterStatus]);
 
   const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, files } = event.target;
+    if (type === 'file') {
+      setFormData((prev) => ({ ...prev, [name]: files[0] || null }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const openModal = () => {
+    setError('');
+    setSuccess('');
+    setFormData({
+      title: '',
+      author: '',
+      description: '',
+      price: '',
+      pdf: null,
+    });
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    if (saving) return;
+    setShowModal(false);
   };
 
   const handleSubmit = async (event) => {
@@ -63,14 +104,16 @@ const Bookshelf = ({ publisherId }) => {
 
     setSaving(true);
     try {
-      await publisherAPI.submitBookToBookshelf(publisherId, {
-        title: formData.title.trim(),
-        author: formData.author.trim(),
-        description: formData.description.trim() || null,
-        price: Number(formData.price),
-        file_url: formData.file_url.trim() || null,
-        cover_url: formData.cover_url.trim() || null,
-      });
+      const payload = new FormData();
+      payload.append('title', formData.title.trim());
+      payload.append('author', formData.author.trim());
+      payload.append('description', formData.description.trim() || '');
+      payload.append('price', Number(formData.price));
+      if (formData.pdf) {
+        payload.append('pdf', formData.pdf);
+      }
+
+      await publisherAPI.submitBookToBookshelf(publisherId, payload);
 
       setSuccess('Book submitted for admin review.');
       setFormData({
@@ -78,9 +121,12 @@ const Bookshelf = ({ publisherId }) => {
         author: '',
         description: '',
         price: '',
-        file_url: '',
-        cover_url: '',
+        pdf: null,
       });
+      setTimeout(() => {
+        setShowModal(false);
+        setSuccess('');
+      }, 1500);
       await fetchSubmissions();
     } catch (err) {
       const validationError = err.response?.data?.errors
@@ -94,86 +140,204 @@ const Bookshelf = ({ publisherId }) => {
 
   return (
     <div className="bookshelf">
-      <div className="page-header">
-        <div className="page-title">
-          <h1>Publisher Bookshelf</h1>
-          <p>Submit books for admin approval and track review status.</p>
+      {/* Page Header */}
+      <div className="bookshelf-header">
+        <div className="header-content">
+          <div className="header-title">
+            <h1>📚 Bookshelf</h1>
+            <p>Manage your published books</p>
+          </div>
+          <div className="header-controls">
+            <div className="search-container">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Search by title or author..."
+                className="search-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <select 
+              className="filter-dropdown"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option>All Books</option>
+              <option>Pending</option>
+              <option>Accepted</option>
+              <option>Declined</option>
+            </select>
+            <button className="btn-add-book" onClick={openModal}>
+              ➕ Add New Book
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="issue-modal" style={{ marginBottom: '1.5rem' }}>
-        <h3 style={{ marginBottom: '1rem' }}>Add Book</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="title">Title *</label>
-            <input id="title" name="title" className="form-control" value={formData.title} onChange={handleChange} />
-          </div>
-          <div className="form-group">
-            <label htmlFor="author">Author *</label>
-            <input id="author" name="author" className="form-control" value={formData.author} onChange={handleChange} />
-          </div>
-          <div className="form-group">
-            <label htmlFor="price">Price *</label>
-            <input id="price" name="price" type="number" min="0" step="0.01" className="form-control" value={formData.price} onChange={handleChange} />
-          </div>
-          <div className="form-group">
-            <label htmlFor="description">Description</label>
-            <textarea id="description" name="description" rows="3" className="form-control" value={formData.description} onChange={handleChange} />
-          </div>
-          <div className="form-group">
-            <label htmlFor="file_url">File URL</label>
-            <input id="file_url" name="file_url" className="form-control" placeholder="https://..." value={formData.file_url} onChange={handleChange} />
-          </div>
-          <div className="form-group">
-            <label htmlFor="cover_url">Cover URL</label>
-            <input id="cover_url" name="cover_url" className="form-control" placeholder="https://..." value={formData.cover_url} onChange={handleChange} />
-          </div>
+      {/* Modal */}
+      {showModal && (
+        <div className="modal-backdrop" onClick={closeModal}>
+          <div className="book-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Add New Book</h2>
+              <button 
+                className="modal-close" 
+                onClick={closeModal}
+                disabled={saving}
+                aria-label="Close modal"
+              >
+                ✕
+              </button>
+            </div>
 
-          {error && <p className="issue-message issue-error">{error}</p>}
-          {success && <p className="issue-message issue-success">{success}</p>}
+            <form onSubmit={handleSubmit} className="book-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="title">Title *</label>
+                  <input 
+                    id="title" 
+                    name="title" 
+                    className="form-control" 
+                    value={formData.title} 
+                    onChange={handleChange}
+                    disabled={saving}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="author">Author *</label>
+                  <input 
+                    id="author" 
+                    name="author" 
+                    className="form-control" 
+                    value={formData.author} 
+                    onChange={handleChange}
+                    disabled={saving}
+                    required
+                  />
+                </div>
+              </div>
 
-          <div className="issue-modal-actions">
-            <button className="btn btn-success" type="submit" disabled={saving}>
-              {saving ? 'Submitting...' : 'Submit Book'}
-            </button>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="price">Price (BDT) *</label>
+                  <input 
+                    id="price" 
+                    name="price" 
+                    type="number" 
+                    min="0" 
+                    step="1" 
+                    className="form-control" 
+                    value={formData.price} 
+                    onChange={handleChange}
+                    disabled={saving}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="pdf">PDF Upload *</label>
+                  <input 
+                    id="pdf" 
+                    name="pdf" 
+                    type="file" 
+                    accept=".pdf"
+                    className="form-control" 
+                    onChange={handleChange}
+                    disabled={saving}
+                    required
+                  />
+                  {formData.pdf && <p className="file-name">📄 {formData.pdf.name}</p>}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="description">Description</label>
+                <textarea 
+                  id="description" 
+                  name="description" 
+                  rows="4" 
+                  className="form-control" 
+                  value={formData.description} 
+                  onChange={handleChange}
+                  disabled={saving}
+                  placeholder="Tell readers about your book..."
+                />
+              </div>
+
+              {error && <div className="alert alert-error">{error}</div>}
+              {success && <div className="alert alert-success">{success}</div>}
+
+              <div className="modal-actions">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={closeModal}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary" 
+                  disabled={saving}
+                >
+                  {saving ? 'Submitting...' : 'Submit Book'}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
+        </div>
+      )}
 
+      {/* Content */}
       {loading ? (
-        <div className="bookshelf-loading">Loading bookshelf...</div>
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p>Loading your bookshelf...</p>
+        </div>
       ) : orderedSubmissions.length === 0 ? (
-        <div className="empty-state">No submissions yet.</div>
+        <div className="empty-state">
+          <div className="empty-icon">📚</div>
+          <p className="empty-message">You haven't published any books yet.</p>
+          <button className="btn-add-first" onClick={openModal}>
+            ➕ Add Your First Book
+          </button>
+        </div>
       ) : (
-        <table className="books-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Author</th>
-              <th>Price</th>
-              <th>Status</th>
-              <th>Created Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orderedSubmissions.map((book) => {
-              const status = statusConfig[book.status] || statusConfig.pending;
-              return (
-                <tr key={book.id} className="book-row">
-                  <td className="book-title-cell">{book.title}</td>
-                  <td className="book-author-cell">{book.author}</td>
-                  <td className="book-price-cell">${Number(book.price || 0).toFixed(2)}</td>
-                  <td className="book-status-cell">
-                    <span className={`book-status ${status.className}`}>
-                      {status.icon} {status.label}
-                    </span>
-                  </td>
-                  <td>{book.created_at ? new Date(book.created_at).toLocaleDateString() : 'N/A'}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="books-container">
+          <table className="books-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Date Added</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orderedSubmissions.map((book) => {
+                const status = statusConfig[book.status] || statusConfig.pending;
+                return (
+                  <tr key={book.id} className="book-row">
+                    <td className="book-cell book-title">{book.title}</td>
+                    <td className="book-cell book-author">{book.author}</td>
+                    <td className="book-cell book-price">${Number(book.price || 0).toFixed(2)}</td>
+                    <td className="book-cell book-status">
+                      <span className={`status-badge status-${status.className}`}>
+                        {status.icon} {status.label}
+                      </span>
+                    </td>
+                    <td className="book-cell book-date">
+                      {book.created_at ? new Date(book.created_at).toLocaleDateString() : 'N/A'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

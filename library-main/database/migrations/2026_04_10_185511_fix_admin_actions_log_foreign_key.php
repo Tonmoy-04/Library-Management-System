@@ -6,11 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        if (Schema::hasTable('admin_actions_log')) {
-            return;
-        }
+        // Drop the old table and recreate with correct schema
+        Schema::dropIfExists('admin_actions_log');
 
         Schema::create('admin_actions_log', function (Blueprint $table) {
             $table->id();
@@ -32,6 +34,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('admin_actions_log');
