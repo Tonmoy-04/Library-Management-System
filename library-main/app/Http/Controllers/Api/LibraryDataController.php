@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AdminActionLog;
 use App\Models\Book;
 use App\Models\Bookshelf;
+use App\Models\PublisherBookSubmission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,7 @@ class LibraryDataController extends Controller
             return response()->json(['message' => 'Invalid status filter.'], 422);
         }
 
-        $query = Bookshelf::query()->orderByDesc('created_at');
+        $query = PublisherBookSubmission::query()->orderByDesc('created_at');
 
         if ($status !== 'all') {
             $query->where('status', $status);
@@ -39,7 +40,7 @@ class LibraryDataController extends Controller
             'action' => 'required|in:accepted,declined',
         ]);
 
-        $submission = Bookshelf::query()->find($bookId);
+        $submission = PublisherBookSubmission::query()->find($bookId);
         if (! $submission) {
             return response()->json(['message' => 'Submission not found.'], 404);
         }
@@ -61,6 +62,7 @@ class LibraryDataController extends Controller
                         'publisher_id' => $submission->publisher_id,
                         'description' => $submission->description,
                         'price' => $submission->price,
+                        'pdf_url' => $submission->file_url,
                         'quantity' => 1,
                         'available' => 1,
                     ]);
@@ -71,7 +73,7 @@ class LibraryDataController extends Controller
             $submission->save();
 
             AdminActionLog::query()->create([
-                'book_id' => $submission->id,
+                'submission_id' => $submission->id,
                 'action' => $action,
                 'admin_id' => optional(auth('api')->user())->id,
                 'action_date' => now(),

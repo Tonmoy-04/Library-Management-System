@@ -12,46 +12,57 @@ Purpose:
 ---
 
 ## Last Verified
-- Date: 2026-04-11
+- Date: 2026-04-11 (updated after PDF workflow implementation)
 - Environment: SQL Server (Laravel project)
-- Verification source: check_tables.php output (live DB connection + table listing)
+- Verification source: check_tables.php output + sys.foreign_keys query (live DB connection)
 
 ---
 
 ## Current Core Tables
-1. users
-2. readers
-3. publishers
-4. books
-5. bookshelf
-6. book_issues
-7. feedback
-8. admin_actions_log
-9. profiles
-10. password_resets
-11. migrations
-12. password_reset_tokens
-13. failed_jobs
-14. personal_access_tokens
+1. users (authentication/system users)
+2. readers (reader authentication & profile)
+3. publishers (publisher authentication & profile)
+4. books (published book catalog with pdf_url)
+5. bookshelf (publisher book collections)
+6. book_issues (book issue/return transactions)
+7. feedback (reader feedback & publisher replies)
+8. admin_actions_log (admin review audit trail for submissions)
+9. profiles (extended user profiles)
+10. password_resets (password reset tokens)
+11. password_reset_tokens (Laravel password reset tokens)
+12. migrations (Laravel migration history)
+13. failed_jobs (failed job queue entries)
+14. personal_access_tokens (API authentication tokens)
 
-Additional project tables currently present:
-- None verified in the current DB snapshot.
+Additional operational tables:
+1. publisher_book_submissions (publisher book submission queue for admin review)
+2. bookshelf_book (junction table for books in collections)
+3. reader_activities (reader activity tracking)
+4. reader_book_purchases (reader purchase history)
+5. reader_bookmarks (reader bookmarks)
+6. reader_reading_progress (reader reading progress tracking)
+7. transactions (transaction history)
+8. user_library (user library/reading list)
 
-System tables currently present:
-1. sysdiagrams
+System tables:
+1. sysdiagrams (SQL Server system diagrams)
 
 ---
 
 ## Foreign Key Map (Confirmed)
 1. admin_actions_log.admin_id -> users.id
-2. admin_actions_log.book_id -> bookshelf.id
+2. admin_actions_log.submission_id -> publisher_book_submissions.id *(updated: was book_id -> bookshelf.id)*
 3. book_issues.book_id -> books.id
 4. book_issues.user_id -> users.id
 5. books.publisher_id -> publishers.id
 6. bookshelf.publisher_id -> publishers.id
-7. feedback.book_id -> books.id
-8. feedback.publisher_id -> publishers.id
-9. feedback.reader_id -> readers.id
+7. bookshelf_book.book_id -> books.id *(NEW)*
+8. bookshelf_book.bookshelf_id -> bookshelf.id *(NEW)*
+9. feedback.book_id -> books.id
+10. feedback.publisher_id -> publishers.id
+11. feedback.reader_id -> readers.id
+12. profiles.user_id -> users.id *(NEW)*
+13. publisher_book_submissions.publisher_id -> publishers.id *(NEW)*
 
 ---
 
@@ -69,17 +80,25 @@ System tables currently present:
 1. users: system/admin authentication entities.
 2. readers: reader account/auth profile.
 3. publishers: publisher account data.
-4. books: final visible library catalog (ISBN removed from schema).
-5. bookshelf: publisher submission queue.
-6. book_issues: issuing and return transaction history.
-7. feedback: reader feedback and publisher reply tracking.
-8. admin_actions_log: admin decision audit trail.
-9. profiles: extra profile metadata.
-10. password_resets: password reset support.
-11. migrations: migration execution history.
-12. password_reset_tokens: Laravel password reset token storage.
-13. failed_jobs: queued job failure tracking.
-14. personal_access_tokens: token storage for personal access token features.
+4. books: final visible library catalog (includes pdf_url for published PDFs).
+5. bookshelf: publisher book collections for organizing/curating published books.
+6. bookshelf_book: junction table linking books to bookshelf collections (many-to-many).
+7. book_issues: issuing and return transaction history.
+8. feedback: reader feedback and publisher reply tracking.
+9. admin_actions_log: admin decision audit trail (submission acceptance/rejection).
+10. publisher_book_submissions: queue/staging table for publisher book submissions awaiting admin review.
+11. profiles: extra profile metadata.
+12. password_resets: password reset support.
+13. password_reset_tokens: Laravel password reset token storage.
+14. migrations: migration execution history.
+15. failed_jobs: queued job failure tracking.
+16. personal_access_tokens: token storage for personal access token features.
+17. reader_activities: reader activity event tracking.
+18. reader_book_purchases: reader purchase transaction history.
+19. reader_bookmarks: reader bookmarks/saved positions.
+20. reader_reading_progress: reader reading progress per book.
+21. transactions: general transaction history.
+22. user_library: reader personal library/reading list.
 
 ---
 
@@ -112,6 +131,21 @@ php artisan migrate --path=database/migrations/<migration_file>.php --force
 
 ## Change Log
 Add a new entry on each schema change.
+
+- 2026-04-11 (LATEST)
+   - **PDF Publishing Workflow Implementation**
+   - Added migration: 2026_04_10_184017_create_publisher_book_submissions_table
+   - Added model: PublisherBookSubmission (separate from bookshelf collections)
+   - Added migration: 2026_04_10_190018_add_pdf_url_to_books_table
+   - Added migration: 2026_04_10_185511_fix_admin_actions_log_foreign_key
+   - Schema changes:
+     * New table: publisher_book_submissions (publisher submission queue)
+     * New column: books.pdf_url (stores published PDF file paths)
+     * Fixed FK: admin_actions_log.submission_id -> publisher_book_submissions.id (was book_id -> bookshelf.id)
+   - Updated models: Book, AdminActionLog, PublisherBookSubmission
+   - Updated controllers: PublisherPortalController, LibraryDataController
+   - Frontend: Added PDF viewer modal in BookDetails component
+   - Workflow: Publisher submits PDF → Admin reviews → If accepted, PDF copied to books.pdf_url → Readers can view
 
 - 2026-04-11
    - Documentation sync only: verified current live table list via `check_tables.php`.

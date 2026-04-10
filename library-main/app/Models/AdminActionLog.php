@@ -12,7 +12,7 @@ class AdminActionLog extends Model
     protected $table = 'admin_actions_log';
 
     protected $fillable = [
-        'book_id',
+        'submission_id',
         'action',
         'admin_id',
         'action_date',
@@ -24,6 +24,6 @@ class AdminActionLog extends Model
 
     public function submission()
     {
-        return $this->belongsTo(Bookshelf::class, 'book_id');
+        return $this->belongsTo(PublisherBookSubmission::class, 'submission_id');
     }
 }

@@ -17,6 +17,8 @@ class Book extends Model
         'quantity',
         'available_quantity',
         'price',
+        'available',
+        'pdf_url',
     ];
 
     public function publisher()

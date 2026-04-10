@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Bookshelf;
+use App\Models\PublisherBookSubmission;
 use App\Models\Book;
 use App\Models\BookIssue;
 use App\Models\Feedback;
@@ -18,7 +18,7 @@ class PublisherPortalController extends Controller
      */
     public function getPublisherBooks($publisherId)
     {
-        $books = Bookshelf::where('publisher_id', $publisherId)
+        $books = PublisherBookSubmission::where('publisher_id', $publisherId)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -276,8 +276,7 @@ class PublisherPortalController extends Controller
                 'author' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'price' => 'required|numeric|min:0',
-                'file_url' => 'nullable|string|max:500',
-                'cover_url' => 'nullable|string|max:500',
+                'pdf' => 'nullable|file|mimes:pdf|max:51200', // 50MB max for PDF
             ]);
 
             $publisher = auth('publisher')->user();
@@ -287,14 +286,22 @@ class PublisherPortalController extends Controller
                 ], 403);
             }
 
-            $book = Bookshelf::create([
+            // Handle PDF upload if provided
+            $fileUrl = null;
+            if ($request->hasFile('pdf')) {
+                $file = $request->file('pdf');
+                $fileName = time() . '_' . $publisherId . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('publisher_submissions/pdfs', $fileName, 'public');
+                $fileUrl = $path;
+            }
+
+            $book = PublisherBookSubmission::create([
                 'title' => $request->title,
                 'author' => $request->author,
                 'publisher_id' => $publisherId,
                 'description' => $request->description,
                 'price' => $request->price,
-                'file_url' => $request->file_url,
-                'cover_url' => $request->cover_url,
+                'file_url' => $fileUrl,
                 'status' => 'pending',
             ]);
 
@@ -321,8 +328,7 @@ class PublisherPortalController extends Controller
                 'author' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'price' => 'required|numeric|min:0',
-                'file_url' => 'nullable|string|max:500',
-                'cover_url' => 'nullable|string|max:500',
+                'pdf' => 'nullable|file|mimes:pdf|max:51200',
             ]);
 
             $publisher = auth('publisher')->user();
@@ -332,7 +338,7 @@ class PublisherPortalController extends Controller
                 ], 403);
             }
 
-            $book = Bookshelf::where('id', $bookId)
+            $book = PublisherBookSubmission::where('id', $bookId)
                 ->where('publisher_id', $publisherId)
                 ->firstOrFail();
 
@@ -342,13 +348,21 @@ class PublisherPortalController extends Controller
                 ], 422);
             }
 
+            // Handle PDF upload if provided
+            $fileUrl = $book->file_url;
+            if ($request->hasFile('pdf')) {
+                $file = $request->file('pdf');
+                $fileName = time() . '_' . $publisherId . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('publisher_submissions/pdfs', $fileName, 'public');
+                $fileUrl = $path;
+            }
+
             $book->update([
                 'title' => $request->title,
                 'author' => $request->author,
                 'description' => $request->description,
                 'price' => $request->price,
-                'file_url' => $request->file_url,
-                'cover_url' => $request->cover_url,
+                'file_url' => $fileUrl,
             ]);
 
             return response()->json([
