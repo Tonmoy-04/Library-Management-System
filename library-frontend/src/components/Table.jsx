@@ -2,6 +2,8 @@ import React from 'react';
 import '../styles/table.css';
 
 const Table = ({ columns, data, actions }) => {
+  const actionColumnIndex = columns.findIndex((column) => column.toLowerCase() === 'actions');
+
   return (
     <div className="table-container" style={{
       overflowX: 'auto',
@@ -22,14 +24,16 @@ const Table = ({ columns, data, actions }) => {
                 padding: '1rem',
                 fontWeight: '600',
                 color: 'var(--text-muted)',
-                fontSize: '0.875rem'
+                fontSize: '0.875rem',
+                textAlign: index === actionColumnIndex ? 'center' : 'left'
               }}>{col}</th>
             ))}
             {actions && <th style={{
               padding: '1rem',
               fontWeight: '600',
               color: 'var(--text-muted)',
-              fontSize: '0.875rem'
+              fontSize: '0.875rem',
+              textAlign: 'center'
             }}>Actions</th>}
           </tr>
         </thead>
@@ -45,12 +49,13 @@ const Table = ({ columns, data, actions }) => {
               {Object.values(row).map((val, cellIndex) => (
                 <td key={cellIndex} style={{
                   padding: '1rem',
-                  fontSize: '0.9rem'
+                  fontSize: '0.9rem',
+                  textAlign: cellIndex === actionColumnIndex ? 'center' : 'left'
                 }}>{val}</td>
               ))}
               {actions && (
-                <td style={{ padding: '1rem' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <td style={{ padding: '1rem', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                     {actions.map((action, actionIndex) => (
                       (() => {
                         const isDisabled = typeof action.isDisabled === 'function'

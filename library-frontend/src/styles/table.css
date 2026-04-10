@@ -36,6 +36,20 @@
 .status-reserved { background-color: #fef9c3; color: #854d0e; }
 .status-overdue { background-color: #fee2e2; color: #991b1b; }
 
+.status-issued-link {
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.status-issued-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(22, 101, 52, 0.16);
+}
+
 .custom-table button:hover {
   box-shadow: 0 6px 14px rgba(15, 103, 248, 0.14);
 }

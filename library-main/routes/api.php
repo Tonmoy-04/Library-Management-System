@@ -70,6 +70,7 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('books/{id}', [LibraryDataController::class, 'destroyBook']);
     Route::get('transactions', [LibraryDataController::class, 'transactions']);
     Route::post('transactions/issue', [LibraryDataController::class, 'issueBook']);
+    Route::post('transactions/{id}/return', [LibraryDataController::class, 'returnBook']);
     Route::get('dashboard/summary', [LibraryDataController::class, 'dashboardSummary']);
     Route::get('publisher-bookshelf', [LibraryDataController::class, 'publisherBookshelf']);
     Route::post('publisher-bookshelf/{bookId}/review', [LibraryDataController::class, 'reviewPublisherBook']);

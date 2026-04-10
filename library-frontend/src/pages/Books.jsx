@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Table from '../components/Table';
 import { bookAPI, readerAPI } from '../services/api';
 import '../styles/dashboard.css';
 
 const Books = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [books, setBooks] = useState([]);
   const [readers, setReaders] = useState([]);
   const [booksData, setBooksData] = useState([]);
@@ -81,6 +84,25 @@ const Books = () => {
 
     bootstrap();
   }, []);
+
+  useEffect(() => {
+    const issueContext = location.state?.issueContext;
+
+    if (!issueContext || !books.length || showIssueModal) {
+      return;
+    }
+
+    const matchedBook = books.find((book) => {
+      const titleMatches = (book.title || '').toLowerCase() === (issueContext.bookTitle || '').toLowerCase();
+      const idMatches = String(book.id) === String(issueContext.bookId || '');
+      return titleMatches || idMatches;
+    });
+
+    if (matchedBook) {
+      openIssueModal(matchedBook);
+      navigate('/books', { replace: true, state: {} });
+    }
+  }, [books, location.state, showIssueModal]);
 
   const openIssueModal = (book) => {
     if (!book || Number(book.available) <= 0) {
