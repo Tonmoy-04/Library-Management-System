@@ -37,6 +37,8 @@ export const readerAuthAPI = {
   login: (payload) => api.post('/reader/login', payload),
   logout: () => api.post('/reader/logout'),
   me: () => api.get('/reader/me'),
+  updateProfile: (payload) => api.put('/reader/profile', payload),
+  changePassword: (payload) => api.post('/reader/change-password', payload),
 };
 
 export const readerPortalAPI = {
@@ -63,6 +65,8 @@ export const publisherAuthAPI = {
   login: (payload) => api.post('/publisher/login', payload),
   logout: () => api.post('/publisher/logout'),
   me: () => api.get('/publisher/me'),
+  updateProfile: (payload) => api.put('/publisher/profile', payload),
+  changePassword: (payload) => api.post('/publisher/change-password', payload),
 };
 
 export const bookAPI = {

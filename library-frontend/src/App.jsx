@@ -16,6 +16,7 @@ import ReaderLibrary from './pages/reader/Library';
 import ReaderMyLibrary from './pages/reader/MyLibrary';
 import ReaderHistory from './pages/reader/History';
 import ReaderBookDetails from './pages/reader/BookDetails';
+import ReaderSettings from './pages/reader/Settings';
 import ReaderPortalLayout from './pages/reader/ReaderPortalLayout';
 import PublisherPortal from './pages/publishers/PublisherPortal';
 import Profile from './pages/Profile';
@@ -23,6 +24,7 @@ import Settings from './pages/Settings';
 import './styles/global.css';
 import './styles/dashboard.css';
 import './pages/publishers/PublisherPortal.css';
+import './pages/Settings.css';
 
 function App() {
   const { isAuthenticated, initializing, isReader, isPublisher } = useAuth();
@@ -133,6 +135,14 @@ function App() {
         element: isAuthenticated && isReader ? (
           <ReaderLayout>
             <ReaderHistory />
+          </ReaderLayout>
+        ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
+      },
+      {
+        path: '/reader/settings',
+        element: isAuthenticated && isReader ? (
+          <ReaderLayout>
+            <ReaderSettings />
           </ReaderLayout>
         ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
