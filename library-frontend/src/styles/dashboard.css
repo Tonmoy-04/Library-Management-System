@@ -152,6 +152,49 @@
   color: #027a48;
 }
 
+.transactions-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.transactions-action-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 0.95rem;
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  border: 1px solid #d1def7;
+  background: linear-gradient(145deg, #f5f9ff 0%, #edf4ff 100%);
+  color: #29416b;
+  box-shadow: 0 8px 18px rgba(15, 103, 248, 0.08);
+}
+
+.transactions-action-message.success {
+  border-color: #bce8d2;
+  background: linear-gradient(145deg, #ecfbf3 0%, #dff7ea 100%);
+  color: #15533a;
+}
+
+.transactions-action-message.info {
+  border-color: #c9dbfb;
+  background: linear-gradient(145deg, #f5f9ff 0%, #e9f1ff 100%);
+  color: #29416b;
+}
+
+.transactions-message-close {
+  border: 1px solid #c8d8f4;
+  border-radius: 999px;
+  width: 28px;
+  height: 28px;
+  background: #ffffff;
+  color: #3f5379;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .publishers-filter-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -280,6 +323,15 @@
 
   .publishers-filter-btn {
     flex: 1 1 calc(50% - 0.25rem);
+    text-align: center;
+  }
+
+  .transactions-actions {
+    width: 100%;
+  }
+
+  .transactions-actions .btn {
+    flex: 1 1 calc(50% - 0.375rem);
     text-align: center;
   }
 }

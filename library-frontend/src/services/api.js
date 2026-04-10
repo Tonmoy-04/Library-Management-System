@@ -71,6 +71,7 @@ export const bookAPI = {
 
 export const transactionAPI = {
   getAll: () => api.get('/transactions'),
+  returnBook: (transactionId) => api.post(`/transactions/${transactionId}/return`),
 };
 
 export const readerAPI = {

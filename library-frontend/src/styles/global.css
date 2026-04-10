@@ -86,3 +86,88 @@ input {
 .mb-1 { margin-bottom: 0.25rem; }
 .mb-2 { margin-bottom: 0.5rem; }
 .mb-4 { margin-bottom: 1rem; }
+
+.nav-user {
+  position: relative;
+}
+
+.profile-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(280px, 88vw);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 18px 36px rgba(17, 35, 75, 0.16);
+  padding: 0.45rem;
+  z-index: 1200;
+}
+
+.profile-menu-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: 10px;
+  padding: 0.62rem 0.72rem;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: transparent;
+}
+
+.profile-menu-item:hover {
+  background: #eff5ff;
+}
+
+.profile-menu-item.danger {
+  color: #b42318;
+}
+
+.profile-menu-item.danger:hover {
+  background: #feeceb;
+}
+
+.profile-menu-panel {
+  margin-top: 0.35rem;
+  border-top: 1px solid #e2eaf7;
+  padding: 0.65rem 0.25rem 0.3rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.profile-menu-panel h4 {
+  font-size: 0.96rem;
+  color: #1f2b45;
+}
+
+.profile-menu-panel p {
+  font-size: 0.82rem;
+  color: #5e6f8f;
+}
+
+.profile-menu-panel small {
+  font-size: 0.78rem;
+  color: #7b8ba9;
+}
+
+.profile-chip {
+  border: 1px solid #ccdbf5;
+  border-radius: 999px;
+  padding: 0.36rem 0.75rem;
+  font-size: 0.8rem;
+  color: #2a4069;
+  background: #f6f9ff;
+}
+
+.profile-chip:hover {
+  border-color: #afc7f3;
+  background: #edf3ff;
+}
+
+@media (max-width: 640px) {
+  .profile-menu {
+    right: -6px;
+    width: min(260px, 90vw);
+  }
+}
