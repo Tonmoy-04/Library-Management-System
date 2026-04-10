@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { readerPortalAPI } from '../../services/api';
 import '../../styles/reader.css';
 
 const ReaderBookDetails = () => {
   const { bookId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
 
   const [book, setBook] = useState(null);
@@ -36,6 +37,15 @@ const ReaderBookDetails = () => {
   useEffect(() => {
     fetchBook();
   }, [bookId]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const shouldOpenPdf = params.get('openPdf') === '1';
+
+    if (shouldOpenPdf && Number(book?.is_purchased) === 1 && book?.pdf_url) {
+      setShowPdfViewer(true);
+    }
+  }, [location.search, book]);
 
   const runAction = async (action, successMessage) => {
     setSaving(true);
@@ -97,18 +107,33 @@ const ReaderBookDetails = () => {
       {message && <p className="issue-message issue-success">{message}</p>}
 
       <section className="reader-details-grid">
-        <div className="card">
-          <div className="card-body">
+        <div className="card reader-detail-card">
+          <div className="card-body reader-detail-summary">
             <div className="reader-book-cover reader-details-cover" aria-hidden="true">
               {book.cover_image_url ? <img src={book.cover_image_url} alt={book.title} /> : <span>{book.title?.slice(0, 1) || 'B'}</span>}
             </div>
-            <p className="mt-2">{book.description || 'No description available for this book yet.'}</p>
-            <p className="mt-2"><strong>Price:</strong> ${Number(book.price || 0).toFixed(2)}</p>
-            <p className="mt-2"><strong>Publisher:</strong> {book.publisher || 'N/A'}</p>
+            <div className="reader-detail-copy">
+              <div className="reader-status-pills reader-detail-pills">
+                <span className="reader-status-pill active">{book.is_purchased ? 'Purchased' : 'Preview Only'}</span>
+                {book.pdf_url && <span className="reader-status-pill">PDF Ready</span>}
+                <span className="reader-status-pill">{book.category || 'General'}</span>
+              </div>
+              <p className="reader-library-description">{book.description || 'No description available for this book yet.'}</p>
+              <div className="reader-detail-metadata">
+                <div>
+                  <span>Price</span>
+                  <strong>${Number(book.price || 0).toFixed(2)}</strong>
+                </div>
+                <div>
+                  <span>Publisher</span>
+                  <strong>{book.publisher || 'N/A'}</strong>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="card reader-detail-actions-card">
           <div className="card-header"><h3>Reader Actions</h3></div>
           <div className="card-body reader-detail-actions">
             {Number(book.is_purchased) === 1 ? (
@@ -116,7 +141,7 @@ const ReaderBookDetails = () => {
                 <button type="button" className="btn btn-primary" onClick={download} disabled={saving}>Download</button>
                 <button type="button" className="btn btn-success" onClick={continueReading} disabled={saving}>Continue Reading</button>
                 {book.pdf_url && (
-                  <button type="button" className="btn btn-info" onClick={() => setShowPdfViewer(true)}>View PDF</button>
+                  <button type="button" className="btn btn-info reader-pdf-button" onClick={() => setShowPdfViewer(true)}>Read PDF</button>
                 )}
               </>
             ) : (
@@ -144,7 +169,7 @@ const ReaderBookDetails = () => {
               />
             </div>
             <div className="pdf-viewer-footer">
-              <a href={book.pdf_url} download className="btn btn-primary">Download PDF</a>
+              <a href={book.pdf_url} download className="btn btn-primary">Download Copy</a>
               <button type="button" className="btn btn-secondary" onClick={() => setShowPdfViewer(false)}>Close</button>
             </div>
           </div>
