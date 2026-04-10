@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 const PREVIEW_COUNT = 4;
 
@@ -6,6 +6,28 @@ const RecentReads = ({ reads }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const previewRows = useMemo(() => reads.slice(0, PREVIEW_COUNT), [reads]);
+
+  useEffect(() => {
+    if (!isModalOpen) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsModalOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isModalOpen]);
 
   const renderRows = (rows) => rows.map((item) => {
     const progress = Math.max(0, Math.min(100, Number(item.progress_percent || 0)));
@@ -62,24 +84,24 @@ const RecentReads = ({ reads }) => {
 
       {isModalOpen && (
         <div
-          className="reader-modal-backdrop"
+          className="modal-backdrop reader-recent-modal-backdrop"
           role="presentation"
           onClick={() => setIsModalOpen(false)}
         >
           <section
-            className="reader-modal"
+            className="issue-modal reader-recent-modal"
             role="dialog"
             aria-modal="true"
             aria-label="All recent reads"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="reader-modal-header">
+            <div className="issue-modal-header">
               <h3>All Recent Reads</h3>
-              <button type="button" className="reader-modal-close" onClick={() => setIsModalOpen(false)}>
+              <button type="button" className="reader-modal-close" onClick={() => setIsModalOpen(false)} aria-label="Close recent reads popup">
                 x
               </button>
             </div>
-            <div className="reader-modal-body">
+            <div className="reader-recent-modal-body">
               {renderTable(reads)}
             </div>
           </section>

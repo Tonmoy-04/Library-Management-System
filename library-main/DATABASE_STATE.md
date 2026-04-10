@@ -14,7 +14,7 @@ Purpose:
 ## Last Verified
 - Date: 2026-04-10
 - Environment: SQL Server (Laravel project)
-- Verification source: migrated schema + FK validation script output
+- Verification source: migrated schema + FK validation script output + live reader purchase API test
 
 ---
 
@@ -38,8 +38,10 @@ Additional project tables currently present:
 4. reader_book_purchases
 5. reader_bookmarks
 6. reader_reading_progress
-7. user_reader_profiles
-8. user_roles
+7. transactions
+8. user_library
+9. user_reader_profiles
+10. user_roles
 
 ---
 
@@ -61,7 +63,8 @@ Additional project tables currently present:
 2. Admin review actions are stored in admin_actions_log.
 3. Approved/active catalog stays in books.
 4. Issue/return transactions are stored in book_issues.
-5. Reader feedback and publisher response are linked in feedback.
+5. Reader engagement and purchase history are stored in user_library and transactions.
+6. Reader feedback and publisher response are linked in feedback.
 
 ---
 
@@ -77,6 +80,8 @@ Additional project tables currently present:
 9. profiles: extra profile metadata.
 10. password_resets: password reset support.
 11. migrations: migration execution history.
+12. transactions: reader purchase history.
+13. user_library: reader library status tracking for saved, bookmarked, purchased, and reading states.
 
 ---
 
@@ -114,3 +119,6 @@ Add a new entry on each schema change.
   - Added schema sync migration for connected core relation map.
   - Ensured missing tables: feedback, bookshelf, admin_actions_log.
   - Confirmed FK map for core library workflow.
+- 2026-04-10
+   - Made legacy create-table migrations idempotent for books, publishers, and book_issues.
+   - Verified reader purchase flow after migrating user_library and transactions.

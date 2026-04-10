@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('book_issues', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('book_id');
-            $table->dateTime('issued_at');
-            $table->dateTime('due_at');
-            $table->dateTime('returned_at')->nullable();
-            $table->string('status')->default('issued'); // issued, returned, overdue
-            $table->text('notes')->nullable();
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('book_issues')) {
+            Schema::create('book_issues', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('user_id');
+                $table->unsignedBigInteger('book_id');
+                $table->dateTime('issued_at');
+                $table->dateTime('due_at');
+                $table->dateTime('returned_at')->nullable();
+                $table->string('status')->default('issued'); // issued, returned, overdue
+                $table->text('notes')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
