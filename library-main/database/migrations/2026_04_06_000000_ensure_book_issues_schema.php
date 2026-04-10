@@ -34,7 +34,6 @@ return new class extends Migration
                 $table->id();
                 $table->string('title');
                 $table->text('description')->nullable();
-                $table->string('isbn')->unique()->nullable();
                 $table->unsignedBigInteger('publisher_id')->nullable();
                 $table->string('author')->nullable();
                 $table->integer('quantity')->default(0);

@@ -32,7 +32,6 @@ class ReaderPortalController extends Controller
                     'b.title',
                     'b.author',
                     DB::raw($descriptionExpr . ' as description'),
-                    DB::raw($this->bookIsbnExpr() . ' as isbn'),
                     DB::raw($priceExpr . ' as price'),
                     'b.created_at',
                     DB::raw($this->bookCategoryExpr() . ' as category'),
@@ -578,8 +577,7 @@ class ReaderPortalController extends Controller
         if ($search !== '') {
             $query->where(function ($builder) use ($search) {
                 $builder->where('b.title', 'like', '%' . $search . '%')
-                    ->orWhere('b.author', 'like', '%' . $search . '%')
-                    ->orWhere('b.isbn', 'like', '%' . $search . '%');
+                    ->orWhere('b.author', 'like', '%' . $search . '%');
             });
         }
 
@@ -779,10 +777,6 @@ class ReaderPortalController extends Controller
             $groupBy[] = 'b.description';
         }
 
-        if (Schema::hasColumn('books', 'isbn')) {
-            $groupBy[] = 'b.isbn';
-        }
-
         if (Schema::hasColumn('books', 'price')) {
             $groupBy[] = 'b.price';
         }
@@ -827,7 +821,6 @@ class ReaderPortalController extends Controller
                 'b.title',
                 'b.author',
                 DB::raw($descriptionExpr . ' as description'),
-                DB::raw($this->bookIsbnExpr() . ' as isbn'),
                 DB::raw($this->bookPriceExpr() . ' as price'),
                 'b.created_at',
                 DB::raw($categoryExpr . ' as category'),
@@ -911,7 +904,6 @@ class ReaderPortalController extends Controller
                 'b.title',
                 'b.author',
                 DB::raw($descriptionExpr . ' as description'),
-                DB::raw($this->bookIsbnExpr() . ' as isbn'),
                 DB::raw($this->bookPriceExpr() . ' as price'),
                 'b.created_at',
                 DB::raw($categoryExpr . ' as category'),
@@ -995,13 +987,6 @@ class ReaderPortalController extends Controller
         return Schema::hasColumn('books', 'category')
             ? "COALESCE(b.category, 'General')"
             : "'General'";
-    }
-
-    private function bookIsbnExpr(): string
-    {
-        return Schema::hasColumn('books', 'isbn')
-            ? "COALESCE(b.isbn, '')"
-            : "''";
     }
 
     private function bookPriceExpr(): string

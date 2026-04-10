@@ -82,7 +82,7 @@ const ReaderBookDetails = () => {
 
   return (
     <div className="reader-details-page">
-      <div className="page-header">
+      <div className="page-header reader-page-header">
         <div className="page-title">
           <h1>{book.title}</h1>
           <p>{book.author || 'Unknown author'} • {book.category || 'General'} • Rating {Number(book.rating || 0).toFixed(1)}</p>

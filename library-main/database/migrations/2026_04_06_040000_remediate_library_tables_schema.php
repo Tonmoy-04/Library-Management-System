@@ -51,7 +51,6 @@ return new class extends Migration
                 $table->string('title');
                 $table->string('author');
                 $table->unsignedBigInteger('publisher_id')->nullable();
-                $table->string('isbn', 13)->nullable();
                 $table->integer('quantity')->default(1);
                 $table->integer('available')->default(1);
                 $table->timestamps();
@@ -67,9 +66,6 @@ return new class extends Migration
             }
             if (! Schema::hasColumn('books', 'publisher_id')) {
                 $table->unsignedBigInteger('publisher_id')->nullable();
-            }
-            if (! Schema::hasColumn('books', 'isbn')) {
-                $table->string('isbn', 13)->nullable();
             }
             if (! Schema::hasColumn('books', 'quantity')) {
                 $table->integer('quantity')->default(1);
@@ -88,12 +84,6 @@ return new class extends Migration
         if (! $this->indexExists('books', 'books_publisher_id_idx') && Schema::hasColumn('books', 'publisher_id')) {
             Schema::table('books', function (Blueprint $table) {
                 $table->index('publisher_id', 'books_publisher_id_idx');
-            });
-        }
-
-        if (! $this->indexExists('books', 'books_isbn_idx') && Schema::hasColumn('books', 'isbn')) {
-            Schema::table('books', function (Blueprint $table) {
-                $table->index('isbn', 'books_isbn_idx');
             });
         }
 
