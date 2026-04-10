@@ -16,15 +16,14 @@ import ReaderLibrary from './pages/reader/Library';
 import ReaderMyLibrary from './pages/reader/MyLibrary';
 import ReaderHistory from './pages/reader/History';
 import ReaderBookDetails from './pages/reader/BookDetails';
-import ReaderSettings from './pages/reader/Settings';
 import ReaderPortalLayout from './pages/reader/ReaderPortalLayout';
+import ReaderSettings from './pages/reader/Settings';
 import PublisherPortal from './pages/publishers/PublisherPortal';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import './styles/global.css';
 import './styles/dashboard.css';
 import './pages/publishers/PublisherPortal.css';
-import './pages/Settings.css';
 
 function App() {
   const { isAuthenticated, initializing, isReader, isPublisher } = useAuth();
@@ -107,6 +106,16 @@ function App() {
         ),
       },
       {
+        path: '/settings',
+        element: isAuthenticated && !isReader ? (
+          <DashboardLayout>
+            <Settings />
+          </DashboardLayout>
+        ) : (
+          <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
+        ),
+      },
+      {
         path: '/reader/home',
         element: isAuthenticated && isReader ? (
           <ReaderLayout>
@@ -139,18 +148,18 @@ function App() {
         ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
       {
-        path: '/reader/settings',
-        element: isAuthenticated && isReader ? (
-          <ReaderLayout>
-            <ReaderSettings />
-          </ReaderLayout>
-        ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
-      },
-      {
         path: '/reader/books/:bookId',
         element: isAuthenticated && isReader ? (
           <ReaderLayout>
             <ReaderBookDetails />
+          </ReaderLayout>
+        ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
+      },
+      {
+        path: '/reader/settings',
+        element: isAuthenticated && isReader ? (
+          <ReaderLayout>
+            <ReaderSettings />
           </ReaderLayout>
         ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
@@ -161,10 +170,6 @@ function App() {
       {
         path: '/profile',
         element: isAuthenticated ? <Profile /> : <Navigate to="/login" replace />,
-      },
-      {
-        path: '/settings',
-        element: isAuthenticated ? <Settings /> : <Navigate to="/login" replace />,
       },
       {
         path: '/login',

@@ -219,3 +219,33 @@ input {
     right: -6px;
   }
 }
+
+/* Dark Mode Theme */
+:root.dark-mode {
+  --primary-color: #5ba3ff;
+  --primary-hover: #4a93ef;
+  --secondary-color: #1a2a3a;
+  --accent-color: #00d4aa;
+  --text-main: #e8e8e8;
+  --text-muted: #a8a8a8;
+  --bg-main: #0a0a0a;
+  --bg-card: #1a1a1a;
+  --border-color: #2a2a2a;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 14px 40px rgba(91, 163, 255, 0.15);
+}
+
+:root.dark-mode body {
+  background: radial-gradient(circle at 100% 0%, rgba(91, 163, 255, 0.08) 0%, transparent 38%),
+              radial-gradient(circle at 0% 100%, rgba(0, 212, 170, 0.06) 0%, transparent 36%),
+              var(--bg-main);
+  color: var(--text-main);
+}
+
+:root.dark-mode input,
+:root.dark-mode textarea,
+:root.dark-mode select {
+  background: #1a1a1a;
+  border-color: #333;
+  color: #e8e8e8;
+}

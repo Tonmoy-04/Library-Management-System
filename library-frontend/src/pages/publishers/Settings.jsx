@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useTheme } from '../../../hooks/useTheme';
-import { publisherAuthAPI } from '../../../services/api';
+import { useTheme } from '../../hooks/useTheme';
+import { publisherAuthAPI } from '../../services/api';
 import '../Settings.css';
 
 const PublisherSettings = () => {

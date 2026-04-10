@@ -9,6 +9,7 @@ const defaultNavItems = [
   { path: '/readers', label: 'Readers', icon: '👥' },
   { path: '/publishers', label: 'Publishers', icon: '🏢' },
   { path: '/transactions', label: 'Transactions', icon: '🔄' },
+  { path: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 const Sidebar = ({ navItems = defaultNavItems, logoutRedirectPath = '/login', logoutLabel = 'Logout' }) => {

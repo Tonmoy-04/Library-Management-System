@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useTheme } from '../../../hooks/useTheme';
-import { readerAuthAPI, readerPortalAPI } from '../../../services/api';
-import './Settings.css';
+import { useTheme } from '../../hooks/useTheme';
+import { readerAuthAPI, readerPortalAPI } from '../../services/api';
+import '../Settings.css';
 
 const ReaderSettings = () => {
   const { isDarkMode, toggleTheme } = useTheme();

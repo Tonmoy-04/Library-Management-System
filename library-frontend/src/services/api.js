@@ -30,6 +30,8 @@ export const authAPI = {
   register: (payload) => api.post('/auth/register', payload),
   logout: () => api.post('/auth/logout'),
   me: () => api.get('/auth/me'),
+  updateProfile: (payload) => api.put('/auth/profile', payload),
+  changePassword: (payload) => api.post('/auth/change-password', payload),
 };
 
 export const readerAuthAPI = {
