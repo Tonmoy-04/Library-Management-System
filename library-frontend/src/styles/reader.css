@@ -834,3 +834,133 @@
     transition: none;
   }
 }
+
+/* Publisher visual parity overrides for reader area */
+.reader-dashboard-page,
+.reader-library-page,
+.reader-details-page {
+  gap: 1.25rem;
+}
+
+.reader-page-header {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+
+.reader-summary-card,
+.reader-section,
+.reader-table-wrap,
+.reader-recent-panel,
+.reader-books-table,
+.reader-recent-table {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-card);
+  box-shadow: none;
+  animation: none;
+}
+
+.reader-summary-card,
+.reader-section {
+  padding: 1rem;
+}
+
+.reader-summary-grid {
+  gap: 1rem;
+}
+
+.reader-summary-label {
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.reader-summary-card h3 {
+  font-size: 1.45rem;
+  line-height: 1.15;
+  color: var(--text-main);
+}
+
+.reader-summary-card small {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.reader-title-main {
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+.reader-title-sub {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.reader-section .card-header,
+.reader-section .card-body {
+  padding: 1rem;
+}
+
+.reader-section .card-header h3 {
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.reader-section-header,
+.reader-books-table th,
+.reader-recent-table th {
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.reader-books-table th,
+.reader-recent-table th {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reader-books-table td,
+.reader-recent-table td {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.reader-books-table tbody tr:hover,
+.reader-recent-table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.reader-tab {
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-main);
+  box-shadow: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.6rem 0.9rem;
+}
+
+.reader-tab.active {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.reader-tab.active span {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.reader-page-header .btn,
+.reader-library-toolbar .btn,
+.reader-table-actions .btn,
+.reader-detail-actions .btn {
+  min-height: 38px;
+}

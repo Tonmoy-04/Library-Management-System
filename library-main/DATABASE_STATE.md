@@ -14,7 +14,7 @@ Purpose:
 ## Last Verified
 - Date: 2026-04-10
 - Environment: SQL Server (Laravel project)
-- Verification source: migrated schema + FK validation script output + live reader purchase API test
+- Verification source: migrated schema + check_tables.php output + FK validation query output + Schema::hasColumn('books', 'isbn') = false
 
 ---
 
@@ -72,7 +72,7 @@ Additional project tables currently present:
 1. users: system/admin authentication entities.
 2. readers: reader account/auth profile.
 3. publishers: publisher account data.
-4. books: final visible library catalog.
+4. books: final visible library catalog (ISBN removed from schema).
 5. bookshelf: publisher submission queue.
 6. book_issues: issuing and return transaction history.
 7. feedback: reader feedback and publisher reply tracking.
@@ -114,6 +114,12 @@ php artisan migrate --path=database/migrations/<migration_file>.php --force
 
 ## Change Log
 Add a new entry on each schema change.
+
+- 2026-04-10
+   - Removed ISBN from books schema and database/API paths.
+   - Added migration: 2026_04_10_122000_drop_isbn_from_books_table.
+   - Updated legacy/sync migrations and SQL Server setup script to avoid reintroducing isbn.
+   - Verified live state: books.isbn column is absent.
 
 - 2026-04-10
   - Added schema sync migration for connected core relation map.

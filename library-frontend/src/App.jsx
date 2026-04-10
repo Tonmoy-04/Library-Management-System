@@ -16,6 +16,7 @@ import ReaderLibrary from './pages/reader/Library';
 import ReaderMyLibrary from './pages/reader/MyLibrary';
 import ReaderHistory from './pages/reader/History';
 import ReaderBookDetails from './pages/reader/BookDetails';
+import ReaderPortalLayout from './pages/reader/ReaderPortalLayout';
 import PublisherPortal from './pages/publishers/PublisherPortal';
 import './styles/global.css';
 import './styles/dashboard.css';
@@ -44,24 +45,8 @@ function App() {
     </div>
   );
 
-  const readerNavItems = [
-    { path: '/reader/home', label: 'Dashboard', icon: '📊' },
-    { path: '/reader/library', label: 'Library', icon: '📚' },
-    { path: '/reader/my-library', label: 'My Library', icon: '🗂️' },
-    { path: '/reader/history', label: 'History', icon: '🧾' },
-  ];
-
   const ReaderLayout = ({ children }) => (
-    <div className="app-container">
-      <Navbar />
-      <div className="dashboard-layout">
-        <Sidebar navItems={readerNavItems} logoutRedirectPath="/login" />
-        <main className="main-content">
-          {children}
-        </main>
-      </div>
-      <Footer />
-    </div>
+    <ReaderPortalLayout>{children}</ReaderPortalLayout>
   );
 
   const router = createBrowserRouter(

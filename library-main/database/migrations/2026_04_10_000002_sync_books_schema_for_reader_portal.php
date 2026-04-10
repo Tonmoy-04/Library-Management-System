@@ -17,10 +17,6 @@ return new class extends Migration
                 $table->text('description')->nullable();
             }
 
-            if (!Schema::hasColumn('books', 'isbn')) {
-                $table->string('isbn', 64)->nullable();
-            }
-
             if (!Schema::hasColumn('books', 'price')) {
                 $table->decimal('price', 10, 2)->default(0);
             }

@@ -66,7 +66,6 @@ CREATE TABLE books (
     title NVARCHAR(255) NOT NULL,
     author NVARCHAR(255) NOT NULL,
     publisher_id BIGINT NULL,
-    isbn NVARCHAR(13) UNIQUE,
     quantity INT DEFAULT 1,
     available INT DEFAULT 1,
     price DECIMAL(10, 2) DEFAULT 0,
@@ -136,12 +135,12 @@ INSERT INTO publishers (name, email, website, location) VALUES
 GO
 
 -- Insert sample books
-INSERT INTO books (title, author, publisher_id, isbn, quantity, available) VALUES
-    ('The Great Gatsby', 'F. Scott Fitzgerald', 1, '9780743273565', 5, 5),
-    ('1984', 'George Orwell', 2, '9780451524935', 3, 3),
-    ('To Kill a Mockingbird', 'Harper Lee', 1, '9780061120084', 4, 4),
-    ('Pride and Prejudice', 'Jane Austen', 3, '9780143039990', 6, 6),
-    ('The Catcher in the Rye', 'J.D. Salinger', 2, '9780316769174', 2, 2);
+INSERT INTO books (title, author, publisher_id, quantity, available) VALUES
+    ('The Great Gatsby', 'F. Scott Fitzgerald', 1, 5, 5),
+    ('1984', 'George Orwell', 2, 3, 3),
+    ('To Kill a Mockingbird', 'Harper Lee', 1, 4, 4),
+    ('Pride and Prejudice', 'Jane Austen', 3, 6, 6),
+    ('The Catcher in the Rye', 'J.D. Salinger', 2, 2, 2);
 GO
 
 -- Verify tables were created

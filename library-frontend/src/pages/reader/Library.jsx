@@ -119,7 +119,7 @@ const Library = () => {
                 <td data-label="Title">
                   <div className="reader-title-cell">
                     <strong className="reader-title-main">{book.title}</strong>
-                    <span className="reader-title-sub">{book.isbn ? `ISBN ${book.isbn}` : 'Digital Edition'}</span>
+                    <span className="reader-title-sub">Digital Edition</span>
                   </div>
                 </td>
                 <td data-label="Author">{book.author || 'Unknown author'}</td>
@@ -206,7 +206,7 @@ const Library = () => {
       <form className="reader-filter-grid reader-library-filters" onSubmit={handleSubmit}>
         <input
           type="search"
-          placeholder="Search titles, authors, or ISBN"
+          placeholder="Search titles or authors"
           value={filters.search}
           onChange={handleFilterChange('search')}
         />

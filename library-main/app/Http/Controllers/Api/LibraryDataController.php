@@ -314,7 +314,6 @@ class LibraryDataController extends Controller
             ->leftJoin('publishers as p', 'b.publisher_id', '=', 'p.id')
             ->select(
                 'b.id',
-                'b.isbn',
                 'b.title',
                 'b.author',
                 'b.quantity',
@@ -332,7 +331,6 @@ class LibraryDataController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
-            'isbn' => 'nullable|string|max:13|unique:books,isbn',
             'publisher' => 'nullable|string|max:255',
             'quantity' => 'required|integer|min:1|max:9999',
         ]);
@@ -359,7 +357,6 @@ class LibraryDataController extends Controller
             'title' => $validated['title'],
             'author' => $validated['author'],
             'publisher_id' => $publisherId,
-            'isbn' => $validated['isbn'] ?? null,
             'quantity' => $validated['quantity'],
             'available' => $validated['quantity'],
             'created_at' => $now,
@@ -370,7 +367,6 @@ class LibraryDataController extends Controller
             ->leftJoin('publishers as p', 'b.publisher_id', '=', 'p.id')
             ->select(
                 'b.id',
-                'b.isbn',
                 'b.title',
                 'b.author',
                 'b.quantity',
@@ -397,7 +393,6 @@ class LibraryDataController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
-            'isbn' => 'nullable|string|max:13|unique:books,isbn,' . $id,
             'publisher' => 'nullable|string|max:255',
             'quantity' => 'required|integer|min:1|max:9999',
         ]);
@@ -437,7 +432,6 @@ class LibraryDataController extends Controller
                 'title' => $validated['title'],
                 'author' => $validated['author'],
                 'publisher_id' => $publisherId,
-                'isbn' => $validated['isbn'] ?? null,
                 'quantity' => $newQuantity,
                 'available' => $newAvailable,
                 'updated_at' => $now,
@@ -447,7 +441,6 @@ class LibraryDataController extends Controller
             ->leftJoin('publishers as p', 'b.publisher_id', '=', 'p.id')
             ->select(
                 'b.id',
-                'b.isbn',
                 'b.title',
                 'b.author',
                 'b.quantity',
@@ -676,11 +669,11 @@ class LibraryDataController extends Controller
         $now = now();
 
         $demoBooks = [
-            ['title' => 'Clean Code', 'author' => 'Robert C. Martin', 'publisher' => 'Prentice Hall', 'isbn' => '9780132350884', 'quantity' => 4],
-            ['title' => 'The Pragmatic Programmer', 'author' => 'Andrew Hunt', 'publisher' => 'Addison-Wesley', 'isbn' => '9780135957059', 'quantity' => 3],
-            ['title' => 'Introduction to Algorithms', 'author' => 'Thomas H. Cormen', 'publisher' => 'MIT Press', 'isbn' => '9780262046305', 'quantity' => 2],
-            ['title' => 'Design Patterns', 'author' => 'Erich Gamma', 'publisher' => 'Addison-Wesley', 'isbn' => '9780201633610', 'quantity' => 5],
-            ['title' => 'Refactoring', 'author' => 'Martin Fowler', 'publisher' => 'Addison-Wesley', 'isbn' => '9780134757599', 'quantity' => 3],
+            ['title' => 'Clean Code', 'author' => 'Robert C. Martin', 'publisher' => 'Prentice Hall', 'quantity' => 4],
+            ['title' => 'The Pragmatic Programmer', 'author' => 'Andrew Hunt', 'publisher' => 'Addison-Wesley', 'quantity' => 3],
+            ['title' => 'Introduction to Algorithms', 'author' => 'Thomas H. Cormen', 'publisher' => 'MIT Press', 'quantity' => 2],
+            ['title' => 'Design Patterns', 'author' => 'Erich Gamma', 'publisher' => 'Addison-Wesley', 'quantity' => 5],
+            ['title' => 'Refactoring', 'author' => 'Martin Fowler', 'publisher' => 'Addison-Wesley', 'quantity' => 3],
         ];
 
         foreach ($demoBooks as $book) {
@@ -700,7 +693,6 @@ class LibraryDataController extends Controller
                 'title' => $book['title'],
                 'author' => $book['author'],
                 'publisher_id' => $publisherId,
-                'isbn' => $book['isbn'],
                 'quantity' => $book['quantity'],
                 'available' => $book['quantity'],
                 'created_at' => $now,
@@ -713,7 +705,7 @@ class LibraryDataController extends Controller
     {
         $books = DB::table('books')
             ->where('publisher_id', $publisherId)
-            ->select('id', 'title', 'author', 'isbn', 'description', 'quantity', 'available_quantity', 'price', 'created_at', 'updated_at')
+            ->select('id', 'title', 'author', 'description', 'quantity', 'available_quantity', 'price', 'created_at', 'updated_at')
             ->orderByDesc('created_at')
             ->get();
 

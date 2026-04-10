@@ -140,7 +140,7 @@ const MyLibrary = () => {
               <td data-label="Title">
                 <div className="reader-title-cell">
                   <strong className="reader-title-main">{book.title}</strong>
-                  <span className="reader-title-sub">{book.isbn ? `ISBN ${book.isbn}` : 'Digital Edition'}</span>
+                  <span className="reader-title-sub">Digital Edition</span>
                 </div>
               </td>
               <td data-label="Author">{book.author || 'Unknown author'}</td>
