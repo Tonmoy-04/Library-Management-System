@@ -11,18 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('books', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->text('description')->nullable();
-            $table->string('isbn')->unique()->nullable();
-            $table->unsignedBigInteger('publisher_id')->nullable();
-            $table->string('author')->nullable();
-            $table->integer('quantity')->default(0);
-            $table->integer('available_quantity')->default(0);
-            $table->decimal('price', 10, 2)->nullable();
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('books')) {
+            Schema::create('books', function (Blueprint $table) {
+                $table->id();
+                $table->string('title');
+                $table->text('description')->nullable();
+                $table->string('isbn')->unique()->nullable();
+                $table->unsignedBigInteger('publisher_id')->nullable();
+                $table->string('author')->nullable();
+                $table->integer('quantity')->default(0);
+                $table->integer('available_quantity')->default(0);
+                $table->decimal('price', 10, 2)->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

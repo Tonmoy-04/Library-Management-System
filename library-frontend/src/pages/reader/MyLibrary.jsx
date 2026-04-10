@@ -4,15 +4,14 @@ import { readerPortalAPI } from '../../services/api';
 import '../../styles/reader.css';
 
 const TABS = [
-  { key: 'saved', label: 'Saved Books' },
-  { key: 'bookmarked', label: 'Bookmarked Books' },
+  { key: 'all', label: 'All Books' },
   { key: 'purchased', label: 'Purchased Books' },
-  { key: 'reading', label: 'Currently Reading' },
+  { key: 'bookmarked', label: 'Bookmarked Books' },
 ];
 
 const MyLibrary = () => {
-  const [collections, setCollections] = useState({ saved: [], bookmarked: [], purchased: [], reading: [] });
-  const [activeTab, setActiveTab] = useState('saved');
+  const [collections, setCollections] = useState({ all: [], bookmarked: [], purchased: [] });
+  const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +22,39 @@ const MyLibrary = () => {
     setError('');
     try {
       const response = await readerPortalAPI.getMyLibrary();
-      setCollections(response.data?.data || { saved: [], bookmarked: [], purchased: [], reading: [] });
+      const data = response.data?.data || {};
+
+      const bookmarked = data.bookmarked || [];
+      const purchased = data.purchased || [];
+
+      const allMap = new Map();
+      [...bookmarked, ...purchased].forEach((book) => {
+        const id = Number(book.id);
+        const existing = allMap.get(id);
+
+        if (!existing) {
+          allMap.set(id, {
+            ...book,
+            library_statuses: Array.from(new Set(book.library_statuses || [])),
+          });
+          return;
+        }
+
+        allMap.set(id, {
+          ...existing,
+          ...book,
+          library_statuses: Array.from(new Set([
+            ...(existing.library_statuses || []),
+            ...(book.library_statuses || []),
+          ])),
+        });
+      });
+
+      setCollections({
+        all: Array.from(allMap.values()),
+        bookmarked,
+        purchased,
+      });
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Failed to load your library.');
     } finally {
@@ -60,71 +91,87 @@ const MyLibrary = () => {
     'Library status removed.'
   );
 
-  const markReading = (bookId) => runAction(
-    () => readerPortalAPI.continueReading(bookId),
-    'Marked as currently reading.'
-  );
+  const statusLabel = (book, status) => {
+    if (status === 'purchased') {
+      return 'Purchased';
+    }
 
-  const renderBookCard = (book, status) => {
-    const isReading = Number(book.is_reading) === 1;
-    const removeLabel = status === 'reading' ? 'Back to Purchased' : 'Remove';
+    if (status === 'bookmarked') {
+      return 'Bookmarked';
+    }
 
-    return (
-      <article key={`${status}-${book.id}`} className="reader-book-card reader-library-card">
-        <div className="reader-book-cover" aria-hidden="true">
-          {book.cover_image_url ? (
-            <img src={book.cover_image_url} alt={book.title} loading="lazy" />
-          ) : (
-            <span>{book.title?.slice(0, 1) || 'B'}</span>
-          )}
-        </div>
+    const statuses = new Set(book.library_statuses || []);
+    const hasPurchased = statuses.has('purchased');
+    const hasBookmarked = statuses.has('bookmarked');
 
-        <div className="reader-book-content">
-          <div className="reader-book-head">
-            <h3>{book.title}</h3>
-            <Link to={`/reader/books/${book.id}`} className="btn btn-secondary">
-              Details
-            </Link>
-          </div>
+    if (hasPurchased && hasBookmarked) {
+      return 'Purchased + Bookmarked';
+    }
+    if (hasPurchased) {
+      return 'Purchased';
+    }
+    if (hasBookmarked) {
+      return 'Bookmarked';
+    }
 
-          <p className="reader-book-meta">
-            <span>{book.author || 'Unknown author'}</span>
-            <span>{book.category || 'General'}</span>
-            <span>${Number(book.price || 0).toFixed(2)}</span>
-          </p>
-
-          <div className="reader-status-pills">
-            {(book.library_statuses || []).map((item) => (
-              <span key={`${book.id}-${item}`} className={`reader-status-pill ${item === status ? 'active' : ''}`}>
-                {item}
-              </span>
-            ))}
-          </div>
-
-          <div className="reader-book-actions">
-            {status === 'purchased' && !isReading && (
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={() => markReading(book.id)}
-                disabled={actionLoading}
-              >
-                Mark Reading
-              </button>
-            )}
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => removeStatus(book.id, status)}
-              disabled={actionLoading}
-            >
-              {removeLabel}
-            </button>
-          </div>
-        </div>
-      </article>
-    );
+    return 'Engaged';
   };
+
+  const renderBooksTable = (rows, status) => (
+    <div className="reader-table-wrap">
+      <table className="reader-books-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((book) => {
+            const statuses = new Set(book.library_statuses || []);
+            const canRemoveBookmark = status === 'bookmarked' || (status === 'all' && statuses.has('bookmarked'));
+
+            return (
+            <tr key={`${status}-${book.id}`}>
+              <td data-label="Title">
+                <div className="reader-title-cell">
+                  <strong className="reader-title-main">{book.title}</strong>
+                  <span className="reader-title-sub">{book.isbn ? `ISBN ${book.isbn}` : 'Digital Edition'}</span>
+                </div>
+              </td>
+              <td data-label="Author">{book.author || 'Unknown author'}</td>
+              <td data-label="Category">{book.category || 'General'}</td>
+              <td data-label="Price">${Number(book.price || 0).toFixed(2)}</td>
+              <td data-label="Status">
+                <span className={`reader-status-chip ${statusLabel(book, status).includes('Purchased') ? 'purchased' : 'available'}`}>
+                  {statusLabel(book, status)}
+                </span>
+              </td>
+              <td data-label="Actions">
+                <div className="reader-table-actions">
+                  <Link to={`/reader/books/${book.id}`} className="btn btn-secondary">Details</Link>
+                  {canRemoveBookmark && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => removeStatus(book.id, 'bookmarked')}
+                      disabled={actionLoading}
+                    >
+                      Remove Bookmark
+                    </button>
+                  )}
+                </div>
+              </td>
+            </tr>
+          );})}
+        </tbody>
+      </table>
+    </div>
+  );
 
   const activeBooks = collections[activeTab] || [];
 
@@ -133,7 +180,7 @@ const MyLibrary = () => {
       <div className="page-header reader-page-header">
         <div className="page-title">
           <h1>My Library</h1>
-          <p>Manage the books you saved, bookmarked, purchased, or are currently reading.</p>
+          <p>Manage all engaged books, including purchased and bookmarked titles.</p>
         </div>
         <Link to="/reader/library" className="btn btn-secondary">
           Back to Library
@@ -178,9 +225,12 @@ const MyLibrary = () => {
           </div>
         </div>
       ) : (
-        <div className="reader-catalog-grid">
-          {activeBooks.map((book) => renderBookCard(book, activeTab))}
-        </div>
+        <section className="card reader-section">
+          <div className="card-header reader-section-header"><h3>{activeTab === 'all' ? 'All Engaged Books' : activeTab === 'purchased' ? 'Purchased Books' : 'Bookmarked Books'}</h3></div>
+          <div className="card-body">
+            {renderBooksTable(activeBooks, activeTab)}
+          </div>
+        </section>
       )}
     </div>
   );

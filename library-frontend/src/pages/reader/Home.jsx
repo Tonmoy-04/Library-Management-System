@@ -9,20 +9,11 @@ import '../../styles/reader.css';
 const ReaderHome = () => {
   const { user } = useAuth();
   const {
-    filters,
-    updateFilters,
-    searchBooks,
     dashboard,
     books,
-    categories,
-    loading,
     actionLoading,
     error,
-    purchaseBook,
-    downloadBook,
     continueReading,
-    addBookmark,
-    removeBookmark,
   } = useReaderDashboard();
 
   const purchasedBooks = dashboard?.purchased_books || [];
@@ -84,149 +75,6 @@ const ReaderHome = () => {
     },
   ]), [activityCount, summary.bookmarkedCount, summary.purchasedCount, summary.totalBooks]);
 
-  const filteredBooks = useMemo(() => {
-    const searchTerm = filters.search.trim().toLowerCase();
-    const authorTerm = filters.author.trim().toLowerCase();
-    const categoryTerm = filters.category.trim().toLowerCase();
-
-    return mergedBooks.filter((book) => {
-      const title = String(book.title || '').toLowerCase();
-      const author = String(book.author || '').toLowerCase();
-      const category = String(book.category || 'general').toLowerCase();
-
-      const matchesSearch = searchTerm === ''
-        || title.includes(searchTerm)
-        || author.includes(searchTerm)
-        || String(book.description || '').toLowerCase().includes(searchTerm)
-        || String(book.isbn || '').toLowerCase().includes(searchTerm);
-
-      const matchesAuthor = authorTerm === '' || author.includes(authorTerm);
-      const matchesCategory = categoryTerm === '' || category.includes(categoryTerm);
-
-      return matchesSearch && matchesAuthor && matchesCategory;
-    });
-  }, [filters.author, filters.category, filters.search, mergedBooks]);
-
-  const renderBooksTable = (rows) => (
-    <div className="reader-table-wrap">
-      <table className="reader-books-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Author</th>
-            <th>Category</th>
-            <th>Price</th>
-            <th>Rating</th>
-            <th>Progress</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((book) => {
-            const progress = Math.max(0, Math.min(100, Number(book.progress_percent || 0)));
-            const isPurchased = Number(book.is_purchased) === 1;
-            const isBookmarked = Number(book.is_bookmarked) === 1;
-            const canContinue = progress > 0;
-
-            return (
-              <tr key={book.id}>
-                <td data-label="Title">
-                  <div className="reader-title-cell">
-                    <strong className="reader-title-main">{book.title}</strong>
-                    <span className="reader-title-sub">{book.isbn ? `ISBN ${book.isbn}` : 'Digital Edition'}</span>
-                  </div>
-                </td>
-                <td data-label="Author">{book.author || 'Unknown author'}</td>
-                <td data-label="Category">{book.category || 'General'}</td>
-                <td data-label="Price">${Number(book.price || 0).toFixed(2)}</td>
-                <td data-label="Rating">{Number(book.rating || 0).toFixed(1)}</td>
-                <td data-label="Progress">
-                  <div className="reader-table-progress">
-                    <div className="reader-book-progress-bar">
-                      <div style={{ width: `${progress}%` }} />
-                    </div>
-                    <span>{progress.toFixed(0)}%</span>
-                  </div>
-                </td>
-                <td data-label="Status">
-                  <span className={`reader-status-chip ${isPurchased ? 'purchased' : 'available'}`}>
-                    {isPurchased ? 'Purchased' : 'Available'}
-                  </span>
-                </td>
-                <td data-label="Actions">
-                  <div className="reader-table-actions">
-                    <Link to={`/reader/books/${book.id}`} className="btn btn-secondary">Details</Link>
-
-                    {isPurchased ? (
-                      <>
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={() => downloadBook(book.id)}
-                          disabled={actionLoading}
-                        >
-                          Download
-                        </button>
-                        {canContinue && (
-                          <button
-                            type="button"
-                            className="btn btn-success"
-                            onClick={() => continueReading(book.id)}
-                            disabled={actionLoading}
-                          >
-                            Continue
-                          </button>
-                        )}
-                      </>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => purchaseBook(book.id)}
-                        disabled={actionLoading}
-                      >
-                        Purchase
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      className={`bookmark-toggle ${isBookmarked ? 'active' : ''}`}
-                      onClick={() => handleToggleBookmark(book)}
-                      disabled={actionLoading}
-                      title={isBookmarked ? 'Remove bookmark' : 'Bookmark book'}
-                    >
-                      {isBookmarked ? 'Saved' : 'Save'}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-
-  const handleFilterSubmit = async (event) => {
-    event.preventDefault();
-    await searchBooks(filters);
-  };
-
-  const handleToggleBookmark = async (book) => {
-    if (Number(book.is_bookmarked) === 1 && Number(book.bookmark_id) > 0) {
-      await removeBookmark(book.bookmark_id);
-      return;
-    }
-
-    await addBookmark({
-      book_id: Number(book.id),
-      page_number: Number(book.current_page || 1),
-      note: '',
-    });
-  };
-
   return (
     <div className="reader-dashboard-page">
       <div className="page-header reader-page-header">
@@ -276,17 +124,6 @@ const ReaderHome = () => {
 
       {error && <p className="issue-message issue-error">{error}</p>}
 
-      <section className="card reader-section">
-        <div className="card-header reader-section-header"><h3>Purchased Books</h3></div>
-        <div className="card-body">
-          {purchasedBooks.length === 0 ? (
-            <p className="reader-empty">No purchases yet. Browse books below to buy your first title.</p>
-          ) : (
-            renderBooksTable(purchasedBooks.map((book) => ({ ...book, is_purchased: 1 })))
-          )}
-        </div>
-      </section>
-
       <section className="reader-mid-grid">
         <article className="card reader-section">
           <div className="card-header reader-section-header"><h3>Reading Progress</h3></div>
@@ -307,42 +144,6 @@ const ReaderHome = () => {
         </article>
       </section>
 
-      <section className="card reader-section" id="browse-books">
-        <div className="card-header reader-section-header"><h3>Books Table</h3></div>
-        <div className="card-body">
-          <form className="reader-filter-grid" onSubmit={handleFilterSubmit}>
-            <input
-              type="text"
-              placeholder="Search by title or keyword"
-              value={filters.search}
-              onChange={(e) => updateFilters({ search: e.target.value })}
-            />
-            <input
-              type="text"
-              placeholder="Filter by author"
-              value={filters.author}
-              onChange={(e) => updateFilters({ author: e.target.value })}
-            />
-            <select
-              value={filters.category}
-              onChange={(e) => updateFilters({ category: e.target.value === 'All' ? '' : e.target.value })}
-            >
-              {categories.map((category) => (
-                <option key={category} value={category === 'All' ? '' : category}>{category}</option>
-              ))}
-            </select>
-            <button type="submit" className="btn btn-primary" disabled={loading || actionLoading}>Apply</button>
-          </form>
-
-          {loading ? (
-            <p className="reader-empty">Loading books...</p>
-          ) : filteredBooks.length === 0 ? (
-            <p className="reader-empty">No books matched your filters.</p>
-          ) : (
-            renderBooksTable(filteredBooks)
-          )}
-        </div>
-      </section>
     </div>
   );
 };

@@ -48,17 +48,13 @@ const Library = () => {
   }, [books]);
 
   const summary = useMemo(() => {
-    const saved = books.filter((book) => Number(book.is_saved) === 1).length;
     const bookmarked = books.filter((book) => Number(book.is_bookmarked) === 1).length;
     const purchased = books.filter((book) => Number(book.is_purchased) === 1).length;
-    const reading = books.filter((book) => Number(book.is_reading) === 1).length;
 
     return {
       catalog: books.length,
-      saved,
       bookmarked,
       purchased,
-      reading,
     };
   }, [books]);
 
@@ -87,11 +83,6 @@ const Library = () => {
     }
   };
 
-  const handleSave = (bookId) => withAction(
-    () => readerPortalAPI.saveBook(bookId),
-    'Book saved to your library.'
-  );
-
   const handleBookmark = (book) => withAction(
     () => readerPortalAPI.addBookmark({ book_id: Number(book.id), page_number: 1, note: '' }),
     'Book bookmarked.'
@@ -102,9 +93,78 @@ const Library = () => {
     'Book purchased.'
   );
 
-  const handleAddToLibrary = (book) => withAction(
-    () => readerPortalAPI.continueReading(book.id),
-    'Book added to My Library.'
+  const renderBooksTable = (rows) => (
+    <div className="reader-table-wrap">
+      <table className="reader-books-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Rating</th>
+            <th>Progress</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((book) => {
+            const isBookmarked = Number(book.is_bookmarked) === 1;
+            const isPurchased = Number(book.is_purchased) === 1;
+            const progress = Math.max(0, Math.min(100, Number(book.progress_percent || 0)));
+
+            return (
+              <tr key={book.id}>
+                <td data-label="Title">
+                  <div className="reader-title-cell">
+                    <strong className="reader-title-main">{book.title}</strong>
+                    <span className="reader-title-sub">{book.isbn ? `ISBN ${book.isbn}` : 'Digital Edition'}</span>
+                  </div>
+                </td>
+                <td data-label="Author">{book.author || 'Unknown author'}</td>
+                <td data-label="Category">{book.category || 'General'}</td>
+                <td data-label="Price">${Number(book.price || 0).toFixed(2)}</td>
+                <td data-label="Rating">{Number(book.rating || 0).toFixed(1)}</td>
+                <td data-label="Progress">
+                  <div className="reader-table-progress">
+                    <div className="reader-book-progress-bar">
+                      <div style={{ width: `${progress}%` }} />
+                    </div>
+                    <span>{progress.toFixed(0)}%</span>
+                  </div>
+                </td>
+                <td data-label="Status">
+                  <span className={`reader-status-chip ${isPurchased ? 'purchased' : isBookmarked ? 'purchased' : 'available'}`}>
+                    {isPurchased ? 'Purchased' : isBookmarked ? 'Bookmarked' : 'Available'}
+                  </span>
+                </td>
+                <td data-label="Actions">
+                  <div className="reader-table-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => handleBookmark(book)}
+                      disabled={actionLoading || isBookmarked}
+                    >
+                      {isBookmarked ? 'Bookmarked' : 'Bookmark'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => handleBuy(book.id)}
+                      disabled={actionLoading || isPurchased}
+                    >
+                      {isPurchased ? 'Purchased' : 'Buy'}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 
   return (
@@ -127,11 +187,6 @@ const Library = () => {
           <p className="reader-summary-label">Catalog</p>
           <h3>{summary.catalog}</h3>
           <small>Books available to readers</small>
-        </article>
-        <article className="reader-summary-card">
-          <p className="reader-summary-label">Saved</p>
-          <h3>{summary.saved}</h3>
-          <small>Books you marked for later</small>
         </article>
         <article className="reader-summary-card">
           <p className="reader-summary-label">Bookmarked</p>
@@ -186,104 +241,18 @@ const Library = () => {
         </button>
       </div>
 
-      {loading ? (
-        <div className="card reader-section">
-          <div className="card-body">Loading library...</div>
-        </div>
-      ) : books.length === 0 ? (
-        <div className="card reader-section">
-          <div className="card-body">
+      <section className="card reader-section" id="browse-books">
+        <div className="card-header reader-section-header"><h3>Books Table</h3></div>
+        <div className="card-body">
+          {loading ? (
+            <p className="reader-empty">Loading books...</p>
+          ) : books.length === 0 ? (
             <p className="reader-empty">No books found in the library.</p>
-          </div>
+          ) : (
+            renderBooksTable(books)
+          )}
         </div>
-      ) : (
-        <div className="reader-catalog-grid">
-          {books.map((book) => {
-            const isSaved = Number(book.is_saved) === 1;
-            const isBookmarked = Number(book.is_bookmarked) === 1;
-            const isPurchased = Number(book.is_purchased) === 1;
-            const isReading = Number(book.is_reading) === 1;
-            const canAddToLibrary = isPurchased || isReading;
-
-            return (
-              <article key={book.id} className="reader-book-card reader-library-card">
-                <div className="reader-book-cover" aria-hidden="true">
-                  {book.cover_image_url ? (
-                    <img src={book.cover_image_url} alt={book.title} loading="lazy" />
-                  ) : (
-                    <span>{book.title?.slice(0, 1) || 'B'}</span>
-                  )}
-                </div>
-
-                <div className="reader-book-content">
-                  <div className="reader-book-head">
-                    <h3>{book.title}</h3>
-                    <Link to={`/reader/books/${book.id}`} className="btn btn-secondary">
-                      Details
-                    </Link>
-                  </div>
-
-                  <p className="reader-book-meta">
-                    <span>{book.author || 'Unknown author'}</span>
-                    <span>{book.category || 'General'}</span>
-                    <span>${Number(book.price || 0).toFixed(2)}</span>
-                    <span>Rating {Number(book.rating || 0).toFixed(1)}</span>
-                  </p>
-
-                  <p className="reader-library-description">
-                    {book.description || 'No description available for this title yet.'}
-                  </p>
-
-                  <div className="reader-status-pills">
-                    <span className={`reader-status-pill ${isSaved ? 'active' : ''}`}>Save</span>
-                    <span className={`reader-status-pill ${isBookmarked ? 'active' : ''}`}>Bookmark</span>
-                    <span className={`reader-status-pill ${isPurchased ? 'active' : ''}`}>Purchased</span>
-                    <span className={`reader-status-pill ${isReading ? 'active' : ''}`}>Reading</span>
-                  </div>
-
-                  <div className="reader-book-actions">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => handleSave(book.id)}
-                      disabled={actionLoading || isSaved}
-                    >
-                      {isSaved ? 'Saved' : 'Save'}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => handleBookmark(book)}
-                      disabled={actionLoading || isBookmarked}
-                    >
-                      {isBookmarked ? 'Bookmarked' : 'Bookmark'}
-                    </button>
-                    {canAddToLibrary ? (
-                      <button
-                        type="button"
-                        className="btn btn-success"
-                        onClick={() => handleAddToLibrary(book)}
-                        disabled={actionLoading}
-                      >
-                        Add to My Library
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => handleBuy(book.id)}
-                        disabled={actionLoading}
-                      >
-                        Buy
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+      </section>
     </div>
   );
 };
