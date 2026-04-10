@@ -17,6 +17,7 @@ import ReaderMyLibrary from './pages/reader/MyLibrary';
 import ReaderHistory from './pages/reader/History';
 import ReaderBookDetails from './pages/reader/BookDetails';
 import ReaderPortalLayout from './pages/reader/ReaderPortalLayout';
+import ReaderSettings from './pages/reader/Settings';
 import PublisherPortal from './pages/publishers/PublisherPortal';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
@@ -105,6 +106,16 @@ function App() {
         ),
       },
       {
+        path: '/settings',
+        element: isAuthenticated && !isReader ? (
+          <DashboardLayout>
+            <Settings />
+          </DashboardLayout>
+        ) : (
+          <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
+        ),
+      },
+      {
         path: '/reader/home',
         element: isAuthenticated && isReader ? (
           <ReaderLayout>
@@ -145,16 +156,20 @@ function App() {
         ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
       {
+        path: '/reader/settings',
+        element: isAuthenticated && isReader ? (
+          <ReaderLayout>
+            <ReaderSettings />
+          </ReaderLayout>
+        ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
+      },
+      {
         path: '/publisher/portal',
         element: isAuthenticated && isPublisher ? <PublisherPortal /> : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
       {
         path: '/profile',
         element: isAuthenticated ? <Profile /> : <Navigate to="/login" replace />,
-      },
-      {
-        path: '/settings',
-        element: isAuthenticated ? <Settings /> : <Navigate to="/login" replace />,
       },
       {
         path: '/login',

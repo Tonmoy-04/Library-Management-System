@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import Bookshelf from './components/Bookshelf';
 import Reports from './components/Reports';
 import Feedback from './components/Feedback';
+import Settings from './Settings';
 import './PublisherPortal.css';
 
 const PublisherPortal = () => {
@@ -20,6 +21,7 @@ const PublisherPortal = () => {
     { id: 'bookshelf', label: 'Bookshelf', icon: '📚' },
     { id: 'reports', label: 'Reports', icon: '📈' },
     { id: 'feedback', label: 'Feedback', icon: '💬' },
+    { id: 'settings', label: 'Settings', icon: '⚙️' },
   ];
 
   const renderContent = () => {
@@ -32,6 +34,8 @@ const PublisherPortal = () => {
         return <Reports publisherId={publisherId} />;
       case 'feedback':
         return <Feedback publisherId={publisherId} />;
+      case 'settings':
+        return <Settings />;
       default:
         return <Dashboard publisherId={publisherId} />;
     }

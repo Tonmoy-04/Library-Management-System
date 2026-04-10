@@ -1,21 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { useTheme } from '../hooks/useTheme';
-import { authAPI } from '../services/api';
-import './Settings.css';
+import React, { useState, useEffect } from 'react';
+import { useTheme } from '../../hooks/useTheme';
+import { readerAuthAPI, readerPortalAPI } from '../../services/api';
+import '../Settings.css';
 
-const Settings = () => {
+const ReaderSettings = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
+  // Profile state
   const [profile, setProfile] = useState({
     name: '',
     email: '',
     phone: '',
   });
 
+  // Password state
   const [passwords, setPasswords] = useState({
     current_password: '',
     new_password: '',
@@ -35,23 +37,14 @@ const Settings = () => {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const response = await authAPI.me();
-      const localUser = JSON.parse(localStorage.getItem('user') || '{}');
-      const user = response.data?.user || response.data || localUser;
-
+      const response = await readerAuthAPI.me();
       setProfile({
-        name: user?.name || '',
-        email: user?.email || '',
-        phone: user?.phone || '',
+        name: response.data?.name || '',
+        email: response.data?.email || '',
+        phone: response.data?.phone || '',
       });
     } catch (err) {
-      const localUser = JSON.parse(localStorage.getItem('user') || '{}');
-      setProfile({
-        name: localUser?.name || '',
-        email: localUser?.email || '',
-        phone: localUser?.phone || '',
-      });
-      setError('Failed to load profile from server. Showing local data.');
+      setError('Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -59,16 +52,16 @@ const Settings = () => {
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
+    setProfile(prev => ({ ...prev, [name]: value }));
   };
 
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
-    setPasswords((prev) => ({ ...prev, [name]: value }));
+    setPasswords(prev => ({ ...prev, [name]: value }));
   };
 
   const togglePasswordVisibility = (field) => {
-    setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
+    setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
   };
 
   const updateProfile = async (e) => {
@@ -82,30 +75,21 @@ const Settings = () => {
       setLoading(true);
       setError('');
       setMessage('');
+      
+      await readerAuthAPI.updateProfile(profile);
 
-      await authAPI.updateProfile(profile);
       setMessage('Profile updated successfully!');
+      setTimeout(() => setMessage(''), 3000);
     } catch (err) {
-      // Fallback so settings still works even if backend endpoint is unavailable.
-      if (err?.response?.status === 404 || err?.response?.status === 405) {
-        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-        localStorage.setItem('user', JSON.stringify({ ...currentUser, ...profile }));
-        setMessage('Profile saved locally. Backend profile endpoint is not available yet.');
-      } else {
-        setError(err.response?.data?.message || 'Failed to update profile');
-      }
+      setError(err.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
-      setTimeout(() => {
-        setMessage('');
-        setError('');
-      }, 3500);
     }
   };
 
   const updatePassword = async (e) => {
     e.preventDefault();
-
+    
     if (!passwords.current_password || !passwords.new_password || !passwords.confirm_password) {
       setError('All fields are required');
       return;
@@ -126,7 +110,7 @@ const Settings = () => {
       setError('');
       setMessage('');
 
-      await authAPI.changePassword({
+      await readerAuthAPI.changePassword({
         current_password: passwords.current_password,
         new_password: passwords.new_password,
       });
@@ -137,81 +121,63 @@ const Settings = () => {
         new_password: '',
         confirm_password: '',
       });
+      setTimeout(() => setMessage(''), 3000);
     } catch (err) {
-      if (err?.response?.status === 404 || err?.response?.status === 405) {
-        setMessage('Password change endpoint is not available yet.');
-      } else {
-        setError(err.response?.data?.message || 'Failed to change password');
-      }
+      setError(err.response?.data?.message || 'Failed to change password');
     } finally {
       setLoading(false);
-      setTimeout(() => {
-        setMessage('');
-        setError('');
-      }, 3500);
     }
-  };
-
-  const clearBanners = () => {
-    if (error) setError('');
-    if (message) setMessage('');
   };
 
   return (
     <div className="settings-container">
       <div className="settings-header">
         <h1>⚙️ Settings</h1>
-        <p>Manage your admin account and preferences</p>
+        <p>Manage your account and preferences</p>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
       {message && <div className="alert alert-success">{message}</div>}
 
       <div className="settings-layout">
+        {/* Tabs Navigation */}
         <nav className="settings-tabs">
           <button
             className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => {
-              clearBanners();
-              setActiveTab('profile');
-            }}
+            onClick={() => setActiveTab('profile')}
           >
             👤 Profile
           </button>
           <button
             className={`tab-btn ${activeTab === 'theme' ? 'active' : ''}`}
-            onClick={() => {
-              clearBanners();
-              setActiveTab('theme');
-            }}
+            onClick={() => setActiveTab('theme')}
           >
             🌙 Appearance
           </button>
           <button
             className={`tab-btn ${activeTab === 'password' ? 'active' : ''}`}
-            onClick={() => {
-              clearBanners();
-              setActiveTab('password');
-            }}
+            onClick={() => setActiveTab('password')}
           >
             🔐 Password
           </button>
         </nav>
 
+        {/* Tab Content */}
         <div className="settings-content">
+          {/* Profile Tab */}
           {activeTab === 'profile' && (
             <div className="settings-section">
               <h2>Edit Profile</h2>
               <form onSubmit={updateProfile} className="settings-form">
                 <div className="form-group">
-                  <label htmlFor="name">Admin Name</label>
+                  <label htmlFor="name">Full Name</label>
                   <input
                     type="text"
                     id="name"
                     name="name"
                     value={profile.name}
                     onChange={handleProfileChange}
-                    placeholder="Enter admin name"
+                    placeholder="Enter your full name"
                     disabled={loading}
                   />
                 </div>
@@ -243,12 +209,13 @@ const Settings = () => {
                 </div>
 
                 <button type="submit" className="btn btn-primary" disabled={loading}>
-                  {loading ? 'Saving...' : 'Save Changes'}
+                  {loading ? 'Saving...' : '✓ Save Changes'}
                 </button>
               </form>
             </div>
           )}
 
+          {/* Theme Tab */}
           {activeTab === 'theme' && (
             <div className="settings-section">
               <h2>Appearance</h2>
@@ -278,6 +245,7 @@ const Settings = () => {
             </div>
           )}
 
+          {/* Password Tab */}
           {activeTab === 'password' && (
             <div className="settings-section">
               <h2>Change Password</h2>
@@ -299,7 +267,7 @@ const Settings = () => {
                       className="toggle-password-btn"
                       onClick={() => togglePasswordVisibility('current')}
                     >
-                      {showPasswords.current ? 'Hide' : 'Show'}
+                      {showPasswords.current ? '👁️' : '👁️‍🗨️'}
                     </button>
                   </div>
                 </div>
@@ -321,7 +289,7 @@ const Settings = () => {
                       className="toggle-password-btn"
                       onClick={() => togglePasswordVisibility('new')}
                     >
-                      {showPasswords.new ? 'Hide' : 'Show'}
+                      {showPasswords.new ? '👁️' : '👁️‍🗨️'}
                     </button>
                   </div>
                 </div>
@@ -343,13 +311,13 @@ const Settings = () => {
                       className="toggle-password-btn"
                       onClick={() => togglePasswordVisibility('confirm')}
                     >
-                      {showPasswords.confirm ? 'Hide' : 'Show'}
+                      {showPasswords.confirm ? '👁️' : '👁️‍🗨️'}
                     </button>
                   </div>
                 </div>
 
                 <button type="submit" className="btn btn-primary" disabled={loading}>
-                  {loading ? 'Updating...' : 'Change Password'}
+                  {loading ? 'Updating...' : '🔐 Change Password'}
                 </button>
               </form>
             </div>
@@ -360,4 +328,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default ReaderSettings;

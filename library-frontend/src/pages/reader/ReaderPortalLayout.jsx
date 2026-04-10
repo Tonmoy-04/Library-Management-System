@@ -10,6 +10,7 @@ const tabs = [
   { path: '/reader/library', label: 'Library', icon: '📚' },
   { path: '/reader/my-library', label: 'My Library', icon: '🗂️' },
   { path: '/reader/history', label: 'History', icon: '🧾' },
+  { path: '/reader/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 const ReaderPortalLayout = ({ children }) => {
