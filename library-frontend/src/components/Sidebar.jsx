@@ -21,68 +21,27 @@ const Sidebar = ({ navItems = defaultNavItems, logoutRedirectPath = '/login', lo
   };
 
   return (
-    <aside className="sidebar" style={{
-      width: '260px',
-      height: 'calc(100vh - 64px)',
-      backgroundColor: 'var(--bg-card)',
-      borderRight: '1px solid var(--border-color)',
-      position: 'fixed',
-      top: '64px',
-      left: 0,
-      padding: '2rem 1rem',
-      overflowY: 'auto'
-    }}>
-      <ul className="sidebar-nav">
+    <aside className="publisher-sidebar" aria-label="Admin sidebar navigation">
+      <nav className="portal-tabs">
         {navItems.map((item) => (
-          <li key={item.path} style={{ marginBottom: '0.5rem' }}>
+          <div key={item.path}>
             <NavLink
               to={item.path}
-              style={({ isActive }) => ({
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0.75rem 1rem',
-                borderRadius: 'var(--radius)',
-                color: isActive ? 'white' : 'var(--text-main)',
-                backgroundColor: isActive ? 'var(--primary-color)' : 'transparent',
-                transition: 'var(--transition)',
-                fontWeight: isActive ? '600' : '500',
-                gap: '0.75rem'
-              })}
-              onMouseEnter={(e) => {
-                if (!e.currentTarget.classList.contains('active')) {
-                  e.currentTarget.style.backgroundColor = 'var(--secondary-color)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!e.currentTarget.classList.contains('active')) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }
-              }}
+              className={({ isActive }) => `tab-button ${isActive ? 'active' : ''}`}
             >
-              <span>{item.icon}</span>
-              {item.label}
+              <span className="tab-icon">{item.icon}</span>
+              <span className="tab-label">{item.label}</span>
             </NavLink>
-          </li>
+          </div>
         ))}
-      </ul>
-      <div style={{ marginTop: 'auto', padding: '1rem' }}>
-        <button
-          onClick={handleLogout}
-          style={{
-          width: '100%',
-          padding: '0.75rem',
-          borderRadius: 'var(--radius)',
-          color: '#ef4444',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          fontWeight: '600',
-          marginTop: '2rem',
-          cursor: 'pointer'
-        }}>
-          <span>🚪</span> {logoutLabel}
-        </button>
-      </div>
+      </nav>
+      <button
+        onClick={handleLogout}
+        className="logout-btn"
+        title={logoutLabel}
+      >
+        🚪 {logoutLabel}
+      </button>
     </aside>
   );
 };

@@ -12,9 +12,9 @@ Purpose:
 ---
 
 ## Last Verified
-- Date: 2026-04-10
+- Date: 2026-04-11
 - Environment: SQL Server (Laravel project)
-- Verification source: migrated schema + check_tables.php output + FK validation query output + Schema::hasColumn('books', 'isbn') = false
+- Verification source: check_tables.php output (live DB connection + table listing)
 
 ---
 
@@ -30,18 +30,15 @@ Purpose:
 9. profiles
 10. password_resets
 11. migrations
+12. password_reset_tokens
+13. failed_jobs
+14. personal_access_tokens
 
 Additional project tables currently present:
-1. borrow_requests
-2. borrowed_books
-3. reader_activities
-4. reader_book_purchases
-5. reader_bookmarks
-6. reader_reading_progress
-7. transactions
-8. user_library
-9. user_reader_profiles
-10. user_roles
+- None verified in the current DB snapshot.
+
+System tables currently present:
+1. sysdiagrams
 
 ---
 
@@ -80,8 +77,9 @@ Additional project tables currently present:
 9. profiles: extra profile metadata.
 10. password_resets: password reset support.
 11. migrations: migration execution history.
-12. transactions: reader purchase history.
-13. user_library: reader library status tracking for saved, bookmarked, purchased, and reading states.
+12. password_reset_tokens: Laravel password reset token storage.
+13. failed_jobs: queued job failure tracking.
+14. personal_access_tokens: token storage for personal access token features.
 
 ---
 
@@ -114,6 +112,11 @@ php artisan migrate --path=database/migrations/<migration_file>.php --force
 
 ## Change Log
 Add a new entry on each schema change.
+
+- 2026-04-11
+   - Documentation sync only: verified current live table list via `check_tables.php`.
+   - Removed stale "Additional project tables currently present" entries that are not in the current DB snapshot.
+   - Updated Last Verified date/source and current table inventory.
 
 - 2026-04-10
    - Removed ISBN from books schema and database/API paths.
