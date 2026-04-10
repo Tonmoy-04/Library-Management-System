@@ -567,6 +567,66 @@ class LibraryDataController extends Controller
         ], 201);
     }
 
+    public function returnBook(int $id): JsonResponse
+    {
+        $returned = DB::transaction(function () use ($id) {
+            $issue = DB::table('book_issues')
+                ->where('id', $id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $issue) {
+                return null;
+            }
+
+            if ($issue->status === 'returned') {
+                throw ValidationException::withMessages([
+                    'transaction' => ['This transaction is already returned.'],
+                ]);
+            }
+
+            $now = now();
+
+            DB::table('book_issues')
+                ->where('id', $id)
+                ->update([
+                    'status' => 'returned',
+                    'returned_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+            DB::table('books')
+                ->where('id', $issue->book_id)
+                ->update([
+                    'available' => DB::raw('available + 1'),
+                    'updated_at' => $now,
+                ]);
+
+            return DB::table('book_issues as bi')
+                ->join('users as u', 'bi.user_id', '=', 'u.id')
+                ->join('books as b', 'bi.book_id', '=', 'b.id')
+                ->select(
+                    'bi.id',
+                    'u.name as reader',
+                    'b.title as book',
+                    'bi.issued_at',
+                    'bi.returned_at',
+                    'bi.status'
+                )
+                ->where('bi.id', $id)
+                ->first();
+        });
+
+        if (! $returned) {
+            return response()->json(['message' => 'Transaction not found.'], 404);
+        }
+
+        return response()->json([
+            'message' => 'Book returned successfully.',
+            'data' => $returned,
+        ]);
+    }
+
     public function dashboardSummary(): JsonResponse
     {
         $totalBooks = (int) DB::table('books')->sum('quantity');
