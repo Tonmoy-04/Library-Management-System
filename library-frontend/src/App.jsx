@@ -12,6 +12,9 @@ import Transactions from './pages/Transactions';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ReaderHome from './pages/reader/Home';
+import ReaderLibrary from './pages/reader/Library';
+import ReaderMyLibrary from './pages/reader/MyLibrary';
+import ReaderHistory from './pages/reader/History';
 import ReaderBookDetails from './pages/reader/BookDetails';
 import PublisherPortal from './pages/publishers/PublisherPortal';
 import './styles/global.css';
@@ -42,7 +45,10 @@ function App() {
   );
 
   const readerNavItems = [
-    { path: '/reader/home', label: 'Dashboard', icon: '📚' },
+    { path: '/reader/home', label: 'Dashboard', icon: '📊' },
+    { path: '/reader/library', label: 'Library', icon: '📚' },
+    { path: '/reader/my-library', label: 'My Library', icon: '🗂️' },
+    { path: '/reader/history', label: 'History', icon: '🧾' },
   ];
 
   const ReaderLayout = ({ children }) => (
@@ -115,6 +121,30 @@ function App() {
         element: isAuthenticated && isReader ? (
           <ReaderLayout>
             <ReaderHome />
+          </ReaderLayout>
+        ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
+      },
+      {
+        path: '/reader/library',
+        element: isAuthenticated && isReader ? (
+          <ReaderLayout>
+            <ReaderLibrary />
+          </ReaderLayout>
+        ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
+      },
+      {
+        path: '/reader/my-library',
+        element: isAuthenticated && isReader ? (
+          <ReaderLayout>
+            <ReaderMyLibrary />
+          </ReaderLayout>
+        ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
+      },
+      {
+        path: '/reader/history',
+        element: isAuthenticated && isReader ? (
+          <ReaderLayout>
+            <ReaderHistory />
           </ReaderLayout>
         ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },

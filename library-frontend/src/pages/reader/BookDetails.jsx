@@ -74,7 +74,7 @@ const ReaderBookDetails = () => {
       <div className="card">
         <div className="card-body">
           <p>Book details are unavailable.</p>
-          <Link to="/reader/home" className="btn btn-secondary">Back to Reader Dashboard</Link>
+          <Link to="/reader/home" className="btn btn-secondary">Back to Dashboard</Link>
         </div>
       </div>
     );

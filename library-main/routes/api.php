@@ -25,6 +25,11 @@ Route::prefix('reader')->group(function () {
     Route::middleware('auth:reader')->group(function () {
         Route::post('logout', [ReaderAuthController::class, 'logout']);
         Route::get('me', [ReaderAuthController::class, 'me']);
+        Route::get('library', [ReaderPortalController::class, 'library']);
+        Route::post('library/{bookId}/save', [ReaderPortalController::class, 'saveBook']);
+        Route::delete('library/{bookId}/status/{status}', [ReaderPortalController::class, 'removeLibraryStatus']);
+        Route::get('my-library', [ReaderPortalController::class, 'myLibrary']);
+        Route::get('history', [ReaderPortalController::class, 'history']);
         Route::get('dashboard', [ReaderPortalController::class, 'dashboard']);
         Route::get('books', [ReaderPortalController::class, 'books']);
         Route::get('books/{bookId}', [ReaderPortalController::class, 'bookDetails']);
