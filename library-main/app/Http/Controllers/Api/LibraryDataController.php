@@ -10,6 +10,7 @@ use App\Models\PublisherBookSubmission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class LibraryDataController extends Controller
@@ -482,20 +483,51 @@ class LibraryDataController extends Controller
 
     public function transactions(): JsonResponse
     {
-        $transactions = DB::table('book_issues as bi')
+        $issueTransactions = DB::table('book_issues as bi')
             ->join('users as u', 'bi.user_id', '=', 'u.id')
             ->join('books as b', 'bi.book_id', '=', 'b.id')
             ->select(
                 'bi.id',
+                DB::raw("'issue' as transaction_type"),
                 'u.name as reader',
                 'b.title as book',
+                DB::raw('NULL as amount'),
+                DB::raw('NULL as payment_status'),
                 'bi.issued_at',
                 'bi.due_at',
                 'bi.returned_at',
-                'bi.status'
+                'bi.status',
+                DB::raw('bi.issued_at as transaction_date')
             )
-            ->orderByDesc('bi.id')
             ->get();
+
+        $paymentTransactions = collect();
+        if (Schema::hasTable('transactions')) {
+            $paymentTransactions = DB::table('transactions as t')
+                ->join('users as u', 't.user_id', '=', 'u.id')
+                ->leftJoin('books as b', 't.book_id', '=', 'b.id')
+                ->select(
+                    't.id',
+                    DB::raw("'payment' as transaction_type"),
+                    'u.name as reader',
+                    DB::raw("COALESCE(b.title, 'N/A') as book"),
+                    't.amount',
+                    't.payment_status',
+                    DB::raw('NULL as issued_at'),
+                    DB::raw('NULL as due_at'),
+                    DB::raw('NULL as returned_at'),
+                    DB::raw("COALESCE(t.payment_status, 'paid') as status"),
+                    DB::raw('t.transaction_date as transaction_date')
+                )
+                ->get();
+        }
+
+        $transactions = $issueTransactions
+            ->concat($paymentTransactions)
+            ->sortByDesc(function ($row) {
+                return $row->transaction_date ?? $row->issued_at ?? $row->returned_at;
+            })
+            ->values();
 
         return response()->json(['data' => $transactions]);
     }
