@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bookshelf;
 use App\Models\Book;
 use App\Models\BookIssue;
 use App\Models\Feedback;
@@ -17,7 +18,7 @@ class PublisherPortalController extends Controller
      */
     public function getPublisherBooks($publisherId)
     {
-        $books = Book::where('publisher_id', $publisherId)
+        $books = Bookshelf::where('publisher_id', $publisherId)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -275,20 +276,30 @@ class PublisherPortalController extends Controller
                 'author' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'price' => 'required|numeric|min:0',
+                'file_url' => 'nullable|string|max:500',
+                'cover_url' => 'nullable|string|max:500',
             ]);
 
-            $book = Book::create([
+            $publisher = auth('publisher')->user();
+            if (! $publisher || (int) $publisher->id !== (int) $publisherId) {
+                return response()->json([
+                    'error' => 'Unauthorized action',
+                ], 403);
+            }
+
+            $book = Bookshelf::create([
                 'title' => $request->title,
                 'author' => $request->author,
                 'publisher_id' => $publisherId,
                 'description' => $request->description,
                 'price' => $request->price,
-                'quantity' => 1,
-                'available' => 1,
+                'file_url' => $request->file_url,
+                'cover_url' => $request->cover_url,
+                'status' => 'pending',
             ]);
 
             return response()->json([
-                'message' => 'Book created successfully',
+                'message' => 'Book submitted for review successfully',
                 'data' => $book,
             ], 201);
         } catch (\Exception $e) {
@@ -310,21 +321,38 @@ class PublisherPortalController extends Controller
                 'author' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'price' => 'required|numeric|min:0',
+                'file_url' => 'nullable|string|max:500',
+                'cover_url' => 'nullable|string|max:500',
             ]);
 
-            $book = Book::where('id', $bookId)
+            $publisher = auth('publisher')->user();
+            if (! $publisher || (int) $publisher->id !== (int) $publisherId) {
+                return response()->json([
+                    'error' => 'Unauthorized action',
+                ], 403);
+            }
+
+            $book = Bookshelf::where('id', $bookId)
                 ->where('publisher_id', $publisherId)
                 ->firstOrFail();
+
+            if ($book->status !== 'pending') {
+                return response()->json([
+                    'error' => 'Only pending submissions can be edited.',
+                ], 422);
+            }
 
             $book->update([
                 'title' => $request->title,
                 'author' => $request->author,
                 'description' => $request->description,
                 'price' => $request->price,
+                'file_url' => $request->file_url,
+                'cover_url' => $request->cover_url,
             ]);
 
             return response()->json([
-                'message' => 'Book updated successfully',
+                'message' => 'Submission updated successfully',
                 'data' => $book,
             ]);
         } catch (\Exception $e) {
@@ -340,21 +368,8 @@ class PublisherPortalController extends Controller
      */
     public function deleteBook($publisherId, $bookId)
     {
-        try {
-            $book = Book::where('id', $bookId)
-                ->where('publisher_id', $publisherId)
-                ->firstOrFail();
-
-            $book->delete();
-
-            return response()->json([
-                'message' => 'Book deleted successfully',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Failed to delete book',
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'error' => 'Submissions are retained for history and cannot be deleted.',
+        ], 422);
     }
 }

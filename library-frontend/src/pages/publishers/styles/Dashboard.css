@@ -1,6 +1,7 @@
 /* Dashboard Styles */
 
-.publisher-dashboard {
+.publisher-dashboard,
+.dashboard-page {
   animation: fadeIn 0.5s ease-in;
 }
 
