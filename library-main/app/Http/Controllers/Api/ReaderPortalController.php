@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class ReaderPortalController extends Controller
 {
@@ -37,6 +38,7 @@ class ReaderPortalController extends Controller
                     DB::raw($this->bookCategoryExpr() . ' as category'),
                     DB::raw($coverImageExpr . ' as cover_image_url'),
                     DB::raw($this->bookRatingExpr() . ' as rating'),
+                    DB::raw($this->bookPdfExpr() . ' as pdf_url'),
                     DB::raw("COALESCE(p.name, 'N/A') as publisher"),
                     'rbp.purchased_at',
                     'rbp.downloaded_at',
@@ -47,6 +49,11 @@ class ReaderPortalController extends Controller
                 )
                 ->orderByDesc('rbp.purchased_at')
                 ->get();
+
+            $purchasedBooks->transform(function ($book) {
+                $book->pdf_url = $this->resolvePublicFileUrl($book->pdf_url ?? null);
+                return $book;
+            });
         }
 
         $readingProgress = collect();
@@ -158,6 +165,11 @@ class ReaderPortalController extends Controller
             ->orderByDesc('b.id')
             ->get();
 
+        $books->transform(function ($book) {
+            $book->pdf_url = $this->resolvePublicFileUrl($book->pdf_url ?? null);
+            return $book;
+        });
+
         return response()->json(['data' => $books]);
     }
 
@@ -172,6 +184,8 @@ class ReaderPortalController extends Controller
         if (! $book) {
             return response()->json(['message' => 'Book not found.'], 404);
         }
+
+        $book->pdf_url = $this->resolvePublicFileUrl($book->pdf_url ?? null);
 
         return response()->json(['data' => $book]);
     }
@@ -806,6 +820,10 @@ class ReaderPortalController extends Controller
             $groupBy[] = 'b.rating';
         }
 
+        if (Schema::hasColumn('books', 'pdf_url')) {
+            $groupBy[] = 'b.pdf_url';
+        }
+
         if (Schema::hasColumn('books', 'available')) {
             $groupBy[] = 'b.available';
         }
@@ -826,6 +844,7 @@ class ReaderPortalController extends Controller
                 DB::raw($categoryExpr . ' as category'),
                 DB::raw($coverImageExpr . ' as cover_image_url'),
                 DB::raw($ratingExpr . ' as rating'),
+                DB::raw($this->bookPdfExpr() . ' as pdf_url'),
                 DB::raw("COALESCE(p.name, 'N/A') as publisher"),
                 DB::raw($hasPurchases ? 'rbp.downloaded_at as downloaded_at' : 'NULL as downloaded_at'),
                 DB::raw($hasProgress ? 'COALESCE(rrp.progress_percent, 0) as progress_percent' : '0 as progress_percent'),
@@ -857,6 +876,41 @@ class ReaderPortalController extends Controller
         }
 
         return $query->groupBy($groupBy);
+    }
+
+    private function bookPdfExpr(): string
+    {
+        if (Schema::hasColumn('books', 'pdf_url')) {
+            return "COALESCE(b.pdf_url, '')";
+        }
+
+        return "''";
+    }
+
+    private function resolvePublicFileUrl(?string $path): ?string
+    {
+        if ($path === null) {
+            return null;
+        }
+
+        $trimmed = trim($path);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if (Str::startsWith($trimmed, ['http://', 'https://'])) {
+            return $trimmed;
+        }
+
+        if (Str::startsWith($trimmed, '/storage/')) {
+            return request()->getSchemeAndHttpHost() . $trimmed;
+        }
+
+        if (Str::startsWith($trimmed, 'storage/')) {
+            return request()->getSchemeAndHttpHost() . '/' . $trimmed;
+        }
+
+        return request()->getSchemeAndHttpHost() . '/storage/' . ltrim($trimmed, '/');
     }
 
     private function hasReaderBookPurchasesTable(): bool

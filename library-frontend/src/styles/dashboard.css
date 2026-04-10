@@ -188,6 +188,115 @@
   font-size: 0.92rem;
 }
 
+.btn-view {
+  background: #ffedd5;
+  color: #9a3412;
+  border: 1px solid #fdba74;
+}
+
+.btn-view:hover {
+  background: #fed7aa;
+  color: #7c2d12;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.22);
+}
+
+.link-button {
+  border: none;
+  background: transparent;
+  color: #0f67f8;
+  padding: 0;
+  font-weight: 700;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: #0b4eb8;
+}
+
+.admin-pdf-modal {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at top left, rgba(15, 103, 248, 0.15), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(14, 168, 134, 0.14), transparent 40%),
+    rgba(10, 17, 33, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3200;
+  padding: 1rem;
+}
+
+.admin-pdf-content {
+  width: min(1100px, 96vw);
+  height: min(90vh, 860px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.admin-pdf-header,
+.admin-pdf-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e5ebf8;
+}
+
+.admin-pdf-footer {
+  border-top: 1px solid #e5ebf8;
+  border-bottom: none;
+}
+
+.admin-pdf-close {
+  border: none;
+  background: #eef2ff;
+  color: #1f2b45;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-pdf-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.admin-pdf-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.admin-pdf-content .btn-primary {
+  background: linear-gradient(90deg, #0f67f8, #0ea886);
+  border-color: transparent;
+}
+
+.admin-pdf-content .btn-primary:hover {
+  box-shadow: 0 12px 20px rgba(15, 103, 248, 0.18);
+}
+
+.admin-pdf-content .btn-secondary {
+  background: #eef4ff;
+  color: #1f2b45;
+  border-color: #cadbf8;
+}
+
+.admin-pdf-content .btn-secondary:hover {
+  box-shadow: 0 10px 18px rgba(15, 103, 248, 0.12);
+}
+
 @keyframes slideUp {
   from {
     opacity: 0;

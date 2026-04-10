@@ -50,7 +50,12 @@ const ReaderBookCard = ({
         </div>
 
         <div className="reader-book-actions">
-          <Link to={`/reader/books/${book.id}`} className="btn btn-secondary">Details</Link>
+          <Link
+            to={Number(book.is_purchased) === 1 ? `/reader/books/${book.id}?openPdf=1` : `/reader/books/${book.id}`}
+            className="btn btn-secondary"
+          >
+            Details
+          </Link>
 
           {Number(book.is_purchased) === 1 ? (
             <>
