@@ -188,6 +188,19 @@
   font-size: 0.92rem;
 }
 
+.btn-view {
+  background: #ffedd5;
+  color: #9a3412;
+  border: 1px solid #fdba74;
+}
+
+.btn-view:hover {
+  background: #fed7aa;
+  color: #7c2d12;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.22);
+}
+
 @keyframes slideUp {
   from {
     opacity: 0;

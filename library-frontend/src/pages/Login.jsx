@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import api, { readerAuthAPI, publisherAuthAPI } from '../services/api';
@@ -9,6 +9,8 @@ const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const initialRole = useMemo(() => {
@@ -18,6 +20,24 @@ const Login = () => {
   const [role, setRole] = useState(initialRole);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const syncAutofillValues = () => {
+      const nextEmail = emailInputRef.current?.value || '';
+      const nextPassword = passwordInputRef.current?.value || '';
+
+      if (nextEmail) {
+        setEmail(nextEmail);
+      }
+
+      if (nextPassword) {
+        setPassword(nextPassword);
+      }
+    };
+
+    const timer = window.setTimeout(syncAutofillValues, 300);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -151,11 +171,19 @@ const Login = () => {
               type="email"
               id="email"
               name="email"
-              autoComplete="username"
+              autoComplete="email"
+              ref={emailInputRef}
               className="form-control"
               placeholder="user@aust.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onInput={(e) => setEmail(e.target.value)}
+              onFocus={() => {
+                const value = emailInputRef.current?.value || '';
+                if (value && value !== email) {
+                  setEmail(value);
+                }
+              }}
               disabled={loading}
             />
           </div>
@@ -167,10 +195,18 @@ const Login = () => {
               id="password"
               name="password"
               autoComplete="current-password"
+              ref={passwordInputRef}
               className="form-control"
               placeholder="********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onInput={(e) => setPassword(e.target.value)}
+              onFocus={() => {
+                const value = passwordInputRef.current?.value || '';
+                if (value && value !== password) {
+                  setPassword(value);
+                }
+              }}
               disabled={loading}
             />
           </div>
