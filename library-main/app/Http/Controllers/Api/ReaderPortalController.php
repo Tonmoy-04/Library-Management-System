@@ -179,9 +179,9 @@ class ReaderPortalController extends Controller
 
     public function purchase(int $bookId): JsonResponse
     {
-        if (! $this->hasReaderBookPurchasesTable()) {
+        if (! $this->hasUserLibraryTable() || ! $this->hasTransactionsTable()) {
             return response()->json([
-                'message' => 'Reader purchase tables are not ready yet. Please run migrations.',
+                'message' => 'Reader library tables are not ready yet. Please run migrations.',
             ], 503);
         }
 
@@ -193,30 +193,59 @@ class ReaderPortalController extends Controller
         }
 
         $purchase = DB::transaction(function () use ($readerId, $bookId, $book) {
-            $existing = DB::table('reader_book_purchases')
-                ->where('reader_id', $readerId)
+            $now = now();
+
+            $existingTransaction = DB::table('transactions')
+                ->where('user_id', $readerId)
                 ->where('book_id', $bookId)
+                ->where('payment_status', 'paid')
+                ->orderByDesc('transaction_date')
                 ->first();
 
-            if ($existing) {
-                return $existing;
+            if (! $existingTransaction) {
+                $transactionId = DB::table('transactions')->insertGetId([
+                    'user_id' => $readerId,
+                    'book_id' => $bookId,
+                    'amount' => $book->price ?? 0,
+                    'payment_status' => 'paid',
+                    'transaction_date' => $now,
+                ]);
+
+                $existingTransaction = DB::table('transactions')->where('id', $transactionId)->first();
             }
 
-            $now = now();
-            $id = DB::table('reader_book_purchases')->insertGetId([
-                'reader_id' => $readerId,
-                'book_id' => $bookId,
-                'price' => $book->price ?? 0,
-                'purchased_at' => $now,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
+            DB::table('user_library')->updateOrInsert(
+                [
+                    'user_id' => $readerId,
+                    'book_id' => $bookId,
+                    'status' => 'purchased',
+                ],
+                [
+                    'added_at' => $now,
+                ]
+            );
+
+            if ($this->hasReaderBookPurchasesTable()) {
+                DB::table('reader_book_purchases')->updateOrInsert(
+                    [
+                        'reader_id' => $readerId,
+                        'book_id' => $bookId,
+                    ],
+                    [
+                        'price' => $book->price ?? 0,
+                        'purchased_at' => $now,
+                        'downloaded_at' => null,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]
+                );
+            }
 
             $this->recordActivity($readerId, $bookId, 'book_purchased', [
                 'price' => (float) ($book->price ?? 0),
             ]);
 
-            return DB::table('reader_book_purchases')->where('id', $id)->first();
+            return $existingTransaction;
         });
 
         return response()->json([
@@ -324,41 +353,73 @@ class ReaderPortalController extends Controller
 
     public function continueReading(int $bookId): JsonResponse
     {
-        if (! $this->hasReaderReadingProgressTable()) {
+        if (! $this->hasUserLibraryTable()) {
             return response()->json([
-                'message' => 'Reader progress tables are not ready yet. Please run migrations.',
+                'message' => 'Reader library tables are not ready yet. Please run migrations.',
             ], 503);
         }
 
         $readerId = (int) auth('reader')->id();
 
-        $progress = DB::table('reader_reading_progress')
-            ->where('reader_id', $readerId)
+        $hasPurchased = DB::table('user_library')
+            ->where('user_id', $readerId)
             ->where('book_id', $bookId)
-            ->first();
+            ->where('status', 'purchased')
+            ->exists();
 
-        if (! $progress) {
-            $now = now();
-            $id = DB::table('reader_reading_progress')->insertGetId([
-                'reader_id' => $readerId,
-                'book_id' => $bookId,
-                'progress_percent' => 0,
-                'current_page' => 1,
-                'total_pages' => null,
-                'last_opened_at' => $now,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-            $progress = DB::table('reader_reading_progress')->where('id', $id)->first();
-        } else {
-            DB::table('reader_reading_progress')
-                ->where('id', $progress->id)
-                ->update([
-                    'last_opened_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            $progress = DB::table('reader_reading_progress')->where('id', $progress->id)->first();
+        if (! $hasPurchased) {
+            $hasPurchased = DB::table('reader_book_purchases')
+                ->where('reader_id', $readerId)
+                ->where('book_id', $bookId)
+                ->exists();
         }
+
+        if (! $hasPurchased) {
+            return response()->json(['message' => 'Purchase the book before marking it as reading.'], 403);
+        }
+
+        $progress = null;
+
+        if ($this->hasReaderReadingProgressTable()) {
+            $progress = DB::table('reader_reading_progress')
+                ->where('reader_id', $readerId)
+                ->where('book_id', $bookId)
+                ->first();
+
+            if (! $progress) {
+                $now = now();
+                $id = DB::table('reader_reading_progress')->insertGetId([
+                    'reader_id' => $readerId,
+                    'book_id' => $bookId,
+                    'progress_percent' => 0,
+                    'current_page' => 1,
+                    'total_pages' => null,
+                    'last_opened_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+                $progress = DB::table('reader_reading_progress')->where('id', $id)->first();
+            } else {
+                DB::table('reader_reading_progress')
+                    ->where('id', $progress->id)
+                    ->update([
+                        'last_opened_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                $progress = DB::table('reader_reading_progress')->where('id', $progress->id)->first();
+            }
+        }
+
+        DB::table('user_library')->updateOrInsert(
+            [
+                'user_id' => $readerId,
+                'book_id' => $bookId,
+                'status' => 'reading',
+            ],
+            [
+                'added_at' => now(),
+            ]
+        );
 
         $this->recordActivity($readerId, $bookId, 'continue_reading');
 
@@ -396,9 +457,9 @@ class ReaderPortalController extends Controller
 
     public function addBookmark(Request $request): JsonResponse
     {
-        if (! $this->hasReaderBookmarksTable()) {
+        if (! $this->hasUserLibraryTable()) {
             return response()->json([
-                'message' => 'Reader bookmark tables are not ready yet. Please run migrations.',
+                'message' => 'Reader library tables are not ready yet. Please run migrations.',
             ], 503);
         }
 
@@ -411,14 +472,29 @@ class ReaderPortalController extends Controller
         ]);
 
         $now = now();
-        $bookmarkId = DB::table('reader_bookmarks')->insertGetId([
-            'reader_id' => $readerId,
-            'book_id' => $validated['book_id'],
-            'page_number' => $validated['page_number'] ?? null,
-            'note' => $validated['note'] ?? null,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
+        $bookmarkId = null;
+
+        if ($this->hasReaderBookmarksTable()) {
+            $bookmarkId = DB::table('reader_bookmarks')->insertGetId([
+                'reader_id' => $readerId,
+                'book_id' => $validated['book_id'],
+                'page_number' => $validated['page_number'] ?? null,
+                'note' => $validated['note'] ?? null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        DB::table('user_library')->updateOrInsert(
+            [
+                'user_id' => $readerId,
+                'book_id' => (int) $validated['book_id'],
+                'status' => 'bookmarked',
+            ],
+            [
+                'added_at' => $now,
+            ]
+        );
 
         $this->recordActivity($readerId, (int) $validated['book_id'], 'bookmark_added', [
             'page_number' => $validated['page_number'] ?? null,
@@ -434,9 +510,9 @@ class ReaderPortalController extends Controller
 
     public function removeBookmark(int $bookmarkId): JsonResponse
     {
-        if (! $this->hasReaderBookmarksTable()) {
+        if (! $this->hasUserLibraryTable()) {
             return response()->json([
-                'message' => 'Reader bookmark tables are not ready yet. Please run migrations.',
+                'message' => 'Reader library tables are not ready yet. Please run migrations.',
             ], 503);
         }
 
@@ -451,7 +527,14 @@ class ReaderPortalController extends Controller
             return response()->json(['message' => 'Bookmark not found.'], 404);
         }
 
-        DB::table('reader_bookmarks')->where('id', $bookmarkId)->delete();
+        if ($this->hasReaderBookmarksTable()) {
+            DB::table('reader_bookmarks')->where('id', $bookmarkId)->delete();
+            DB::table('user_library')
+                ->where('user_id', $readerId)
+                ->where('book_id', $bookmark->book_id)
+                ->where('status', 'bookmarked')
+                ->delete();
+        }
 
         $this->recordActivity($readerId, (int) $bookmark->book_id, 'bookmark_removed');
 
@@ -481,6 +564,195 @@ class ReaderPortalController extends Controller
             ->get();
 
         return response()->json(['data' => $activity]);
+    }
+
+    public function library(Request $request): JsonResponse
+    {
+        $readerId = (int) auth('reader')->id();
+        $query = $this->catalogBookQuery();
+
+        $search = trim((string) $request->query('search', ''));
+        $author = trim((string) $request->query('author', ''));
+        $category = trim((string) $request->query('category', ''));
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('b.title', 'like', '%' . $search . '%')
+                    ->orWhere('b.author', 'like', '%' . $search . '%')
+                    ->orWhere('b.isbn', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($author !== '') {
+            $query->where('b.author', 'like', '%' . $author . '%');
+        }
+
+        if ($category !== '' && Schema::hasColumn('books', 'category')) {
+            $query->where('b.category', 'like', '%' . $category . '%');
+        }
+
+        $books = $query->orderByDesc('b.id')->get();
+        $statusLookup = $this->readerLibraryStatusLookup($readerId);
+
+        $books = $books->map(function ($book) use ($statusLookup) {
+            $statuses = $statusLookup[(int) $book->id] ?? [];
+
+            return array_merge((array) $book, [
+                'library_statuses' => array_values($statuses),
+                'is_saved' => in_array('saved', $statuses, true) ? 1 : 0,
+                'is_bookmarked' => in_array('bookmarked', $statuses, true) ? 1 : 0,
+                'is_purchased' => in_array('purchased', $statuses, true) ? 1 : 0,
+                'is_reading' => in_array('reading', $statuses, true) ? 1 : 0,
+            ]);
+        });
+
+        return response()->json(['data' => $books]);
+    }
+
+    public function saveBook(int $bookId): JsonResponse
+    {
+        if (! $this->hasUserLibraryTable()) {
+            return response()->json(['message' => 'Reader library tables are not ready yet. Please run migrations.'], 503);
+        }
+
+        if (! DB::table('books')->where('id', $bookId)->exists()) {
+            return response()->json(['message' => 'Book not found.'], 404);
+        }
+
+        $readerId = (int) auth('reader')->id();
+        $now = now();
+
+        DB::table('user_library')->updateOrInsert(
+            [
+                'user_id' => $readerId,
+                'book_id' => $bookId,
+                'status' => 'saved',
+            ],
+            [
+                'added_at' => $now,
+            ]
+        );
+
+        return response()->json(['message' => 'Book saved to your library.'], 201);
+    }
+
+    public function removeLibraryStatus(int $bookId, string $status): JsonResponse
+    {
+        if (! $this->hasUserLibraryTable()) {
+            return response()->json(['message' => 'Reader library tables are not ready yet. Please run migrations.'], 503);
+        }
+
+        if (! in_array($status, ['saved', 'bookmarked', 'reading'], true)) {
+            return response()->json(['message' => 'Unsupported library status.'], 422);
+        }
+
+        $readerId = (int) auth('reader')->id();
+
+        if ($status === 'reading') {
+            $hasPurchased = DB::table('user_library')
+                ->where('user_id', $readerId)
+                ->where('book_id', $bookId)
+                ->where('status', 'purchased')
+                ->exists();
+
+            if (! $hasPurchased) {
+                $hasPurchased = DB::table('reader_book_purchases')
+                    ->where('reader_id', $readerId)
+                    ->where('book_id', $bookId)
+                    ->exists();
+            }
+
+            if (! $hasPurchased) {
+                return response()->json(['message' => 'Only purchased books can be marked as reading.'], 403);
+            }
+        }
+
+        DB::table('user_library')
+            ->where('user_id', $readerId)
+            ->where('book_id', $bookId)
+            ->where('status', $status)
+            ->delete();
+
+        if ($status === 'bookmarked' && $this->hasReaderBookmarksTable()) {
+            DB::table('reader_bookmarks')
+                ->where('reader_id', $readerId)
+                ->where('book_id', $bookId)
+                ->delete();
+        }
+
+        if ($status === 'reading' && $this->hasReaderReadingProgressTable()) {
+            DB::table('reader_reading_progress')
+                ->where('reader_id', $readerId)
+                ->where('book_id', $bookId)
+                ->delete();
+        }
+
+        return response()->json(['message' => 'Library status removed.']);
+    }
+
+    public function myLibrary(): JsonResponse
+    {
+        $readerId = (int) auth('reader')->id();
+        $lookup = $this->readerLibraryStatusLookup($readerId);
+        $books = $this->catalogBookQuery()->get()->keyBy('id');
+
+        $sections = [
+            'saved' => [],
+            'bookmarked' => [],
+            'purchased' => [],
+            'reading' => [],
+        ];
+
+        foreach ($lookup as $bookId => $statuses) {
+            $book = $books->get((int) $bookId);
+
+            if (! $book) {
+                continue;
+            }
+
+            foreach ($statuses as $status) {
+                if (! array_key_exists($status, $sections)) {
+                    continue;
+                }
+
+                $sections[$status][] = array_merge((array) $book, [
+                    'library_status' => $status,
+                    'library_statuses' => array_values($statuses),
+                ]);
+            }
+        }
+
+        return response()->json(['data' => $sections]);
+    }
+
+    public function history(Request $request): JsonResponse
+    {
+        if (! $this->hasTransactionsTable()) {
+            return response()->json(['data' => []]);
+        }
+
+        $readerId = (int) auth('reader')->id();
+        $range = trim((string) $request->query('range', 'all'));
+
+        $query = DB::table('transactions as t')
+            ->join('books as b', 'b.id', '=', 't.book_id')
+            ->where('t.user_id', $readerId)
+            ->select(
+                't.id',
+                't.book_id',
+                't.amount',
+                't.payment_status',
+                't.transaction_date',
+                'b.title as book_title',
+                'b.author as author'
+            )
+            ->orderByDesc('t.transaction_date');
+
+        if ($range === 'recent') {
+            $query->limit(10);
+        }
+
+        return response()->json(['data' => $query->get()]);
     }
 
     private function baseBookQuery(int $readerId)
@@ -612,6 +884,110 @@ class ReaderPortalController extends Controller
     private function hasReaderActivitiesTable(): bool
     {
         return Schema::hasTable('reader_activities');
+    }
+
+    private function hasUserLibraryTable(): bool
+    {
+        return Schema::hasTable('user_library');
+    }
+
+    private function hasTransactionsTable(): bool
+    {
+        return Schema::hasTable('transactions');
+    }
+
+    private function catalogBookQuery()
+    {
+        $descriptionExpr = $this->bookDescriptionExpr();
+        $categoryExpr = $this->bookCategoryExpr();
+        $coverImageExpr = $this->bookCoverExpr();
+        $ratingExpr = $this->bookRatingExpr();
+        $availableExpr = $this->bookAvailabilityExpr();
+
+        return DB::table('books as b')
+            ->leftJoin('publishers as p', 'b.publisher_id', '=', 'p.id')
+            ->select(
+                'b.id',
+                'b.title',
+                'b.author',
+                DB::raw($descriptionExpr . ' as description'),
+                DB::raw($this->bookIsbnExpr() . ' as isbn'),
+                DB::raw($this->bookPriceExpr() . ' as price'),
+                'b.created_at',
+                DB::raw($categoryExpr . ' as category'),
+                DB::raw($coverImageExpr . ' as cover_image_url'),
+                DB::raw($ratingExpr . ' as rating'),
+                DB::raw("COALESCE(p.name, 'N/A') as publisher"),
+                DB::raw($availableExpr . ' as available_copies')
+            );
+    }
+
+    private function readerLibraryStatusLookup(int $readerId): array
+    {
+        $rows = collect();
+
+        if ($this->hasUserLibraryTable()) {
+            $rows = $rows->merge(
+                DB::table('user_library as ul')
+                    ->where('ul.user_id', $readerId)
+                    ->select('ul.book_id', 'ul.status')
+                    ->get()
+            );
+        }
+
+        if ($this->hasReaderBookPurchasesTable()) {
+            $rows = $rows->merge(
+                DB::table('reader_book_purchases as rbp')
+                    ->where('rbp.reader_id', $readerId)
+                    ->select(DB::raw('rbp.book_id as book_id'), DB::raw("'purchased' as status"))
+                    ->get()
+            );
+        }
+
+        if ($this->hasReaderBookmarksTable()) {
+            $rows = $rows->merge(
+                DB::table('reader_bookmarks as rb')
+                    ->where('rb.reader_id', $readerId)
+                    ->select(DB::raw('rb.book_id as book_id'), DB::raw("'bookmarked' as status"))
+                    ->get()
+            );
+        }
+
+        if ($this->hasReaderReadingProgressTable()) {
+            $rows = $rows->merge(
+                DB::table('reader_reading_progress as rrp')
+                    ->where('rrp.reader_id', $readerId)
+                    ->select(DB::raw('rrp.book_id as book_id'), DB::raw("'reading' as status"))
+                    ->get()
+            );
+        }
+
+        if ($this->hasTransactionsTable()) {
+            $rows = $rows->merge(
+                DB::table('transactions as t')
+                    ->where('t.user_id', $readerId)
+                    ->where('t.payment_status', 'paid')
+                    ->select(DB::raw('t.book_id as book_id'), DB::raw("'purchased' as status"))
+                    ->get()
+            );
+        }
+
+        $lookup = [];
+
+        foreach ($rows as $row) {
+            $bookId = (int) $row->book_id;
+            $status = (string) $row->status;
+
+            if (! isset($lookup[$bookId])) {
+                $lookup[$bookId] = [];
+            }
+
+            if (! in_array($status, $lookup[$bookId], true)) {
+                $lookup[$bookId][] = $status;
+            }
+        }
+
+        return $lookup;
     }
 
     private function bookCategoryExpr(): string

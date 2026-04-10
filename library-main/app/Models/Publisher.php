@@ -14,8 +14,11 @@ class Publisher extends Authenticatable implements JWTSubject
     protected $fillable = [
         'name',
         'email',
+        'description',
         'phone',
         'address',
+        'city',
+        'country',
         'password',
     ];
 

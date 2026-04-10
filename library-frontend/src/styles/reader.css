@@ -69,6 +69,26 @@
   color: #6c7c9a;
 }
 
+.reader-summary-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.reader-sections-panel .card-body {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.reader-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.reader-summary-link:hover {
+  transform: translateY(-2px);
+}
+
 .reader-section {
   border-radius: var(--radius);
   border: 1px solid #dbe6fa;
@@ -538,6 +558,112 @@
   gap: 1rem;
 }
 
+.reader-library-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.reader-library-toolbar,
+.reader-history-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.reader-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.reader-library-card {
+  min-height: 100%;
+  align-items: start;
+}
+
+.reader-library-card .reader-book-content {
+  gap: 0.7rem;
+}
+
+.reader-library-description {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.reader-status-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.reader-status-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #d5e1f7;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #577095;
+  background: #f4f8ff;
+  text-transform: capitalize;
+}
+
+.reader-status-pill.active {
+  color: #114ea9;
+  border-color: #abc4f6;
+  background: #e5efff;
+}
+
+.reader-tab-bar,
+.reader-toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.reader-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #d5e1f7;
+  padding: 0.65rem 0.95rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+  color: #2b3d61;
+  font-weight: 700;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.reader-tab span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  background: #e8effd;
+  font-size: 0.78rem;
+}
+
+.reader-tab.active {
+  border-color: #8cb0f7;
+  box-shadow: 0 10px 18px rgba(15, 103, 248, 0.14);
+  color: #114ea9;
+}
+
+.reader-tab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(15, 103, 248, 0.12);
+}
+
+.reader-history-table {
+  min-width: 760px;
+}
+
 .reader-details-cover {
   width: 130px;
   height: 176px;
@@ -574,6 +700,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .reader-sections-grid {
+    grid-template-columns: 1fr;
+  }
+
   .reader-mid-grid,
   .reader-details-grid {
     grid-template-columns: 1fr;
@@ -608,6 +738,21 @@
   .reader-purchased-grid,
   .reader-browse-grid {
     grid-template-columns: 1fr;
+  }
+
+  .reader-library-toolbar,
+  .reader-history-toolbar {
+    align-items: stretch;
+  }
+
+  .reader-tab-bar,
+  .reader-toggle-group {
+    width: 100%;
+  }
+
+  .reader-tab {
+    flex: 1 1 calc(50% - 0.5rem);
+    justify-content: center;
   }
 
   .reader-books-table {

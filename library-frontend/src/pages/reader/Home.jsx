@@ -28,6 +28,7 @@ const ReaderHome = () => {
   const purchasedBooks = dashboard?.purchased_books || [];
   const readingProgress = dashboard?.reading_progress || [];
   const recentReads = dashboard?.recent_reads || [];
+  const activityCount = dashboard?.activity?.length || 0;
 
   const purchasedById = useMemo(() => {
     const map = new Map();
@@ -61,6 +62,27 @@ const ReaderHome = () => {
       averageProgress,
     };
   }, [mergedBooks, purchasedBooks, readingProgress]);
+
+  const sectionCards = useMemo(() => ([
+    {
+      path: '/reader/library',
+      label: 'Library',
+      value: summary.totalBooks,
+      description: 'Browse the full catalog, save titles, bookmark pages, or buy a book.',
+    },
+    {
+      path: '/reader/my-library',
+      label: 'My Library',
+      value: summary.purchasedCount + summary.bookmarkedCount,
+      description: 'Review saved, bookmarked, purchased, and reading books in one place.',
+    },
+    {
+      path: '/reader/history',
+      label: 'History',
+      value: activityCount,
+      description: 'Check recent transactions and purchase history at a glance.',
+    },
+  ]), [activityCount, summary.bookmarkedCount, summary.purchasedCount, summary.totalBooks]);
 
   const filteredBooks = useMemo(() => {
     const searchTerm = filters.search.trim().toLowerCase();
@@ -235,6 +257,21 @@ const ReaderHome = () => {
           <h3>{summary.averageProgress.toFixed(0)}%</h3>
           <small>Across your active reads</small>
         </article>
+      </section>
+
+      <section className="reader-section reader-sections-panel">
+        <div className="card-header reader-section-header">
+          <h3>Reader Sections</h3>
+        </div>
+        <div className="card-body reader-sections-grid">
+          {sectionCards.map((section) => (
+            <Link key={section.path} to={section.path} className="reader-summary-card reader-summary-link">
+              <p className="reader-summary-label">{section.label}</p>
+              <h3>{section.value}</h3>
+              <small>{section.description}</small>
+            </Link>
+          ))}
+        </div>
       </section>
 
       {error && <p className="issue-message issue-error">{error}</p>}
