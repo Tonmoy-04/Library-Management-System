@@ -118,7 +118,13 @@ const Library = () => {
               <tr key={book.id}>
                 <td data-label="Title">
                   <div className="reader-title-cell">
-                    <strong className="reader-title-main">{book.title}</strong>
+                    {isPurchased ? (
+                      <Link to={`/reader/books/${book.id}?openPdf=1`} className="reader-title-main">
+                        {book.title}
+                      </Link>
+                    ) : (
+                      <strong className="reader-title-main">{book.title}</strong>
+                    )}
                     <span className="reader-title-sub">Digital Edition</span>
                   </div>
                 </td>

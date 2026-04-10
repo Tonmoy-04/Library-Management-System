@@ -15,6 +15,7 @@ const Publishers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [processingId, setProcessingId] = useState(null);
+  const [selectedPdf, setSelectedPdf] = useState(null);
 
   const fetchQueue = async (status = statusFilter) => {
     try {
@@ -59,7 +60,18 @@ const Publishers = () => {
     return submissions.map((row) => {
       const style = statusStyles[row.status] || statusStyles.pending;
       return {
-        title: row.title,
+        title: row.pdf_url ? (
+          <button
+            type="button"
+            className="link-button"
+            onClick={() => setSelectedPdf({ title: row.title, url: row.pdf_url })}
+            title="Preview submission PDF"
+          >
+            {row.title}
+          </button>
+        ) : (
+          row.title
+        ),
         author: row.author,
         publisher_id: row.publisher_id,
         price: `$${Number(row.price || 0).toFixed(2)}`,
@@ -125,6 +137,28 @@ const Publishers = () => {
           data={tableData}
           actions={tableActions}
         />
+      )}
+
+      {selectedPdf && (
+        <div className="admin-pdf-modal" onClick={() => setSelectedPdf(null)}>
+          <div className="admin-pdf-content" onClick={(event) => event.stopPropagation()}>
+            <div className="admin-pdf-header">
+              <h3>{selectedPdf.title}</h3>
+              <button type="button" className="admin-pdf-close" onClick={() => setSelectedPdf(null)}>X</button>
+            </div>
+            <div className="admin-pdf-body">
+              <iframe
+                src={`${selectedPdf.url}#toolbar=1&navpanes=0&scrollbar=1`}
+                title={selectedPdf.title}
+                className="admin-pdf-iframe"
+              />
+            </div>
+            <div className="admin-pdf-footer">
+              <a href={selectedPdf.url} target="_blank" rel="noreferrer" className="btn btn-primary">Open PDF</a>
+              <button type="button" className="btn btn-secondary" onClick={() => setSelectedPdf(null)}>Close</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

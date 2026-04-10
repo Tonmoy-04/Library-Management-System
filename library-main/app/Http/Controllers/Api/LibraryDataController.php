@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class LibraryDataController extends Controller
@@ -30,8 +31,13 @@ class LibraryDataController extends Controller
             $query->where('status', $status);
         }
 
+        $submissions = $query->get()->map(function ($submission) {
+            $submission->pdf_url = $this->resolvePublicFileUrl($submission->file_url ?? null);
+            return $submission;
+        });
+
         return response()->json([
-            'data' => $query->get(),
+            'data' => $submissions,
         ]);
     }
 
@@ -87,6 +93,32 @@ class LibraryDataController extends Controller
             'message' => 'Submission updated successfully.',
             'data' => $submission,
         ]);
+    }
+
+    private function resolvePublicFileUrl(?string $path): ?string
+    {
+        if ($path === null) {
+            return null;
+        }
+
+        $trimmed = trim($path);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if (Str::startsWith($trimmed, ['http://', 'https://'])) {
+            return $trimmed;
+        }
+
+        if (Str::startsWith($trimmed, '/storage/')) {
+            return request()->getSchemeAndHttpHost() . $trimmed;
+        }
+
+        if (Str::startsWith($trimmed, 'storage/')) {
+            return request()->getSchemeAndHttpHost() . '/' . $trimmed;
+        }
+
+        return request()->getSchemeAndHttpHost() . '/storage/' . ltrim($trimmed, '/');
     }
 
     public function readers(): JsonResponse
