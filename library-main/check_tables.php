@@ -20,13 +20,16 @@ try {
         echo "  - " . $table->TABLE_NAME . "\n";
     }
     
-    echo "\nExpected Tables from Developer Branch:\n";
+    echo "\nExpected Tables from Connected Schema:\n";
     echo "  - users\n";
     echo "  - profiles\n";
     echo "  - readers\n";
     echo "  - publishers\n";
     echo "  - books\n";
+    echo "  - bookshelf\n";
     echo "  - book_issues\n";
+    echo "  - feedback\n";
+    echo "  - admin_actions_log\n";
     echo "  - password_resets\n";
     echo "  - password_reset_tokens\n";
     echo "  - failed_jobs\n";
