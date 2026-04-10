@@ -674,6 +674,15 @@
   gap: 0.6rem;
 }
 
+.reader-details-page .page-header {
+  margin-bottom: 0;
+}
+
+.reader-detail-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
 @keyframes readerLiftIn {
   from {
     opacity: 0;
@@ -815,6 +824,14 @@
 
   .reader-modal-body {
     max-height: none;
+  }
+
+  .reader-details-page .page-header {
+    gap: 0.75rem;
+  }
+
+  .reader-details-page .page-header .btn {
+    width: 100%;
   }
 }
 

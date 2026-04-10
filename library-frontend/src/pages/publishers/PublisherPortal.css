@@ -1,6 +1,7 @@
+/* Publisher Portal Sidebar Navigation */
 .publisher-portal .dashboard-layout {
   display: flex;
-  min-height: 100vh;
+  min-height: calc(100vh - 140px);
   padding-top: 64px;
   gap: 0;
 }
@@ -22,7 +23,7 @@
   margin-left: 0;
   padding: 2rem;
   background-color: var(--bg-main);
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 140px);
 }
 
 .publisher-portal .footer {

@@ -95,11 +95,15 @@ export const publisherAPI = {
   createBook: (publisherId, payload) => api.post(`/publisher-portal/${publisherId}/books`, payload),
   updateBook: (publisherId, bookId, payload) => api.put(`/publisher-portal/${publisherId}/books/${bookId}`, payload),
   deleteBook: (publisherId, bookId) => api.delete(`/publisher-portal/${publisherId}/books/${bookId}`),
+  getBookshelfSubmissions: (publisherId) => api.get(`/publisher-portal/${publisherId}/books`),
+  submitBookToBookshelf: (publisherId, payload) => api.post(`/publisher-portal/${publisherId}/books`, payload),
   getDashboard: (publisherId) => api.get(`/publisher-portal/${publisherId}/dashboard`),
   getReports: (publisherId, params) => api.get(`/publisher-portal/${publisherId}/reports`, { params }),
   getFeedback: (publisherId, params) => api.get(`/publisher-portal/${publisherId}/feedback`, { params }),
   replyToFeedback: (feedbackId, payload) => api.post(`/publisher-portal/feedback/${feedbackId}/reply`, payload),
   updateFeedbackStatus: (feedbackId, payload) => api.put(`/publisher-portal/feedback/${feedbackId}/status`, payload),
+  getPublisherReviewQueue: (status = 'pending') => api.get('/publisher-bookshelf', { params: { status } }),
+  reviewBookSubmission: (bookId, action) => api.post(`/publisher-bookshelf/${bookId}/review`, { action }),
 };
 
 export const dashboardAPI = {
