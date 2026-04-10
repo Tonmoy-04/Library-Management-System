@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import api, { readerAuthAPI, publisherAuthAPI } from '../services/api';
 import '../styles/global.css';
@@ -7,10 +7,15 @@ import '../styles/form.css';
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('admin');
+  const initialRole = useMemo(() => {
+    const queryRole = searchParams.get('role');
+    return ['admin', 'publisher', 'reader'].includes(queryRole) ? queryRole : 'admin';
+  }, [searchParams]);
+  const [role, setRole] = useState(initialRole);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -100,7 +105,7 @@ const Login = () => {
           <p style={{ color: 'var(--text-muted)' }}>Welcome back! Please login to your account.</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} autoComplete="on">
           {error && (
             <div style={{
               color: '#ef4444',
@@ -145,6 +150,8 @@ const Login = () => {
             <input
               type="email"
               id="email"
+              name="email"
+              autoComplete="username"
               className="form-control"
               placeholder="user@aust.edu"
               value={email}
@@ -158,6 +165,8 @@ const Login = () => {
             <input
               type="password"
               id="password"
+              name="password"
+              autoComplete="current-password"
               className="form-control"
               placeholder="********"
               value={password}

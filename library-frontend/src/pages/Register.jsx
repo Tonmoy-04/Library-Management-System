@@ -155,7 +155,7 @@ const Register = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} autoComplete="on">
           {error && (
             <div style={{
               color: '#991b1b',
@@ -208,6 +208,7 @@ const Register = () => {
                 type="text"
                 id="name"
                 name="name"
+                autoComplete="name"
                 className="form-control"
                 placeholder="John Doe"
                 value={formData.name}
@@ -222,6 +223,7 @@ const Register = () => {
               type="email"
               id="email"
               name="email"
+              autoComplete="username"
               className="form-control"
               placeholder="user@aust.edu"
               value={formData.email}
@@ -237,6 +239,7 @@ const Register = () => {
                   type="text"
                   id="phone"
                   name="phone"
+                  autoComplete="tel"
                   className="form-control"
                   placeholder="017XXXXXXXX"
                   value={formData.phone}
@@ -250,6 +253,7 @@ const Register = () => {
                   type="text"
                   id="address"
                   name="address"
+                  autoComplete="street-address"
                   className="form-control"
                   placeholder="Your address"
                   value={formData.address}
@@ -267,6 +271,7 @@ const Register = () => {
                   type="text"
                   id="name"
                   name="name"
+                  autoComplete="organization"
                   className="form-control"
                   placeholder="John Doe"
                   value={formData.name}
@@ -280,6 +285,7 @@ const Register = () => {
                   type="text"
                   id="phone"
                   name="phone"
+                  autoComplete="tel"
                   className="form-control"
                   placeholder="017XXXXXXXX"
                   value={formData.phone}
@@ -307,6 +313,7 @@ const Register = () => {
                   type="text"
                   id="city"
                   name="city"
+                  autoComplete="address-level2"
                   className="form-control"
                   placeholder="Dhaka"
                   value={formData.city}
@@ -320,6 +327,7 @@ const Register = () => {
                   type="text"
                   id="country"
                   name="country"
+                  autoComplete="country-name"
                   className="form-control"
                   placeholder="Bangladesh"
                   value={formData.country}
@@ -335,6 +343,7 @@ const Register = () => {
               type="password"
               id="password"
               name="password"
+              autoComplete="new-password"
               className="form-control"
               placeholder="********"
               value={formData.password}
@@ -348,6 +357,7 @@ const Register = () => {
               type="password"
               id="password_confirmation"
               name="password_confirmation"
+              autoComplete="new-password"
               className="form-control"
               placeholder="********"
               value={formData.password_confirmation}
@@ -374,7 +384,7 @@ const Register = () => {
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
             Already have an account?{' '}
             <Link
-              to="/login"
+              to={`/login?role=${role}`}
               style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}
             >
               Login here
