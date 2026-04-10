@@ -26,11 +26,37 @@ const Publishers = () => {
   const [deleteNoHover, setDeleteNoHover] = useState(false);
   const [deleteYesHover, setDeleteYesHover] = useState(false);
 
+  const normalizeWebsiteUrl = (website) => {
+    const trimmed = (website || '').trim();
+    if (!trimmed) return null;
+
+    const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+    try {
+      const parsed = new URL(withProtocol);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return null;
+      }
+      return parsed.href;
+    } catch {
+      return null;
+    }
+  };
+
   const mapPublishersForTable = (rows) => rows.map((publisher) => ({
     id: publisher.id,
     name: publisher.name,
     email: publisher.email || 'N/A',
-    website: publisher.website || 'N/A',
+    website: (() => {
+      const websiteUrl = normalizeWebsiteUrl(publisher.website);
+      if (!websiteUrl) return 'N/A';
+
+      return (
+        <a href={websiteUrl} target="_blank" rel="noopener noreferrer">
+          {publisher.website}
+        </a>
+      );
+    })(),
     location: publisher.location || 'N/A',
   }));
 
