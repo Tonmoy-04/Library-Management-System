@@ -101,16 +101,16 @@ const Navbar = ({ showMenuToggle = false, isMenuOpen: isSidebarOpen = false, onM
             <div className="profile-menu-divider" />
 
             <button type="button" className="profile-menu-item" onClick={() => handleMenuAction('profile')}>
-              <span className="profile-menu-icon">👤</span>
-              <span>My Profile</span>
+              <span className="profile-menu-icon">•</span>
+              <span>View Profile</span>
             </button>
             <button type="button" className="profile-menu-item" onClick={() => handleMenuAction('settings')}>
-              <span className="profile-menu-icon">⚙️</span>
-              <span>Settings</span>
+              <span className="profile-menu-icon">⚙</span>
+              <span>Settings & Preferences</span>
             </button>
             <button type="button" className="profile-menu-item profile-menu-item-danger" onClick={() => handleMenuAction('logout')}>
-              <span className="profile-menu-icon">🚪</span>
-              <span>Logout</span>
+              <span className="profile-menu-icon">→</span>
+              <span>Sign Out</span>
             </button>
           </div>
         )}
