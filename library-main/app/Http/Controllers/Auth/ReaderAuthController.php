@@ -14,7 +14,7 @@ class ReaderAuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:readers,email',
-            'phone' => 'required|string|max:50',
+            'phone' => 'required|digits:11',
             'address' => 'required|string|max:1000',
             'password' => 'required|string|min:8|confirmed',
         ]);
@@ -101,7 +101,7 @@ class ReaderAuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:readers,email,' . $reader->id,
-            'phone' => 'nullable|string|max:50',
+            'phone' => 'nullable|digits:11',
         ]);
 
         $reader->update([

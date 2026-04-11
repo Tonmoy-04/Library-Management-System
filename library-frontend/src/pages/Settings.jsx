@@ -59,7 +59,8 @@ const Settings = () => {
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
+    const nextValue = name === 'phone' ? value.replace(/\D/g, '').slice(0, 11) : value;
+    setProfile((prev) => ({ ...prev, [name]: nextValue }));
   };
 
   const handlePasswordChange = (e) => {
@@ -75,6 +76,11 @@ const Settings = () => {
     e.preventDefault();
     if (!profile.name.trim()) {
       setError('Name is required');
+      return;
+    }
+
+    if (profile.phone && !/^\d{11}$/.test(profile.phone)) {
+      setError('Phone number must be exactly 11 digits');
       return;
     }
 
@@ -232,6 +238,9 @@ const Settings = () => {
                     onChange={handleProfileChange}
                     placeholder="Enter your phone number"
                     disabled={loading}
+                    inputMode="numeric"
+                    pattern="\d{11}"
+                    maxLength={11}
                   />
                 </div>
 

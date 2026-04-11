@@ -132,12 +132,18 @@ const Library = () => {
         setError('Please fill all payment fields to complete purchase.');
         return;
       }
+
+      if (!/^\d{15}$/.test(paymentForm.card_number.trim())) {
+        setError('Card number must be exactly 15 digits.');
+        return;
+      }
     }
 
     await withAction(
       () => readerPortalAPI.purchaseBook(selectedBookForPayment.id, {
         payment_method: isPaidBook ? paymentForm.payment_method : 'free',
         payment_reference: `WEB-${Date.now()}`,
+        card_number: isPaidBook ? paymentForm.card_number.trim() : null,
       }),
       isPaidBook ? 'Payment successful. Book purchased.' : 'Book unlocked successfully.'
     );
@@ -352,9 +358,12 @@ const Library = () => {
                       id="card_number"
                       className="form-control"
                       value={paymentForm.card_number}
-                      onChange={(e) => setPaymentForm((prev) => ({ ...prev, card_number: e.target.value }))}
+                      onChange={(e) => setPaymentForm((prev) => ({ ...prev, card_number: e.target.value.replace(/\D/g, '').slice(0, 15) }))}
                       disabled={actionLoading}
                       required
+                      inputMode="numeric"
+                      pattern="\d{15}"
+                      maxLength={15}
                     />
                   </div>
 

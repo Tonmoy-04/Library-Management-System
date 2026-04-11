@@ -14,6 +14,7 @@ class PublisherAuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:publishers,email',
+            'phone' => 'required|digits:11',
             'description' => 'required|string|max:500',
             'city' => 'required|string|max:255',
             'country' => 'required|string|max:255',
@@ -23,6 +24,7 @@ class PublisherAuthController extends Controller
         $publisher = Publisher::create([
             'name' => $validated['name'] ?? $validated['email'],
             'email' => $validated['email'],
+            'phone' => $validated['phone'],
             'description' => $validated['description'],
             'city' => $validated['city'],
             'country' => $validated['country'],
@@ -101,7 +103,7 @@ class PublisherAuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:publishers,email,' . $publisher->id,
-            'phone' => 'nullable|string|max:50',
+            'phone' => 'nullable|digits:11',
         ]);
 
         $publisher->update([
