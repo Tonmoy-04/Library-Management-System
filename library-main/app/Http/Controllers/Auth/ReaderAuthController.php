@@ -25,6 +25,9 @@ class ReaderAuthController extends Controller
             'phone' => $validated['phone'],
             'address' => $validated['address'],
             'password' => Hash::make($validated['password']),
+            'is_online_registered' => true,
+            'is_suspended' => false,
+            'suspended_at' => null,
         ]);
 
         return response()->json([
@@ -41,11 +44,17 @@ class ReaderAuthController extends Controller
             'password' => 'required',
         ]);
 
-        $credentials = $request->only('email', 'password');
+        $reader = Reader::query()->where('email', $request->input('email'))->first();
 
-        if (! $token = auth('reader')->attempt($credentials)) {
+        if (! $reader || ! Hash::check($request->input('password'), $reader->password)) {
             return response()->json(['message' => 'Invalid email or password'], 401);
         }
+
+        if ((bool) $reader->is_suspended) {
+            return response()->json(['message' => 'Your account has been suspended. Please contact admin.'], 403);
+        }
+
+        $token = auth('reader')->login($reader);
 
         return response()->json([
             'message' => 'Login successful',

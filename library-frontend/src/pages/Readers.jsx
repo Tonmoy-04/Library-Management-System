@@ -5,8 +5,12 @@ import '../styles/dashboard.css';
 
 const Readers = () => {
   const [readers, setReaders] = useState([]);
+  const [onlineReaders, setOnlineReaders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingOnline, setLoadingOnline] = useState(true);
   const [error, setError] = useState('');
+  const [onlineError, setOnlineError] = useState('');
+  const [suspendingId, setSuspendingId] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingReader, setEditingReader] = useState(null);
   const [readerForm, setReaderForm] = useState({
@@ -40,17 +44,37 @@ const Readers = () => {
     setReaders(rows);
   };
 
+  const fetchOnlineReaders = async () => {
+    const response = await readerAPI.getOnline();
+    const rows = response.data?.data || [];
+    setOnlineReaders(rows);
+  };
+
   useEffect(() => {
     const bootstrap = async () => {
       setLoading(true);
+      setLoadingOnline(true);
       setError('');
+      setOnlineError('');
 
       try {
-        await fetchReaders();
+        const [offlineResult, onlineResult] = await Promise.allSettled([
+          fetchReaders(),
+          fetchOnlineReaders(),
+        ]);
+
+        if (offlineResult.status === 'rejected') {
+          setError(offlineResult.reason?.response?.data?.message || 'Failed to load offline readers.');
+        }
+
+        if (onlineResult.status === 'rejected') {
+          setOnlineError(onlineResult.reason?.response?.data?.message || 'Failed to load online readers.');
+        }
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load readers.');
       } finally {
         setLoading(false);
+        setLoadingOnline(false);
       }
     };
 
@@ -61,6 +85,59 @@ const Readers = () => {
     { label: 'Edit', type: 'edit', onClick: (_row, rowIndex) => openEditModal(readers[rowIndex]) },
     { label: 'Delete', type: 'delete', onClick: (_row, rowIndex) => openDeleteModal(readers[rowIndex]) },
   ];
+
+  const onlineActions = [
+    {
+      label: 'Suspend/Unsuspend',
+      type: 'edit',
+      isDisabled: (_row, rowIndex) => suspendingId === onlineReaders[rowIndex]?.id,
+      disabledTitle: 'Updating suspension status...',
+      onClick: async (_row, rowIndex) => {
+        const target = onlineReaders[rowIndex];
+        if (!target) {
+          return;
+        }
+
+        const nextSuspended = !target.is_suspended;
+        const confirmationText = nextSuspended
+          ? `Suspend ${target.name}? This reader will not be able to login.`
+          : `Unsuspend ${target.name}? This reader will be able to login again.`;
+
+        if (!window.confirm(confirmationText)) {
+          return;
+        }
+
+        try {
+          setSuspendingId(target.id);
+          setOnlineError('');
+          await readerAPI.setSuspension(target.id, nextSuspended);
+          await fetchOnlineReaders();
+        } catch (err) {
+          setOnlineError(err.response?.data?.message || 'Failed to update reader suspension status.');
+        } finally {
+          setSuspendingId(null);
+        }
+      },
+    },
+  ];
+
+  const mapOnlineReadersForTable = (rows) => rows.map((reader) => ({
+    id: reader.id,
+    name: reader.name,
+    email: reader.email || 'N/A',
+    phone: reader.phone || 'N/A',
+    status: (
+      <span
+        className="status-badge"
+        style={{
+          backgroundColor: reader.is_suspended ? '#fee2e2' : '#dcfce7',
+          color: reader.is_suspended ? '#991b1b' : '#166534',
+        }}
+      >
+        {reader.is_suspended ? 'Suspended' : 'Active'}
+      </span>
+    ),
+  }));
 
   const openAddModal = () => {
     setFormError('');
@@ -188,12 +265,13 @@ const Readers = () => {
       <div className="page-header">
         <div className="page-title">
           <h1>Readers Management</h1>
-          <p>Manage library members and their information.</p>
+          <p>Manage offline readers and monitor online registered reader accounts.</p>
         </div>
         <button className="btn btn-primary" onClick={openAddModal}>+ Add Reader</button>
       </div>
 
-      {loading && <p>Loading readers...</p>}
+      <h2 style={{ marginBottom: '0.75rem' }}>Offline Readers</h2>
+      {loading && <p>Loading offline readers...</p>}
       {error && <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{error}</p>}
       {deleteError && !showDeleteModal && (
         <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{deleteError}</p>
@@ -211,6 +289,22 @@ const Readers = () => {
       ) : (
         !loading && <p>No readers found in the database.</p>
       )}
+
+      <div style={{ marginTop: '2rem' }}>
+        <h2 style={{ marginBottom: '0.75rem' }}>Online Registered Readers</h2>
+        {loadingOnline && <p>Loading online readers...</p>}
+        {onlineError && <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{onlineError}</p>}
+
+        {onlineReaders.length > 0 ? (
+          <Table
+            columns={['ID', 'Name', 'Email', 'Phone', 'Status']}
+            data={mapOnlineReadersForTable(onlineReaders)}
+            actions={onlineActions}
+          />
+        ) : (
+          !loadingOnline && <p>No online registered readers found.</p>
+        )}
+      </div>
 
       {showAddModal && (
         <div className="modal-backdrop" onClick={closeAddModal}>
