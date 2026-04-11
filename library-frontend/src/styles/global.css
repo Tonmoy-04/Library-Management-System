@@ -7,6 +7,7 @@
   --text-muted: #647088;
   --bg-main: #f4f7ff;
   --bg-card: #ffffff;
+  --bg-hover: #f3f7ff;
   --border-color: #d9e4f6;
   --shadow: 0 8px 24px rgba(28, 36, 52, 0.08);
   --shadow-hover: 0 14px 40px rgba(15, 103, 248, 0.14);
@@ -224,13 +225,14 @@ input {
 :root.dark-mode {
   --primary-color: #5ba3ff;
   --primary-hover: #4a93ef;
-  --secondary-color: #1a2a3a;
+  --secondary-color: #202c3d;
   --accent-color: #00d4aa;
-  --text-main: #e8e8e8;
-  --text-muted: #a8a8a8;
-  --bg-main: #0a0a0a;
-  --bg-card: #1a1a1a;
-  --border-color: #2a2a2a;
+  --text-main: #e2ebfb;
+  --text-muted: #a8b8cf;
+  --bg-main: #0f1722;
+  --bg-card: #18212d;
+  --bg-hover: #243245;
+  --border-color: #324355;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   --shadow-hover: 0 14px 40px rgba(91, 163, 255, 0.15);
 }

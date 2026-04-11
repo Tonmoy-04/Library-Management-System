@@ -12,6 +12,16 @@
   --shadow-light: rgba(0, 0, 0, 0.08);
 }
 
+:root.dark-mode {
+  --text-main: #e2ebfb;
+  --text-muted: #a8b8cf;
+  --border-color: #324355;
+  --bg-input: #1b2532;
+  --bg-card: #18212d;
+  --bg-hover: #243245;
+  --shadow-light: rgba(0, 0, 0, 0.35);
+}
+
 .bookshelf {
   padding: 2rem 0;
   animation: fadeIn 0.5s ease-in;
@@ -626,4 +636,44 @@ textarea.form-control {
   .modal-actions .btn {
     width: 100%;
   }
+}
+
+:root.dark-mode .bookshelf-header {
+  background: #1d2836;
+}
+
+:root.dark-mode .book-modal,
+:root.dark-mode .books-table,
+:root.dark-mode .search-input,
+:root.dark-mode .filter-dropdown,
+:root.dark-mode .form-control {
+  background: #18212d;
+}
+
+:root.dark-mode .books-table thead,
+:root.dark-mode .empty-state,
+:root.dark-mode .btn-secondary,
+:root.dark-mode .modal-close:hover,
+:root.dark-mode .books-table tbody tr:hover {
+  background: #243245;
+}
+
+:root.dark-mode .btn-secondary:hover {
+  background: #2d3d52;
+}
+
+:root.dark-mode .books-table th,
+:root.dark-mode .book-cell,
+:root.dark-mode .modal-header h2,
+:root.dark-mode .form-group label {
+  color: #e5ecf8;
+}
+
+:root.dark-mode .book-author,
+:root.dark-mode .book-date,
+:root.dark-mode .header-title p,
+:root.dark-mode .loading-state p,
+:root.dark-mode .empty-message,
+:root.dark-mode .modal-close {
+  color: #a8b8cf;
 }
