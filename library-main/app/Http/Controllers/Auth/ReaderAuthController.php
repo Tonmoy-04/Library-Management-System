@@ -79,4 +79,59 @@ class ReaderAuthController extends Controller
 
         return redirect('/');
     }
+
+    public function forgotPasswordReset(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|exists:readers,email',
+            'new_password' => 'required|string|min:8',
+        ]);
+
+        $reader = Reader::query()->where('email', $validated['email'])->firstOrFail();
+        $reader->password = Hash::make($validated['new_password']);
+        $reader->save();
+
+        return response()->json(['message' => 'Password reset successful. You can now log in with your new password.']);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $reader = auth('reader')->user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:readers,email,' . $reader->id,
+            'phone' => 'nullable|string|max:50',
+        ]);
+
+        $reader->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? $reader->phone,
+        ]);
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+            'user' => $reader->fresh(),
+        ]);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8',
+        ]);
+
+        $reader = auth('reader')->user();
+
+        if (! Hash::check($validated['current_password'], $reader->password)) {
+            return response()->json(['message' => 'Current password is incorrect.'], 422);
+        }
+
+        $reader->password = Hash::make($validated['new_password']);
+        $reader->save();
+
+        return response()->json(['message' => 'Password changed successfully.']);
+    }
 }

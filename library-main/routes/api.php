@@ -10,21 +10,27 @@ use App\Http\Controllers\Api\ReaderPortalController;
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
+    Route::post('forgot-password-reset', [AuthController::class, 'forgotPasswordReset']);
 
     Route::middleware('auth:api')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::get('me', [AuthController::class, 'me']);
+        Route::put('profile', [AuthController::class, 'updateProfile']);
+        Route::post('change-password', [AuthController::class, 'changePassword']);
     });
 });
 
 Route::prefix('reader')->group(function () {
     Route::post('register', [ReaderAuthController::class, 'register']);
     Route::post('login', [ReaderAuthController::class, 'login']);
+    Route::post('forgot-password-reset', [ReaderAuthController::class, 'forgotPasswordReset']);
 
     Route::middleware('auth:reader')->group(function () {
         Route::post('logout', [ReaderAuthController::class, 'logout']);
         Route::get('me', [ReaderAuthController::class, 'me']);
+        Route::put('profile', [ReaderAuthController::class, 'updateProfile']);
+        Route::post('change-password', [ReaderAuthController::class, 'changePassword']);
         Route::get('library', [ReaderPortalController::class, 'library']);
         Route::post('library/{bookId}/save', [ReaderPortalController::class, 'saveBook']);
         Route::delete('library/{bookId}/status/{status}', [ReaderPortalController::class, 'removeLibraryStatus']);
@@ -49,10 +55,13 @@ Route::prefix('reader')->group(function () {
 Route::prefix('publisher')->group(function () {
     Route::post('register', [PublisherAuthController::class, 'register']);
     Route::post('login', [PublisherAuthController::class, 'login']);
+    Route::post('forgot-password-reset', [PublisherAuthController::class, 'forgotPasswordReset']);
 
     Route::middleware('auth:publisher')->group(function () {
         Route::post('logout', [PublisherAuthController::class, 'logout']);
         Route::get('me', [PublisherAuthController::class, 'me']);
+        Route::put('profile', [PublisherAuthController::class, 'updateProfile']);
+        Route::post('change-password', [PublisherAuthController::class, 'changePassword']);
     });
 });
 

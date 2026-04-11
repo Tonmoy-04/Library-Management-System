@@ -273,6 +273,37 @@ input {
   color: #e8e8e8;
 }
 
+:root.dark-mode .profile-menu-panel {
+  background: #162233;
+  border-color: #35506f;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.4);
+}
+
+:root.dark-mode .profile-menu-card {
+  background:
+    linear-gradient(180deg, #24344a 0%, #1e2d41 100%),
+    radial-gradient(circle at top right, rgba(91, 163, 255, 0.2), transparent 45%);
+  border-color: #4c6787;
+  color: #e9f1ff;
+}
+
+:root.dark-mode .profile-menu-name {
+  color: #eaf2ff;
+}
+
+:root.dark-mode .profile-menu-email {
+  color: #c1d0e6;
+}
+
+:root.dark-mode .profile-menu-divider {
+  background: linear-gradient(90deg, transparent, #3d5575, transparent);
+}
+
+:root.dark-mode .profile-menu-icon {
+  background: #2a3e57;
+  color: #dce9ff;
+}
+
 /* Project-wide dark hardening for legacy light surfaces */
 :root.dark-mode .card,
 :root.dark-mode .table-container,

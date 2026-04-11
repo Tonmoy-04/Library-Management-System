@@ -256,23 +256,60 @@ class PublisherPortalController extends Controller
                     ->toArray();
             }
 
-            // Performance metrics
+            // Performance metrics (computed from feedback when available)
+            $totalReviews = 0;
+            $avgRating = 0.0;
+            if (! empty($publisherBooks) && Schema::hasTable('feedback')) {
+                $feedbackQuery = DB::table('feedback')
+                    ->whereIn('book_id', $publisherBooks)
+                    ->whereBetween('created_at', [$startDate, $endDate]);
+
+                $totalReviews = (int) (clone $feedbackQuery)->count();
+                $avgRating = (float) ((clone $feedbackQuery)->avg('rating') ?? 0);
+            }
+
             $performanceMetrics = [
-                'avgRating' => 4.5, // Placeholder
-                'totalReviews' => 0,
+                'avgRating' => round($avgRating, 2),
+                'totalReviews' => $totalReviews,
             ];
 
             // User engagement
+            $views = BookIssue::whereIn('book_id', $publisherBooks)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+
+            $downloads = BookIssue::whereIn('book_id', $publisherBooks)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->where('status', 'returned')
+                ->count();
+
+            $repeatReaders = 0;
+            $avgReadingTime = 0;
+
+            if (! empty($publisherBooks) && Schema::hasTable('reader_book_purchases')) {
+                $repeatReaders = (int) DB::table('reader_book_purchases')
+                    ->whereIn('book_id', $publisherBooks)
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->select('reader_id')
+                    ->groupBy('reader_id')
+                    ->havingRaw('COUNT(*) > 1')
+                    ->count();
+            }
+
+            if (! empty($publisherBooks) && Schema::hasTable('reader_reading_progress')) {
+                $avgProgress = (float) (DB::table('reader_reading_progress')
+                    ->whereIn('book_id', $publisherBooks)
+                    ->whereBetween('updated_at', [$startDate, $endDate])
+                    ->avg('progress_percent') ?? 0);
+                // Convert average progress % to a coarse minutes estimate for UI continuity.
+                $avgReadingTime = (int) round(($avgProgress / 100) * 60);
+            }
+
             $userEngagement = [
-                'views' => BookIssue::whereIn('book_id', $publisherBooks)
-                    ->whereBetween('created_at', [$startDate, $endDate])
-                    ->count(),
-                'downloads' => BookIssue::whereIn('book_id', $publisherBooks)
-                    ->whereBetween('created_at', [$startDate, $endDate])
-                    ->where('status', 'returned')
-                    ->count(),
-                'avgReadingTime' => 45,
-                'repeatReaders' => 0,
+                'views' => $views,
+                'downloads' => $downloads,
+                'avgReadingTime' => $avgReadingTime,
+                'repeatReaders' => $repeatReaders,
             ];
 
             return response()->json([

@@ -78,4 +78,59 @@ class PublisherAuthController extends Controller
 
         return redirect('/');
     }
+
+    public function forgotPasswordReset(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|exists:publishers,email',
+            'new_password' => 'required|string|min:8',
+        ]);
+
+        $publisher = Publisher::query()->where('email', $validated['email'])->firstOrFail();
+        $publisher->password = Hash::make($validated['new_password']);
+        $publisher->save();
+
+        return response()->json(['message' => 'Password reset successful. You can now log in with your new password.']);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $publisher = auth('publisher')->user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:publishers,email,' . $publisher->id,
+            'phone' => 'nullable|string|max:50',
+        ]);
+
+        $publisher->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? $publisher->phone,
+        ]);
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+            'user' => $publisher->fresh(),
+        ]);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8',
+        ]);
+
+        $publisher = auth('publisher')->user();
+
+        if (! Hash::check($validated['current_password'], $publisher->password)) {
+            return response()->json(['message' => 'Current password is incorrect.'], 422);
+        }
+
+        $publisher->password = Hash::make($validated['new_password']);
+        $publisher->save();
+
+        return response()->json(['message' => 'Password changed successfully.']);
+    }
 }
