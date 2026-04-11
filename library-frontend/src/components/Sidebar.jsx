@@ -12,7 +12,13 @@ const defaultNavItems = [
   { path: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
-const Sidebar = ({ navItems = defaultNavItems, logoutRedirectPath = '/login', logoutLabel = 'Logout' }) => {
+const Sidebar = ({
+  navItems = defaultNavItems,
+  logoutRedirectPath = '/login',
+  logoutLabel = 'Logout',
+  isOpen = true,
+  onClose,
+}) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -22,7 +28,22 @@ const Sidebar = ({ navItems = defaultNavItems, logoutRedirectPath = '/login', lo
   };
 
   return (
-    <aside className="publisher-sidebar" aria-label="Admin sidebar navigation">
+    <aside
+      id="admin-sidebar"
+      className={`publisher-sidebar ${isOpen ? 'open' : 'closed'}`}
+      aria-label="Admin sidebar navigation"
+    >
+      <div className="sidebar-header">
+        <div>
+          <div className="sidebar-title">LibraryMS</div>
+          <div className="sidebar-subtitle">Navigation menu</div>
+        </div>
+        {onClose && (
+          <button type="button" className="sidebar-close-btn" onClick={onClose} aria-label="Close navigation menu">
+            ×
+          </button>
+        )}
+      </div>
       <nav className="portal-tabs">
         {navItems.map((item) => (
           <div key={item.path}>

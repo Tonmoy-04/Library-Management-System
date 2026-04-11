@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { RouterProvider, createBrowserRouter, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Navbar from './components/Navbar';
@@ -36,24 +36,37 @@ function App() {
     );
   }
 
-  const DashboardLayout = ({ children }) => (
-    <div className="app-container publisher-portal">
-      <Navbar />
-      <div className="dashboard-layout">
-        <Sidebar />
-        <main className="main-content">
-          {children}
-        </main>
+  const DashboardLayout = ({ children }) => {
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth > 768);
+
+    return (
+      <div className="app-container publisher-portal">
+        <Navbar
+          showMenuToggle
+          isMenuOpen={isSidebarOpen}
+          onMenuToggle={() => setIsSidebarOpen((prev) => !prev)}
+        />
+        <div className={`dashboard-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+          <div
+            className={`sidebar-overlay ${isSidebarOpen ? 'visible' : ''}`}
+            onClick={() => setIsSidebarOpen(false)}
+            aria-hidden="true"
+          />
+          <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+          <main className="main-content">
+            {children}
+          </main>
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
-  );
+    );
+  };
 
   const ReaderLayout = ({ children }) => (
     <ReaderPortalLayout>{children}</ReaderPortalLayout>
   );
 
-  const router = createBrowserRouter(
+  const router = useMemo(() => createBrowserRouter(
     [
       {
         path: '/',
@@ -190,7 +203,7 @@ function App() {
         v7_relativeSplatPath: true,
       },
     }
-  );
+  ), [isAuthenticated, isReader, isPublisher]);
 
   return <RouterProvider router={router} />;
 }
