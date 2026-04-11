@@ -413,12 +413,13 @@ class LibraryDataController extends Controller
                 'email' => $validated['email'] ?? null,
                 'website' => $validated['website'] ?? null,
                 'location' => $validated['location'] ?? null,
+                'is_suspended' => false,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
 
             $publisher = DB::table('publishers')
-                ->select('id', 'name', 'email', 'website', 'location')
+                ->select('id', 'name', 'email', 'website', 'location', 'is_suspended')
                 ->where('id', $publisherId)
                 ->first();
 
