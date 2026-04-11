@@ -15,6 +15,7 @@ const Publishers = () => {
   const [publisherList, setPublisherList] = useState([]);
   const [publisherListLoading, setPublisherListLoading] = useState(true);
   const [publisherActionId, setPublisherActionId] = useState(null);
+  const [publisherError, setPublisherError] = useState('');
   const [statusFilter, setStatusFilter] = useState('pending');
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,11 +39,11 @@ const Publishers = () => {
   const fetchPublishers = async () => {
     try {
       setPublisherListLoading(true);
-      setError('');
+      setPublisherError('');
       const response = await publisherAPI.getAll();
       setPublisherList(response.data?.data || []);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load publishers list.');
+      setPublisherError(err.response?.data?.message || 'Failed to load publishers list.');
     } finally {
       setPublisherListLoading(false);
     }
@@ -58,18 +59,21 @@ const Publishers = () => {
       return;
     }
 
-    const actionLabel = suspended ? 'suspend' : 'reactivate';
-    if (!window.confirm(`Are you sure you want to ${actionLabel} publisher "${publisher.name}"?`)) {
+    const confirmationText = suspended
+      ? `Suspend ${publisher.name}? This publisher will not be able to login.`
+      : `Unsuspend ${publisher.name}? This publisher will be able to login again.`;
+
+    if (!window.confirm(confirmationText)) {
       return;
     }
 
     try {
       setPublisherActionId(publisher.id);
-      setError('');
+      setPublisherError('');
       await publisherAPI.setSuspension(publisher.id, suspended);
       await fetchPublishers();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update publisher suspension.');
+      setPublisherError(err.response?.data?.message || 'Failed to update publisher suspension.');
     } finally {
       setPublisherActionId(null);
     }
@@ -194,7 +198,6 @@ const Publishers = () => {
       const haystack = [
         publisher.name,
         publisher.email,
-        publisher.website,
         publisher.location,
       ]
         .filter(Boolean)
@@ -205,9 +208,10 @@ const Publishers = () => {
     });
 
     return filteredPublishers.map((publisher) => ({
+      id: publisher.id,
+      is_suspended: publisher.is_suspended,
       name: publisher.name,
       email: publisher.email || 'N/A',
-      website: publisher.website || 'N/A',
       location: publisher.location || 'N/A',
       status: publisher.is_suspended ? (
         <span className="status-badge" style={{ backgroundColor: '#fee2e2', color: '#991b1b' }}>
@@ -221,48 +225,21 @@ const Publishers = () => {
     }));
   }, [publisherList, searchTerm]);
 
-  const filteredPublishers = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-
-    return publisherList.filter((publisher) => {
-      if (!normalizedSearch) {
-        return true;
-      }
-
-      const haystack = [
-        publisher.name,
-        publisher.email,
-        publisher.website,
-        publisher.location,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-
-      return haystack.includes(normalizedSearch);
-    });
-  }, [publisherList, searchTerm]);
-
   const publisherActions = [
     {
-      label: 'Suspend',
-      type: 'delete',
-      isDisabled: (_row, index) => {
-        const publisher = filteredPublishers[index];
-        return !publisher || publisher.is_suspended || publisherActionId === publisher.id;
+      label: 'Suspend/Unsuspend',
+      type: 'edit',
+      isDisabled: (row) => {
+        return !row?.id || publisherActionId === row.id;
       },
-      disabledTitle: 'Only active publishers can be suspended',
-      onClick: (_row, index) => handlePublisherSuspension(filteredPublishers[index], true),
-    },
-    {
-      label: 'Unsuspend',
-      type: 'issue',
-      isDisabled: (_row, index) => {
-        const publisher = filteredPublishers[index];
-        return !publisher || !publisher.is_suspended || publisherActionId === publisher.id;
+      disabledTitle: 'Updating suspension status...',
+      onClick: (row) => {
+        if (!row?.id) {
+          return;
+        }
+
+        handlePublisherSuspension(row, !row.is_suspended);
       },
-      disabledTitle: 'Only suspended publishers can be reactivated',
-      onClick: (_row, index) => handlePublisherSuspension(filteredPublishers[index], false),
     },
   ];
 
@@ -303,7 +280,7 @@ const Publishers = () => {
           type="text"
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder={viewMode === 'queue' ? 'Search queue by title, author, publisher id' : 'Search publisher by name, email, website, location'}
+          placeholder={viewMode === 'queue' ? 'Search queue by title, author, publisher id' : 'Search publisher by name, email, location'}
           style={{
             width: '100%',
             maxWidth: '520px',
@@ -321,15 +298,16 @@ const Publishers = () => {
       <div style={{ marginBottom: '1.5rem' }}>
         <h2 style={{ marginBottom: '0.5rem' }}>Publisher List</h2>
         <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
-          Admin can suspend or reactivate publisher accounts from here.
+          Admin can suspend or unsuspend publisher accounts from here.
         </p>
+        {publisherError && <p className="publishers-error">{publisherError}</p>}
         {publisherListLoading ? (
           <p>Loading publishers list...</p>
         ) : publisherListRows.length === 0 ? (
           <p>No publishers found.</p>
         ) : (
           <Table
-            columns={['Name', 'Email', 'Website', 'Location', 'Status']}
+            columns={['Name', 'Email', 'Location', 'Status']}
             data={publisherListRows}
             actions={publisherActions}
           />

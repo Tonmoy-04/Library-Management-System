@@ -20,7 +20,6 @@ const Login = () => {
   const [role, setRole] = useState(initialRole);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
     const syncAutofillValues = () => {
@@ -102,54 +101,6 @@ const Login = () => {
       setError(errorMessage);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    setError('');
-
-    if (!email) {
-      setError('Enter your email first, then click Forgot password.');
-      return;
-    }
-
-    const nextPassword = window.prompt('Enter your new password (minimum 8 characters):', '');
-    if (!nextPassword) {
-      return;
-    }
-
-    const confirmPassword = window.prompt('Confirm your new password:', '');
-    if (!confirmPassword) {
-      return;
-    }
-
-    if (nextPassword !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
-    if (nextPassword.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      return;
-    }
-
-    try {
-      setForgotLoading(true);
-
-      const payload = { email, new_password: nextPassword };
-      if (role === 'reader') {
-        await readerAuthAPI.forgotPasswordReset(payload);
-      } else if (role === 'publisher') {
-        await publisherAuthAPI.forgotPasswordReset(payload);
-      } else {
-        await authAPI.forgotPasswordReset(payload);
-      }
-
-      window.alert('Password reset successful. Please log in with your new password.');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to reset password.');
-    } finally {
-      setForgotLoading(false);
     }
   };
 
@@ -249,14 +200,6 @@ const Login = () => {
               Register here
             </Link>
           </p>
-          <button
-            type="button"
-            className="auth-link-btn"
-            onClick={handleForgotPassword}
-            disabled={forgotLoading}
-          >
-            {forgotLoading ? 'Resetting...' : 'Forgot password?'}
-          </button>
         </div>
       </div>
     </div>

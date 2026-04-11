@@ -12,7 +12,7 @@ Purpose:
 ---
 
 ## Last Verified
-- Date: 2026-04-11 (updated after payment split + admin PDF upload schema updates)
+- Date: 2026-04-11 (updated after missing operational table recovery migration)
 - Environment: SQL Server (Laravel project)
 - Verification source: check_tables.php output + sys.foreign_keys query + migrate:status (live DB connection) + targeted migration apply logs
 
@@ -136,6 +136,16 @@ php artisan migrate --path=database/migrations/<migration_file>.php --force
 
 ## Change Log
 Add a new entry on each schema change.
+
+- 2026-04-11
+   - Added migration: `2026_04_11_140000_ensure_missing_operational_tables`.
+   - Recreated missing operational tables in live DB with documented FK links:
+      * `borrow_requests`
+      * `borrowed_books`
+      * `user_reader_profiles`
+      * `user_roles`
+   - Applied all pending 2026-04-11 migrations successfully; migration status is now fully up to date.
+   - Re-verified table inventory via `php check_tables.php`.
 
 - 2026-04-11
     - Added reader status/suspension schema migration: `2026_04_11_120000_add_online_and_suspension_columns_to_readers_table`.

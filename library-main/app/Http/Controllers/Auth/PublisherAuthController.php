@@ -27,6 +27,7 @@ class PublisherAuthController extends Controller
             'city' => $validated['city'],
             'country' => $validated['country'],
             'password' => Hash::make($validated['password']),
+            'is_suspended' => false,
         ]);
 
         return response()->json([
