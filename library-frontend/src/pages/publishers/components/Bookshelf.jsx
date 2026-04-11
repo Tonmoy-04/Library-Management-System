@@ -44,10 +44,8 @@ const Bookshelf = ({ publisherId, publisherName }) => {
   const [formData, setFormData] = useState({
     title: '',
     author: '',
-    publisher: '',
     category: '',
     price: '',
-    quantity: 1,
     free_to_read: false,
     pdf: null,
   });
@@ -63,6 +61,18 @@ const Bookshelf = ({ publisherId, publisherName }) => {
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load bookshelf submissions.');
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteBook = async (bookId) => {
+    if (!window.confirm("Are you sure you want to delete this book?")) return;
+    try {
+      setLoading(true);
+      await publisherAPI.deleteBook(publisherId, bookId);
+      await fetchSubmissions();
+    } catch (err) {
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to delete book.');
       setLoading(false);
     }
   };
@@ -109,10 +119,8 @@ const Bookshelf = ({ publisherId, publisherName }) => {
     setFormData({
       title: '',
       author: '',
-      publisher: publisherName || '',
       category: '',
       price: '',
-      quantity: 1,
       free_to_read: false,
       pdf: null,
     });
@@ -129,8 +137,8 @@ const Bookshelf = ({ publisherId, publisherName }) => {
     setError('');
     setSuccess('');
 
-    if (!formData.title.trim() || !formData.author.trim() || !formData.publisher.trim() || !formData.category.trim()) {
-      setError('Title, author, publisher, and category are required.');
+    if (!formData.title.trim() || !formData.author.trim() || !formData.category.trim()) {
+      setError('Title, author, and category are required.');
       return;
     }
 
@@ -149,10 +157,8 @@ const Bookshelf = ({ publisherId, publisherName }) => {
       const payload = new FormData();
       payload.append('title', formData.title.trim());
       payload.append('author', formData.author.trim());
-      payload.append('publisher', formData.publisher.trim());
       payload.append('category', formData.category.trim());
       payload.append('price', String(formData.free_to_read ? 0 : Number(formData.price)));
-      payload.append('quantity', String(Number(formData.quantity) || 1));
       payload.append('free_to_read', formData.free_to_read ? '1' : '0');
 
       if (formData.pdf.size > BASE64_SAFE_MAX_BYTES) {
@@ -175,10 +181,8 @@ const Bookshelf = ({ publisherId, publisherName }) => {
       setFormData({
         title: '',
         author: '',
-        publisher: publisherName || '',
         category: '',
         price: '',
-        quantity: 1,
         free_to_read: false,
         pdf: null,
       });
@@ -278,19 +282,6 @@ const Bookshelf = ({ publisherId, publisherName }) => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="publisher">Publisher *</label>
-                <input
-                  id="publisher"
-                  name="publisher"
-                  className="form-control"
-                  value={formData.publisher}
-                  onChange={handleChange}
-                  disabled
-                  required
-                />
-              </div>
-
-              <div className="form-group">
                 <label htmlFor="category">Category *</label>
                 <select
                   id="category"
@@ -322,20 +313,6 @@ const Bookshelf = ({ publisherId, publisherName }) => {
                     onChange={handleChange}
                     disabled={saving || formData.free_to_read}
                     required={!formData.free_to_read}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="quantity">Quantity</label>
-                  <input 
-                    id="quantity"
-                    name="quantity"
-                    type="number" 
-                    min="1"
-                    className="form-control" 
-                    value={formData.quantity}
-                    onChange={handleChange}
-                    disabled={saving}
                   />
                 </div>
 
@@ -422,6 +399,7 @@ const Bookshelf = ({ publisherId, publisherName }) => {
                 <th>Price</th>
                 <th>Status</th>
                 <th>Date Added</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -439,6 +417,15 @@ const Bookshelf = ({ publisherId, publisherName }) => {
                     </td>
                     <td className="book-cell book-date">
                       {book.created_at ? new Date(book.created_at).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td className="book-cell book-actions">
+                      <button 
+                        onClick={() => handleDeleteBook(book.id)} 
+                        style={{ background: '#e11d48', color: 'white', border: 'none', padding: '0.35rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+                        title="Delete Book"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 );

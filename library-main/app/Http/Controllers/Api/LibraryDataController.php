@@ -66,7 +66,6 @@ class LibraryDataController extends Controller
                     ->exists();
 
                 if (! $alreadyExists) {
-                    $submissionQuantity = max(1, (int) ($submission->quantity ?? 1));
                     $submissionPrice = (bool) ($submission->free_to_read ?? false)
                         ? 0
                         : (float) ($submission->price ?? 0);
@@ -78,9 +77,7 @@ class LibraryDataController extends Controller
                         'description' => $submission->description,
                         'price' => $submissionPrice,
                         'category' => $submission->category ?? null,
-                        'quantity' => $submissionQuantity,
-                        'available' => $submissionQuantity,
-                    ];
+                        ];
 
                     if (Schema::hasColumn('books', 'pdf_url') && ! empty($submission->file_url)) {
                         $bookPayload['pdf_url'] = $submission->file_url;
@@ -521,8 +518,6 @@ class LibraryDataController extends Controller
                 'b.author',
                 'b.category',
                 'b.price',
-                'b.quantity',
-                'b.available',
                 DB::raw(Schema::hasColumn('books', 'pdf_url') ? "COALESCE(b.pdf_url, '') as pdf_url" : "'' as pdf_url"),
                 DB::raw("COALESCE(p.name, 'N/A') as publisher")
             )
@@ -541,7 +536,6 @@ class LibraryDataController extends Controller
             'category' => 'required|string|max:120',
             'price' => 'nullable|numeric|min:0',
             'free_to_read' => 'nullable|boolean',
-            'quantity' => 'nullable|integer|min:1|max:9999',
             'pdf' => 'nullable|file|mimes:pdf|max:51200',
         ]);
 
@@ -559,8 +553,6 @@ class LibraryDataController extends Controller
         }
 
         $price = $freeToRead ? 0 : (float) $validated['price'];
-        $quantity = max(1, (int) ($validated['quantity'] ?? 1));
-
         if (! empty($validated['publisher'])) {
             $publisherName = trim($validated['publisher']);
             $publisherId = DB::table('publishers')
@@ -582,8 +574,6 @@ class LibraryDataController extends Controller
             'publisher_id' => $publisherId,
             'category' => $validated['category'],
             'price' => $price,
-            'quantity' => $quantity,
-            'available' => $quantity,
             'created_at' => $now,
             'updated_at' => $now,
         ];
@@ -610,8 +600,6 @@ class LibraryDataController extends Controller
                 'b.author',
                 'b.category',
                 'b.price',
-                'b.quantity',
-                'b.available',
                 DB::raw(Schema::hasColumn('books', 'pdf_url') ? "COALESCE(b.pdf_url, '') as pdf_url" : "'' as pdf_url"),
                 DB::raw("COALESCE(p.name, 'N/A') as publisher")
             )
@@ -639,7 +627,6 @@ class LibraryDataController extends Controller
             'category' => 'required|string|max:120',
             'price' => 'nullable|numeric|min:0',
             'free_to_read' => 'nullable|boolean',
-            'quantity' => 'nullable|integer|min:1|max:9999',
             'pdf' => 'nullable|file|mimes:pdf|max:51200',
         ]);
 
@@ -657,8 +644,6 @@ class LibraryDataController extends Controller
         }
 
         $price = $freeToRead ? 0 : (float) $validated['price'];
-        $newQuantity = max(1, (int) ($validated['quantity'] ?? $book->quantity ?? 1));
-
         if (! empty($validated['publisher'])) {
             $publisherName = trim($validated['publisher']);
             $publisherId = DB::table('publishers')
@@ -674,15 +659,7 @@ class LibraryDataController extends Controller
             }
         }
 
-        $issuedCount = max(0, (int) $book->quantity - (int) $book->available);
-
-        if ($newQuantity < $issuedCount) {
-            return response()->json([
-                'message' => 'Quantity cannot be lower than currently issued copies (' . $issuedCount . ').',
-            ], 422);
-        }
-
-        $newAvailable = $newQuantity - $issuedCount;
+        
 
         $updatePayload = [
             'title' => $validated['title'],
@@ -690,8 +667,6 @@ class LibraryDataController extends Controller
             'publisher_id' => $publisherId,
             'category' => $validated['category'],
             'price' => $price,
-            'quantity' => $newQuantity,
-            'available' => $newAvailable,
             'updated_at' => $now,
         ];
 
@@ -721,8 +696,6 @@ class LibraryDataController extends Controller
                 'b.author',
                 'b.category',
                 'b.price',
-                'b.quantity',
-                'b.available',
                 DB::raw(Schema::hasColumn('books', 'pdf_url') ? "COALESCE(b.pdf_url, '') as pdf_url" : "'' as pdf_url"),
                 DB::raw("COALESCE(p.name, 'N/A') as publisher")
             )
@@ -948,7 +921,7 @@ class LibraryDataController extends Controller
 
     public function dashboardSummary(): JsonResponse
     {
-        $totalBooks = (int) DB::table('books')->sum('quantity');
+        \$totalBooks = (int) DB::table('books')->count();
         $totalReaders = (int) DB::table('users')->count();
         $booksIssued = (int) DB::table('book_issues')
             ->where('status', 'issued')
@@ -1023,11 +996,11 @@ class LibraryDataController extends Controller
         $now = now();
 
         $demoBooks = [
-            ['title' => 'Clean Code', 'author' => 'Robert C. Martin', 'publisher' => 'Prentice Hall', 'quantity' => 4],
-            ['title' => 'The Pragmatic Programmer', 'author' => 'Andrew Hunt', 'publisher' => 'Addison-Wesley', 'quantity' => 3],
-            ['title' => 'Introduction to Algorithms', 'author' => 'Thomas H. Cormen', 'publisher' => 'MIT Press', 'quantity' => 2],
-            ['title' => 'Design Patterns', 'author' => 'Erich Gamma', 'publisher' => 'Addison-Wesley', 'quantity' => 5],
-            ['title' => 'Refactoring', 'author' => 'Martin Fowler', 'publisher' => 'Addison-Wesley', 'quantity' => 3],
+            ['title' => 'Clean Code', 'author' => 'Robert C. Martin', 'publisher' => 'Prentice Hall'],
+            ['title' => 'The Pragmatic Programmer', 'author' => 'Andrew Hunt', 'publisher' => 'Addison-Wesley'],
+            ['title' => 'Introduction to Algorithms', 'author' => 'Thomas H. Cormen', 'publisher' => 'MIT Press'],
+            ['title' => 'Design Patterns', 'author' => 'Erich Gamma', 'publisher' => 'Addison-Wesley'],
+            ['title' => 'Refactoring', 'author' => 'Martin Fowler', 'publisher' => 'Addison-Wesley'],
         ];
 
         foreach ($demoBooks as $book) {
@@ -1047,8 +1020,6 @@ class LibraryDataController extends Controller
                 'title' => $book['title'],
                 'author' => $book['author'],
                 'publisher_id' => $publisherId,
-                'quantity' => $book['quantity'],
-                'available' => $book['quantity'],
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
@@ -1059,7 +1030,7 @@ class LibraryDataController extends Controller
     {
         $books = DB::table('books')
             ->where('publisher_id', $publisherId)
-            ->select('id', 'title', 'author', 'description', 'quantity', 'available_quantity', 'price', 'created_at', 'updated_at')
+            ->select('id', 'title', 'author', 'description', 'price', 'created_at', 'updated_at')
             ->orderByDesc('created_at')
             ->get();
 

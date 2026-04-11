@@ -40,9 +40,11 @@ class PublisherPortalController extends Controller
         $publisher = Publisher::findOrFail($publisherId);
         $publisherBookIds = Book::where('publisher_id', $publisherId)->pluck('id')->toArray();
 
-        $hasPublisherRevenueSplit = Schema::hasTable('transactions')
-            && Schema::hasColumn('transactions', 'publisher_id')
-            && Schema::hasColumn('transactions', 'publisher_share');
+        $hasPublisherRevenueSplit = \Illuminate\Support\Facades\Cache::remember('schema.has_publisher_revenue_split', 3600, function () {
+            return Schema::hasTable('transactions')
+                && Schema::hasColumn('transactions', 'publisher_id')
+                && Schema::hasColumn('transactions', 'publisher_share');
+        });
 
         $totalBooks = Book::where('publisher_id', $publisherId)->count();
 
@@ -136,15 +138,23 @@ class PublisherPortalController extends Controller
     public function reports($publisherId, Request $request)
     {
         try {
-            $startDate = $request->query('startDate') ? Carbon::parse($request->query('startDate')) : Carbon::now()->subDays(30);
-            $endDate = $request->query('endDate') ? Carbon::parse($request->query('endDate')) : Carbon::now();
+            $startDate = $request->query('startDate') ? Carbon::parse($request->query('startDate'))->startOfDay() : Carbon::now()->subDays(30)->startOfDay();
+            $endDate = $request->query('endDate') ? Carbon::parse($request->query('endDate'))->endOfDay() : Carbon::now()->endOfDay();
             $filterType = $request->query('filterType', 'sales');
 
-            $hasPublisherRevenueSplit = Schema::hasTable('transactions')
-                && Schema::hasColumn('transactions', 'publisher_id')
-                && Schema::hasColumn('transactions', 'publisher_share');
+            $hasPublisherRevenueSplit = \Illuminate\Support\Facades\Cache::remember('schema.has_publisher_revenue_split', 3600, function () {
+                return Schema::hasTable('transactions')
+                    && Schema::hasColumn('transactions', 'publisher_id')
+                    && Schema::hasColumn('transactions', 'publisher_share');
+            });
 
-            $publisherBooks = Book::where('publisher_id', $publisherId)->pluck('id')->toArray();
+            $bookId = $request->query('bookId');
+            
+            $bookQuery = Book::where('publisher_id', $publisherId);
+            if ($bookId && $bookId !== 'null' && $bookId !== 'all') {
+                $bookQuery->where('id', $bookId);
+            }
+            $publisherBooks = $bookQuery->pluck('id')->toArray();
 
             // Initialize default values
             $booksSold = 0;
@@ -155,9 +165,13 @@ class PublisherPortalController extends Controller
             if (!empty($publisherBooks) && $hasPublisherRevenueSplit) {
                 $paymentRows = DB::table('transactions as t')
                     ->leftJoin('books as b', 'b.id', '=', 't.book_id')
-                    ->where(function ($query) use ($publisherId, $publisherBooks) {
-                        $query->where('t.publisher_id', $publisherId)
-                            ->orWhereIn('t.book_id', $publisherBooks);
+                    ->where(function ($query) use ($publisherId, $publisherBooks, $bookId) {
+                        if ($bookId && $bookId !== 'null' && $bookId !== 'all') {
+                            $query->whereIn('t.book_id', $publisherBooks);
+                        } else {
+                            $query->where('t.publisher_id', $publisherId)
+                                ->orWhereIn('t.book_id', $publisherBooks);
+                        }
                     })
                     ->where('t.payment_status', 'paid')
                     ->whereBetween('t.transaction_date', [$startDate, $endDate])
@@ -259,7 +273,8 @@ class PublisherPortalController extends Controller
             // Performance metrics (computed from feedback when available)
             $totalReviews = 0;
             $avgRating = 0.0;
-            if (! empty($publisherBooks) && Schema::hasTable('feedback')) {
+            $hasFeedbackTable = \Illuminate\Support\Facades\Cache::remember('schema.has_feedback', 3600, function () { return Schema::hasTable('feedback'); });
+            if (! empty($publisherBooks) && $hasFeedbackTable) {
                 $feedbackQuery = DB::table('feedback')
                     ->whereIn('book_id', $publisherBooks)
                     ->whereBetween('created_at', [$startDate, $endDate]);
@@ -286,7 +301,8 @@ class PublisherPortalController extends Controller
             $repeatReaders = 0;
             $avgReadingTime = 0;
 
-            if (! empty($publisherBooks) && Schema::hasTable('reader_book_purchases')) {
+            $hasPurchasesTable = \Illuminate\Support\Facades\Cache::remember('schema.has_reader_book_purchases', 3600, function () { return Schema::hasTable('reader_book_purchases'); });
+            if (! empty($publisherBooks) && $hasPurchasesTable) {
                 $repeatReaders = (int) DB::table('reader_book_purchases')
                     ->whereIn('book_id', $publisherBooks)
                     ->whereBetween('created_at', [$startDate, $endDate])
@@ -296,7 +312,8 @@ class PublisherPortalController extends Controller
                     ->count();
             }
 
-            if (! empty($publisherBooks) && Schema::hasTable('reader_reading_progress')) {
+            $hasProgressTable = \Illuminate\Support\Facades\Cache::remember('schema.has_reader_reading_progress', 3600, function () { return Schema::hasTable('reader_reading_progress'); });
+            if (! empty($publisherBooks) && $hasProgressTable) {
                 $avgProgress = (float) (DB::table('reader_reading_progress')
                     ->whereIn('book_id', $publisherBooks)
                     ->whereBetween('updated_at', [$startDate, $endDate])
@@ -420,10 +437,8 @@ class PublisherPortalController extends Controller
             $request->validate([
                 'title' => 'required|string|max:255',
                 'author' => 'required|string|max:255',
-                'publisher' => 'required|string|max:255',
                 'category' => 'required|string|max:120',
                 'price' => 'required|numeric|min:0',
-                'quantity' => 'nullable|integer|min:1|max:9999',
                 'free_to_read' => 'nullable|boolean',
                 'pdf' => 'nullable|file|mimes:pdf|max:51200', // 50MB max for PDF
                 'pdf_base64' => 'nullable|string',
@@ -482,10 +497,8 @@ class PublisherPortalController extends Controller
             $request->validate([
                 'title' => 'required|string|max:255',
                 'author' => 'required|string|max:255',
-                'publisher' => 'required|string|max:255',
                 'category' => 'required|string|max:120',
                 'price' => 'required|numeric|min:0',
-                'quantity' => 'nullable|integer|min:1|max:9999',
                 'free_to_read' => 'nullable|boolean',
                 'pdf' => 'nullable|file|mimes:pdf|max:51200',
                 'pdf_base64' => 'nullable|string',
@@ -546,9 +559,27 @@ class PublisherPortalController extends Controller
      */
     public function deleteBook($publisherId, $bookId)
     {
-        return response()->json([
-            'error' => 'Submissions are retained for history and cannot be deleted.',
-        ], 422);
+        try {
+            $book = PublisherBookSubmission::where('id', $bookId)
+                ->where('publisher_id', $publisherId)
+                ->firstOrFail();
+
+            // Optionally delete the physical file
+            if ($book->file_url) {
+                Storage::disk('public')->delete($book->file_url);
+            }
+            
+            $book->delete();
+
+            return response()->json([
+                'message' => 'Book deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to delete book',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     private function storePublisherPdf(Request $request, int $publisherId): ?string

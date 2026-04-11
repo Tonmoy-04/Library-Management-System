@@ -181,13 +181,16 @@ const Login = () => {
             />
           </div>
 
-          <button 
-            type="submit" 
-            className="btn btn-primary auth-submit"
-            disabled={loading}
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: '1.5rem' }}>
+            <button 
+              type="submit" 
+              className="btn btn-primary"
+              style={{ minWidth: '150px' }}
+              disabled={loading}
+            >
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
+          </div>
         </form>
 
         <div className="auth-footer">

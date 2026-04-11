@@ -52,7 +52,6 @@ const Books = () => {
     publisher: '',
     category: '',
     price: '',
-    quantity: 1,
     free_to_read: false,
     pdf: null,
     pdf_url: '',
@@ -74,8 +73,6 @@ const Books = () => {
     publisher: book.publisher,
     category: book.category || 'General',
     price: Number(book.price || 0) === 0 ? 'Free' : `$${Number(book.price || 0).toFixed(2)}`,
-    quantity: book.quantity,
-    available: book.available,
   }));
 
   const fetchBooks = async () => {
@@ -177,7 +174,6 @@ const Books = () => {
       publisher: '',
       category: '',
       price: '',
-      quantity: 1,
       free_to_read: false,
       pdf: null,
       pdf_url: '',
@@ -205,7 +201,6 @@ const Books = () => {
       publisher: book.publisher === 'N/A' ? '' : (book.publisher || ''),
       category: book.category === 'General' ? '' : (book.category || ''),
       price: Number(book.price || 0) === 0 ? '' : String(book.price ?? ''),
-      quantity: book.quantity || 1,
       free_to_read: Number(book.price || 0) === 0,
       pdf: null,
       pdf_url: book.pdf_url || '',
@@ -319,7 +314,6 @@ const Books = () => {
       payload.append('publisher', bookForm.publisher.trim() || '');
       payload.append('category', bookForm.category.trim());
       payload.append('price', String(bookForm.free_to_read ? 0 : Number(bookForm.price)));
-      payload.append('quantity', String(Number(bookForm.quantity) || 1));
       payload.append('free_to_read', bookForm.free_to_read ? '1' : '0');
 
       if (bookForm.pdf) {
@@ -345,7 +339,6 @@ const Books = () => {
           publisher: '',
           category: '',
           price: '',
-          quantity: 1,
           free_to_read: false,
           pdf: null,
           pdf_url: '',
@@ -391,8 +384,6 @@ const Books = () => {
       label: 'Issue Book',
       type: 'issue',
       onClick: (_row, rowIndex) => openIssueModal(filteredBooks[rowIndex]),
-      isDisabled: (_row, rowIndex) => Number(filteredBooks[rowIndex]?.available ?? 0) <= 0,
-      disabledTitle: 'Book unavailable for issue',
     },
     { label: 'Edit', type: 'edit', onClick: (_row, rowIndex) => openEditModal(filteredBooks[rowIndex]) },
     { label: 'Delete', type: 'delete', onClick: (_row, rowIndex) => openDeleteModal(filteredBooks[rowIndex]) },
@@ -441,7 +432,7 @@ const Books = () => {
 
       {filteredBooksData.length > 0 ? (
         <Table
-          columns={['Title', 'Author', 'Publisher', 'Category', 'Price', 'Quantity', 'Available']}
+          columns={['Title', 'Author', 'Publisher', 'Category', 'Price']}
           data={filteredBooksData}
           actions={actions}
         />
