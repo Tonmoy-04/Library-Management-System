@@ -10,6 +10,11 @@ const statusStyles = {
 };
 
 const Publishers = () => {
+  const [viewMode, setViewMode] = useState('queue');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [publisherList, setPublisherList] = useState([]);
+  const [publisherListLoading, setPublisherListLoading] = useState(true);
+  const [publisherActionId, setPublisherActionId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('pending');
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,9 +35,45 @@ const Publishers = () => {
     }
   };
 
+  const fetchPublishers = async () => {
+    try {
+      setPublisherListLoading(true);
+      setError('');
+      const response = await publisherAPI.getAll();
+      setPublisherList(response.data?.data || []);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load publishers list.');
+    } finally {
+      setPublisherListLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchQueue(statusFilter);
+    fetchPublishers();
   }, [statusFilter]);
+
+  const handlePublisherSuspension = async (publisher, suspended) => {
+    if (!publisher?.id) {
+      return;
+    }
+
+    const actionLabel = suspended ? 'suspend' : 'reactivate';
+    if (!window.confirm(`Are you sure you want to ${actionLabel} publisher "${publisher.name}"?`)) {
+      return;
+    }
+
+    try {
+      setPublisherActionId(publisher.id);
+      setError('');
+      await publisherAPI.setSuspension(publisher.id, suspended);
+      await fetchPublishers();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update publisher suspension.');
+    } finally {
+      setPublisherActionId(null);
+    }
+  };
 
   const handleAction = async (submission, action) => {
     if (!submission?.id) {
@@ -57,7 +98,25 @@ const Publishers = () => {
   };
 
   const tableData = useMemo(() => {
-    return submissions.map((row) => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    const filteredSubmissions = submissions.filter((row) => {
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      const title = String(row.title || '').toLowerCase();
+      const author = String(row.author || '').toLowerCase();
+      const publisherId = String(row.publisher_id || '').toLowerCase();
+
+      return (
+        title.includes(normalizedSearch)
+        || author.includes(normalizedSearch)
+        || publisherId.includes(normalizedSearch)
+      );
+    });
+
+    return filteredSubmissions.map((row) => {
       const style = statusStyles[row.status] || statusStyles.pending;
       return {
         title: row.pdf_url ? (
@@ -85,22 +144,125 @@ const Publishers = () => {
         ),
       };
     });
-  }, [submissions]);
+  }, [submissions, searchTerm]);
+
+  const filteredSubmissions = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return submissions.filter((row) => {
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      const title = String(row.title || '').toLowerCase();
+      const author = String(row.author || '').toLowerCase();
+      const publisherId = String(row.publisher_id || '').toLowerCase();
+
+      return (
+        title.includes(normalizedSearch)
+        || author.includes(normalizedSearch)
+        || publisherId.includes(normalizedSearch)
+      );
+    });
+  }, [submissions, searchTerm]);
 
   const tableActions = [
     {
       label: 'Accept',
       type: 'issue',
-      isDisabled: (_row, index) => submissions[index]?.status !== 'pending' || processingId === submissions[index]?.id,
+      isDisabled: (_row, index) => filteredSubmissions[index]?.status !== 'pending' || processingId === filteredSubmissions[index]?.id,
       disabledTitle: 'Only pending submissions can be accepted',
-      onClick: (_row, index) => handleAction(submissions[index], 'accepted'),
+      onClick: (_row, index) => handleAction(filteredSubmissions[index], 'accepted'),
     },
     {
       label: 'Decline',
       type: 'delete',
-      isDisabled: (_row, index) => submissions[index]?.status !== 'pending' || processingId === submissions[index]?.id,
+      isDisabled: (_row, index) => filteredSubmissions[index]?.status !== 'pending' || processingId === filteredSubmissions[index]?.id,
       disabledTitle: 'Only pending submissions can be declined',
-      onClick: (_row, index) => handleAction(submissions[index], 'declined'),
+      onClick: (_row, index) => handleAction(filteredSubmissions[index], 'declined'),
+    },
+  ];
+
+  const publisherListRows = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    const filteredPublishers = publisherList.filter((publisher) => {
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      const haystack = [
+        publisher.name,
+        publisher.email,
+        publisher.website,
+        publisher.location,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(normalizedSearch);
+    });
+
+    return filteredPublishers.map((publisher) => ({
+      name: publisher.name,
+      email: publisher.email || 'N/A',
+      website: publisher.website || 'N/A',
+      location: publisher.location || 'N/A',
+      status: publisher.is_suspended ? (
+        <span className="status-badge" style={{ backgroundColor: '#fee2e2', color: '#991b1b' }}>
+          Suspended
+        </span>
+      ) : (
+        <span className="status-badge" style={{ backgroundColor: '#dcfce7', color: '#166534' }}>
+          Active
+        </span>
+      ),
+    }));
+  }, [publisherList, searchTerm]);
+
+  const filteredPublishers = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return publisherList.filter((publisher) => {
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      const haystack = [
+        publisher.name,
+        publisher.email,
+        publisher.website,
+        publisher.location,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(normalizedSearch);
+    });
+  }, [publisherList, searchTerm]);
+
+  const publisherActions = [
+    {
+      label: 'Suspend',
+      type: 'delete',
+      isDisabled: (_row, index) => {
+        const publisher = filteredPublishers[index];
+        return !publisher || publisher.is_suspended || publisherActionId === publisher.id;
+      },
+      disabledTitle: 'Only active publishers can be suspended',
+      onClick: (_row, index) => handlePublisherSuspension(filteredPublishers[index], true),
+    },
+    {
+      label: 'Unsuspend',
+      type: 'issue',
+      isDisabled: (_row, index) => {
+        const publisher = filteredPublishers[index];
+        return !publisher || !publisher.is_suspended || publisherActionId === publisher.id;
+      },
+      disabledTitle: 'Only suspended publishers can be reactivated',
+      onClick: (_row, index) => handlePublisherSuspension(filteredPublishers[index], false),
     },
   ];
 
@@ -112,6 +274,72 @@ const Publishers = () => {
           <p>Review publisher bookshelf submissions and approve or decline them.</p>
         </div>
       </div>
+
+      <div className="publishers-filter-tabs" style={{ marginBottom: '1rem' }}>
+        <button
+          type="button"
+          className={`publishers-filter-btn ${viewMode === 'queue' ? 'active' : ''}`}
+          onClick={() => {
+            setViewMode('queue');
+            setSearchTerm('');
+          }}
+        >
+          Submission Queue
+        </button>
+        <button
+          type="button"
+          className={`publishers-filter-btn ${viewMode === 'list' ? 'active' : ''}`}
+          onClick={() => {
+            setViewMode('list');
+            setSearchTerm('');
+          }}
+        >
+          Publisher List
+        </button>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder={viewMode === 'queue' ? 'Search queue by title, author, publisher id' : 'Search publisher by name, email, website, location'}
+          style={{
+            width: '100%',
+            maxWidth: '520px',
+            border: '1px solid var(--border-color, #e5e7eb)',
+            borderRadius: '10px',
+            padding: '0.65rem 0.85rem',
+            fontSize: '0.95rem',
+            backgroundColor: 'var(--bg-card)',
+            color: 'var(--text-primary)'
+          }}
+        />
+      </div>
+
+      {viewMode === 'list' && (
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h2 style={{ marginBottom: '0.5rem' }}>Publisher List</h2>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
+          Admin can suspend or reactivate publisher accounts from here.
+        </p>
+        {publisherListLoading ? (
+          <p>Loading publishers list...</p>
+        ) : publisherListRows.length === 0 ? (
+          <p>No publishers found.</p>
+        ) : (
+          <Table
+            columns={['Name', 'Email', 'Website', 'Location', 'Status']}
+            data={publisherListRows}
+            actions={publisherActions}
+          />
+        )}
+      </div>
+      )}
+
+      {viewMode === 'queue' && (
+      <>
+      <h2 style={{ marginBottom: '0.5rem' }}>Publisher Submission Queue</h2>
 
       <div className="publishers-filter-tabs">
         {['pending', 'accepted', 'declined'].map((tab) => (
@@ -137,6 +365,8 @@ const Publishers = () => {
           data={tableData}
           actions={tableActions}
         />
+      )}
+      </>
       )}
 
       {selectedPdf && (

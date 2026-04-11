@@ -10,6 +10,7 @@ const Books = () => {
   const [books, setBooks] = useState([]);
   const [readers, setReaders] = useState([]);
   const [booksData, setBooksData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -65,6 +66,30 @@ const Books = () => {
     setBooks(rows);
     setBooksData(mapBooksForTable(rows));
   };
+
+  const filteredBooks = useMemo(() => {
+    const normalized = searchTerm.trim().toLowerCase();
+
+    if (!normalized) {
+      return books;
+    }
+
+    return books.filter((book) => {
+      const haystack = [
+        book.title,
+        book.author,
+        book.publisher,
+        book.category,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(normalized);
+    });
+  }, [books, searchTerm]);
+
+  const filteredBooksData = useMemo(() => mapBooksForTable(filteredBooks), [filteredBooks]);
 
   const fetchReaders = async () => {
     const response = await readerAPI.getAll();
@@ -333,12 +358,12 @@ const Books = () => {
     {
       label: 'Issue Book',
       type: 'issue',
-      onClick: (_row, rowIndex) => openIssueModal(books[rowIndex]),
-      isDisabled: (_row, rowIndex) => Number(books[rowIndex]?.available ?? 0) <= 0,
+      onClick: (_row, rowIndex) => openIssueModal(filteredBooks[rowIndex]),
+      isDisabled: (_row, rowIndex) => Number(filteredBooks[rowIndex]?.available ?? 0) <= 0,
       disabledTitle: 'Book unavailable for issue',
     },
-    { label: 'Edit', type: 'edit', onClick: (_row, rowIndex) => openEditModal(books[rowIndex]) },
-    { label: 'Delete', type: 'delete', onClick: (_row, rowIndex) => openDeleteModal(books[rowIndex]) },
+    { label: 'Edit', type: 'edit', onClick: (_row, rowIndex) => openEditModal(filteredBooks[rowIndex]) },
+    { label: 'Delete', type: 'delete', onClick: (_row, rowIndex) => openDeleteModal(filteredBooks[rowIndex]) },
   ];
 
   return (
@@ -349,6 +374,25 @@ const Books = () => {
           <p>Manage your library's book collection.</p>
         </div>
         <button className="btn btn-primary" onClick={openAddModal}>+ Add New Book</button>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder="Search books by title, author, publisher, category"
+          style={{
+            width: '100%',
+            maxWidth: '520px',
+            border: '1px solid var(--border-color, #e5e7eb)',
+            borderRadius: '10px',
+            padding: '0.65rem 0.85rem',
+            fontSize: '0.95rem',
+            backgroundColor: 'var(--bg-card)',
+            color: 'var(--text-primary)'
+          }}
+        />
       </div>
 
       {loading && <p>Loading books...</p>}
@@ -363,14 +407,14 @@ const Books = () => {
         <p style={{ color: '#166534', marginBottom: '1rem' }}>{deleteSuccess}</p>
       )}
 
-      {booksData.length > 0 ? (
+      {filteredBooksData.length > 0 ? (
         <Table
           columns={['Title', 'Author', 'Publisher', 'Category', 'Price', 'Quantity', 'Available']}
-          data={booksData}
+          data={filteredBooksData}
           actions={actions}
         />
       ) : (
-        !loading && <p>No books found in the database.</p>
+        !loading && <p>No books found.</p>
       )}
 
       {showAddModal && (

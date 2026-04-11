@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Table from '../components/Table';
 import { readerAPI } from '../services/api';
 import '../styles/dashboard.css';
@@ -11,6 +11,7 @@ const Readers = () => {
   const [error, setError] = useState('');
   const [onlineError, setOnlineError] = useState('');
   const [suspendingId, setSuspendingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingReader, setEditingReader] = useState(null);
   const [readerForm, setReaderForm] = useState({
@@ -82,18 +83,18 @@ const Readers = () => {
   }, []);
 
   const actions = [
-    { label: 'Edit', type: 'edit', onClick: (_row, rowIndex) => openEditModal(readers[rowIndex]) },
-    { label: 'Delete', type: 'delete', onClick: (_row, rowIndex) => openDeleteModal(readers[rowIndex]) },
+    { label: 'Edit', type: 'edit', onClick: (_row, rowIndex) => openEditModal(filteredOfflineReaders[rowIndex]) },
+    { label: 'Delete', type: 'delete', onClick: (_row, rowIndex) => openDeleteModal(filteredOfflineReaders[rowIndex]) },
   ];
 
   const onlineActions = [
     {
       label: 'Suspend/Unsuspend',
       type: 'edit',
-      isDisabled: (_row, rowIndex) => suspendingId === onlineReaders[rowIndex]?.id,
+      isDisabled: (_row, rowIndex) => suspendingId === filteredOnlineReaders[rowIndex]?.id,
       disabledTitle: 'Updating suspension status...',
       onClick: async (_row, rowIndex) => {
-        const target = onlineReaders[rowIndex];
+        const target = filteredOnlineReaders[rowIndex];
         if (!target) {
           return;
         }
@@ -138,6 +139,40 @@ const Readers = () => {
       </span>
     ),
   }));
+
+  const filteredOfflineReaders = useMemo(() => {
+    const normalized = searchTerm.trim().toLowerCase();
+
+    if (!normalized) {
+      return readers;
+    }
+
+    return readers.filter((reader) => {
+      const haystack = [reader.name, reader.email, reader.phone, reader.address]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(normalized);
+    });
+  }, [readers, searchTerm]);
+
+  const filteredOnlineReaders = useMemo(() => {
+    const normalized = searchTerm.trim().toLowerCase();
+
+    if (!normalized) {
+      return onlineReaders;
+    }
+
+    return onlineReaders.filter((reader) => {
+      const haystack = [reader.name, reader.email, reader.phone, reader.address]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(normalized);
+    });
+  }, [onlineReaders, searchTerm]);
 
   const openAddModal = () => {
     setFormError('');
@@ -270,6 +305,25 @@ const Readers = () => {
         <button className="btn btn-primary" onClick={openAddModal}>+ Add Reader</button>
       </div>
 
+      <div style={{ marginBottom: '1rem' }}>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder="Search readers by name, email, phone, address"
+          style={{
+            width: '100%',
+            maxWidth: '520px',
+            border: '1px solid var(--border-color, #e5e7eb)',
+            borderRadius: '10px',
+            padding: '0.65rem 0.85rem',
+            fontSize: '0.95rem',
+            backgroundColor: 'var(--bg-card)',
+            color: 'var(--text-primary)'
+          }}
+        />
+      </div>
+
       <h2 style={{ marginBottom: '0.75rem' }}>Offline Readers</h2>
       {loading && <p>Loading offline readers...</p>}
       {error && <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{error}</p>}
@@ -280,14 +334,14 @@ const Readers = () => {
         <p style={{ color: '#166534', marginBottom: '1rem' }}>{deleteSuccess}</p>
       )}
 
-      {readers.length > 0 ? (
+      {filteredOfflineReaders.length > 0 ? (
         <Table
           columns={['ID', 'Name', 'Email', 'Phone', 'Address']}
-          data={mapReadersForTable(readers)}
+          data={mapReadersForTable(filteredOfflineReaders)}
           actions={actions}
         />
       ) : (
-        !loading && <p>No readers found in the database.</p>
+        !loading && <p>No offline readers found.</p>
       )}
 
       <div style={{ marginTop: '2rem' }}>
@@ -295,10 +349,10 @@ const Readers = () => {
         {loadingOnline && <p>Loading online readers...</p>}
         {onlineError && <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{onlineError}</p>}
 
-        {onlineReaders.length > 0 ? (
+        {filteredOnlineReaders.length > 0 ? (
           <Table
             columns={['ID', 'Name', 'Email', 'Phone', 'Status']}
-            data={mapOnlineReadersForTable(onlineReaders)}
+            data={mapOnlineReadersForTable(filteredOnlineReaders)}
             actions={onlineActions}
           />
         ) : (

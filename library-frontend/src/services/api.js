@@ -96,6 +96,7 @@ export const readerAPI = {
 
 export const publisherAPI = {
   getAll: () => api.get('/publishers'),
+  setSuspension: (id, suspended) => api.patch(`/publishers/${id}/suspension`, { suspended }),
   create: (payload) => api.post('/publishers', payload),
   update: (id, payload) => api.put(`/publishers/${id}`, payload),
   remove: (id) => api.delete(`/publishers/${id}`),

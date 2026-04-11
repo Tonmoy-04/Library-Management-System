@@ -19,7 +19,16 @@ class Publisher extends Authenticatable implements JWTSubject
         'address',
         'city',
         'country',
+        'website',
+        'location',
         'password',
+        'is_suspended',
+        'suspended_at',
+    ];
+
+    protected $casts = [
+        'is_suspended' => 'boolean',
+        'suspended_at' => 'datetime',
     ];
 
     protected $hidden = [

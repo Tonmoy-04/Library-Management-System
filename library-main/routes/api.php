@@ -62,6 +62,7 @@ Route::middleware('auth:api')->group(function () {
     Route::put('readers/{id}', [LibraryDataController::class, 'updateReader']);
     Route::delete('readers/{id}', [LibraryDataController::class, 'destroyReader']);
     Route::get('publishers', [LibraryDataController::class, 'publishers']);
+    Route::patch('publishers/{id}/suspension', [LibraryDataController::class, 'setPublisherSuspension']);
     Route::post('publishers', [LibraryDataController::class, 'storePublisher']);
     Route::put('publishers/{id}', [LibraryDataController::class, 'updatePublisher']);
     Route::delete('publishers/{id}', [LibraryDataController::class, 'destroyPublisher']);

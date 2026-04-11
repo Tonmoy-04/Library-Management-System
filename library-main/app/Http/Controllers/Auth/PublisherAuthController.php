@@ -43,6 +43,12 @@ class PublisherAuthController extends Controller
             'password' => 'required',
         ]);
 
+        $publisher = Publisher::query()->where('email', $request->input('email'))->first();
+
+        if ($publisher && isset($publisher->is_suspended) && (bool) $publisher->is_suspended) {
+            return response()->json(['message' => 'Your account has been suspended. Please contact admin.'], 403);
+        }
+
         $credentials = $request->only('email', 'password');
 
         if (! $token = auth('publisher')->attempt($credentials)) {
