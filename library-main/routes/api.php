@@ -35,6 +35,8 @@ Route::prefix('reader')->group(function () {
         Route::get('books/{bookId}', [ReaderPortalController::class, 'bookDetails']);
         Route::post('books/{bookId}/purchase', [ReaderPortalController::class, 'purchase']);
         Route::post('books/{bookId}/download', [ReaderPortalController::class, 'download']);
+        Route::get('books/{bookId}/feedback', [ReaderPortalController::class, 'bookFeedback']);
+        Route::post('books/{bookId}/feedback', [ReaderPortalController::class, 'submitFeedback']);
         Route::post('books/{bookId}/progress', [ReaderPortalController::class, 'upsertProgress']);
         Route::post('books/{bookId}/continue', [ReaderPortalController::class, 'continueReading']);
         Route::get('bookmarks', [ReaderPortalController::class, 'bookmarks']);

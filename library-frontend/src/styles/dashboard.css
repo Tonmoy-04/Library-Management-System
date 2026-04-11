@@ -4,14 +4,15 @@
   padding-top: 64px;
   gap: 0;
   position: relative;
+  overflow-x: clip;
 }
 
 .publisher-sidebar {
   flex: 0 0 250px;
   min-width: 250px;
-  background: var(--bg-card);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(245, 250, 255, 0.94) 100%);
   border-right: 1px solid var(--border-color);
-  box-shadow: var(--shadow);
+  box-shadow: 0 14px 30px rgba(21, 35, 58, 0.1);
   padding: 1rem;
   position: fixed;
   top: 64px;
@@ -19,6 +20,7 @@
   bottom: 0;
   z-index: 1100;
   overflow-y: auto;
+  overflow-x: hidden;
   transition: transform 0.28s ease, opacity 0.28s ease;
 }
 
@@ -38,17 +40,19 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px dashed #d7e2fb;
 }
 
 .sidebar-title {
-  font-size: 1.05rem;
-  font-weight: 800;
+  font-size: 1.08rem;
+  font-weight: 900;
   color: var(--text-main);
 }
 
 .sidebar-subtitle {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   margin-top: 0.15rem;
 }
@@ -119,8 +123,9 @@
 
 .main-content {
   flex: 1;
+  min-width: 0;
   margin-left: 260px;
-  padding: 2rem;
+  padding: 2rem 2.1rem;
   background-color: var(--bg-main);
   min-height: calc(100vh - 64px);
 }
@@ -137,7 +142,7 @@
 }
 
 .dashboard-layout.sidebar-closed .main-content,
-.dashboard-layout.sidebar-closed .footer {
+.dashboard-layout.sidebar-closed + .footer {
   margin-left: 0;
   width: 100%;
 }
@@ -146,7 +151,7 @@
   padding-left: 2rem;
 }
 
-.dashboard-layout.sidebar-closed .footer {
+.dashboard-layout.sidebar-closed + .footer {
   padding-left: 2rem;
 }
 
@@ -161,14 +166,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.4rem;
   gap: 1rem;
   animation: slideUp 0.45s ease;
 }
 
 .page-title h1 {
-  font-size: 1.5rem;
+  font-size: clamp(1.35rem, 2.2vw, 1.75rem);
   color: var(--text-main);
+  letter-spacing: -0.02em;
 }
 
 .page-title p {
@@ -177,11 +183,11 @@
 }
 
 .recent-activity {
-  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
-  padding: 1.25rem;
-  box-shadow: var(--shadow);
+  padding: 1.2rem;
+  box-shadow: 0 14px 28px rgba(21, 35, 58, 0.07);
 }
 
 .recent-activity h2 {
@@ -195,10 +201,56 @@
 }
 
 .dashboard-page > p {
-  padding: 0.9rem 1rem;
+  padding: 0.95rem 1rem;
   border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+}
+
+.portal-tabs {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 0.72rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.72rem 0.82rem;
   border-radius: 10px;
-  background: #ffffff;
+  color: var(--text-main);
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.tab-button:hover {
+  background: rgba(11, 92, 255, 0.08);
+  transform: translateX(2px);
+}
+
+.tab-button.active {
+  background: linear-gradient(130deg, rgba(11, 92, 255, 0.15), rgba(0, 163, 136, 0.14));
+  color: #0a4ac9;
+}
+
+.logout-btn {
+  margin-top: auto;
+  width: 100%;
+  min-width: 0;
+  padding: 0.76rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-weight: 700;
+  transition: var(--transition);
+}
+
+.logout-btn:hover {
+  border-color: #f39ab1;
+  color: #c2410c;
+  background: #fff5f6;
 }
 
 .stats-grid .card {
@@ -420,6 +472,32 @@
 
 :root.dark-mode .recent-activity,
 :root.dark-mode .dashboard-page > p,
+:root.dark-mode .issue-modal,
+:root.dark-mode .admin-pdf-content {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+:root.dark-mode .issue-modal-header button,
+:root.dark-mode .admin-pdf-close,
+:root.dark-mode .admin-pdf-content .btn-secondary {
+  background: var(--bg-hover);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+:root.dark-mode .admin-pdf-header,
+:root.dark-mode .admin-pdf-footer,
+:root.dark-mode .reader-section-header,
+:root.dark-mode .publishers-filter-btn {
+  background: var(--bg-hover);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+:root.dark-mode .recent-activity,
+:root.dark-mode .dashboard-page > p,
 :root.dark-mode .stats-grid .card {
   background: #1b2532;
   border-color: #324355;
@@ -540,20 +618,34 @@
 
 @media (max-width: 1024px) {
   .publisher-sidebar {
-    width: 250px;
+    width: min(84vw, 300px);
+    min-width: 0;
+    transform: translateX(-102%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .publisher-sidebar.open {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .nav-brand { font-size: 1.2rem; }
 
   .main-content {
     margin-left: 0;
-    padding-left: calc(250px + 2rem);
+    padding: 1.25rem;
   }
 
   .footer {
     margin-left: 0;
     width: 100%;
-    padding-left: 250px;
+    padding-left: 0;
+  }
+
+  .sidebar-overlay {
+    display: block;
   }
 }
 

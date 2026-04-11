@@ -52,6 +52,18 @@ const Dashboard = () => {
       { title: 'Total Readers', value: values.total_readers ?? 0, icon: '👥', color: '#10b981' },
       { title: 'Books Issued', value: values.books_issued ?? 0, icon: '📖', color: '#f59e0b' },
       { title: 'Overdue Books', value: values.overdue_books ?? 0, icon: '⚠️', color: '#ef4444' },
+      {
+        title: 'Library Earnings (10%)',
+        value: `$${Number(values.library_earnings || 0).toFixed(2)}`,
+        icon: '💰',
+        color: '#0f766e',
+      },
+      {
+        title: 'Publisher Payouts (90%)',
+        value: `$${Number(values.publisher_payouts || 0).toFixed(2)}`,
+        icon: '🏦',
+        color: '#7c3aed',
+      },
     ];
   }, [summary]);
 

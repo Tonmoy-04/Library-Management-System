@@ -418,6 +418,31 @@ textarea.form-control {
   background: var(--bg-hover);
 }
 
+:root.dark-mode .bookshelf-header,
+:root.dark-mode .books-table,
+:root.dark-mode .book-row,
+:root.dark-mode .book-modal,
+:root.dark-mode .modal-header,
+:root.dark-mode .modal-actions,
+:root.dark-mode .filter-dropdown,
+:root.dark-mode .search-input {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+:root.dark-mode .alert-error {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fecaca;
+}
+
+:root.dark-mode .alert-success {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #bbf7d0;
+}
+
 .empty-icon {
   font-size: 3rem;
   margin-bottom: 1rem;

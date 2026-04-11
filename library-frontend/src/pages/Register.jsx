@@ -133,67 +133,31 @@ const Register = () => {
   };
 
   return (
-    <div className="register-page" style={{
-      height: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'var(--bg-main)'
-    }}>
-      <div className="register-card" style={{
-        backgroundColor: 'var(--bg-card)',
-        padding: '2.5rem',
-        borderRadius: 'var(--radius)',
-        boxShadow: 'var(--shadow-hover)',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ color: 'var(--primary-color)', fontSize: '2rem', marginBottom: '0.5rem' }}>LibraryMS</h1>
-          <p style={{ color: 'var(--text-muted)' }}>
+    <div className="register-page auth-page">
+      <div className="register-card auth-card auth-card-wide">
+        <div className="auth-header">
+          <h1 className="auth-brand">LibraryMS</h1>
+          <p className="auth-subtitle">
             {role === 'reader' ? 'Create a reader account to get started.' : 'Create a publisher account to get started.'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} autoComplete="on">
           {error && (
-            <div style={{
-              color: '#991b1b',
-              marginBottom: '1rem',
-              fontSize: '0.875rem',
-              textAlign: 'left',
-              padding: '1rem',
-              backgroundColor: '#fee2e2',
-              borderRadius: '0.375rem',
-              border: '1px solid #fecaca',
-              wordWrap: 'break-word',
-              overflowWrap: 'break-word',
-              maxHeight: '100px',
-              overflowY: 'auto',
-              lineHeight: '1.5'
-            }}>
+            <div className="auth-error auth-error-left">
               {error}
             </div>
           )}
 
           <div className="form-group">
             <label>Register As</label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="auth-role-grid two-cols">
               {['reader', 'publisher'].map((option) => (
                 <button
                   key={option}
                   type="button"
                   onClick={() => setRole(option)}
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem',
-                    borderRadius: '0.5rem',
-                    border: '1px solid var(--border-color)',
-                    backgroundColor: role === option ? 'var(--primary-color)' : 'transparent',
-                    color: role === option ? '#fff' : 'var(--text-main)',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
+                  className={`auth-role-btn ${role === option ? 'active' : ''}`}
                 >
                   {option === 'reader' ? 'Reader' : 'Publisher'}
                 </button>
@@ -303,7 +267,7 @@ const Register = () => {
                   value={formData.description}
                   onChange={handleChange}
                   rows="2"
-                  style={{ fontFamily: 'inherit', minHeight: '60px' }}
+                  style={{ minHeight: '60px' }}
                 />
               </div>
 
@@ -367,25 +331,19 @@ const Register = () => {
 
           <button
             type="submit"
-            className="btn btn-primary"
-            style={{
-              width: '100%',
-              marginTop: '1rem',
-              opacity: loading ? 0.6 : 1,
-              cursor: loading ? 'not-allowed' : 'pointer'
-            }}
+            className="btn btn-primary auth-submit"
             disabled={loading}
           >
             {loading ? 'Creating Account...' : 'Register'}
           </button>
         </form>
 
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+        <div className="auth-footer">
+          <p className="auth-meta-text">
             Already have an account?{' '}
             <Link
               to={`/login?role=${role}`}
-              style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}
+              className="auth-link"
             >
               Login here
             </Link>

@@ -12,7 +12,7 @@ Purpose:
 ---
 
 ## Last Verified
-- Date: 2026-04-11 (updated after reader/publisher suspension schema updates)
+- Date: 2026-04-11 (updated after payment split + admin PDF upload schema updates)
 - Environment: SQL Server (Laravel project)
 - Verification source: check_tables.php output + sys.foreign_keys query + migrate:status (live DB connection) + targeted migration apply logs
 
@@ -85,7 +85,7 @@ System tables:
 1. users: system/admin authentication entities.
 2. readers: reader account/auth profile with online-registration and suspension controls (`is_online_registered`, `is_suspended`, `suspended_at`).
 3. publishers: publisher account data with admin suspension controls (`is_suspended`, `suspended_at`).
-4. books: final visible library catalog (core metadata only; cover/pdf files are no longer stored on the book row).
+4. books: final visible library catalog (core metadata + optional `pdf_url` for uploaded book files).
 5. bookshelf: publisher book collections for organizing/curating published books.
 6. book_issues: issuing and return transaction history.
 7. feedback: reader feedback and publisher reply tracking.
@@ -164,6 +164,12 @@ Add a new entry on each schema change.
 - 2026-04-11
    - Added migration: `2026_04_11_020000_add_pdf_url_to_books_table`.
    - Re-enabled `books.pdf_url` to support PDF upload in admin add/edit book form.
+
+- 2026-04-11
+   - Added migration: `2026_04_11_030000_add_admin_style_fields_to_publisher_book_submissions_table`.
+   - Publisher add-book form now follows admin-style fields: title, author, publisher (prefilled), category, price, quantity, free-to-read, and PDF upload.
+   - Added `category`, `quantity`, and `free_to_read` columns to `publisher_book_submissions`.
+   - Admin acceptance flow now carries these submission values into `books` (category, quantity/available, free-to-read price logic).
 
 - 2026-04-11 (prior sync)
     - Live DB sync after applying pending migrations and reconciling the schema inventory.

@@ -66,16 +66,27 @@ class LibraryDataController extends Controller
                     ->exists();
 
                 if (! $alreadyExists) {
-                    Book::query()->create([
+                    $submissionQuantity = max(1, (int) ($submission->quantity ?? 1));
+                    $submissionPrice = (bool) ($submission->free_to_read ?? false)
+                        ? 0
+                        : (float) ($submission->price ?? 0);
+
+                    $bookPayload = [
                         'title' => $submission->title,
                         'author' => $submission->author,
                         'publisher_id' => $submission->publisher_id,
                         'description' => $submission->description,
-                        'price' => $submission->price,
-                        'category' => null,
-                        'quantity' => 1,
-                        'available' => 1,
-                    ]);
+                        'price' => $submissionPrice,
+                        'category' => $submission->category ?? null,
+                        'quantity' => $submissionQuantity,
+                        'available' => $submissionQuantity,
+                    ];
+
+                    if (Schema::hasColumn('books', 'pdf_url') && ! empty($submission->file_url)) {
+                        $bookPayload['pdf_url'] = $submission->file_url;
+                    }
+
+                    Book::query()->create($bookPayload);
                 }
             }
 
@@ -949,6 +960,31 @@ class LibraryDataController extends Controller
             ->where('due_at', '<', now())
             ->count();
 
+        $libraryEarnings = 0.0;
+        $publisherPayouts = 0.0;
+        $grossSales = 0.0;
+
+        if (Schema::hasTable('transactions')) {
+            $paidTransactions = DB::table('transactions')->where('payment_status', 'paid');
+            $grossSales = (float) (clone $paidTransactions)->sum('amount');
+
+            if (Schema::hasColumn('transactions', 'admin_share')) {
+                $libraryEarnings = (float) (clone $paidTransactions)
+                    ->selectRaw('SUM(CASE WHEN COALESCE(admin_share, 0) > 0 THEN admin_share ELSE COALESCE(amount, 0) * 0.10 END) as total')
+                    ->value('total');
+            } else {
+                $libraryEarnings = round($grossSales * 0.10, 2);
+            }
+
+            if (Schema::hasColumn('transactions', 'publisher_share')) {
+                $publisherPayouts = (float) (clone $paidTransactions)
+                    ->selectRaw('SUM(CASE WHEN COALESCE(publisher_share, 0) > 0 THEN publisher_share ELSE COALESCE(amount, 0) * 0.90 END) as total')
+                    ->value('total');
+            } else {
+                $publisherPayouts = round($grossSales * 0.90, 2);
+            }
+        }
+
         $recentTransactions = DB::table('book_issues as bi')
             ->join('users as u', 'bi.user_id', '=', 'u.id')
             ->join('books as b', 'bi.book_id', '=', 'b.id')
@@ -969,6 +1005,9 @@ class LibraryDataController extends Controller
                 'total_readers' => $totalReaders,
                 'books_issued' => $booksIssued,
                 'overdue_books' => $overdueBooks,
+                'library_earnings' => $libraryEarnings,
+                'publisher_payouts' => $publisherPayouts,
+                'gross_sales' => $grossSales,
             ],
             'recent_transactions' => $recentTransactions,
         ]);

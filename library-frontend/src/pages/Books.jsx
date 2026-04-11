@@ -4,6 +4,22 @@ import Table from '../components/Table';
 import { bookAPI, readerAPI } from '../services/api';
 import '../styles/dashboard.css';
 
+const CATEGORY_OPTIONS = [
+  'Fiction',
+  'Science Fiction',
+  'Documentary',
+  'Story',
+  'Biography',
+  'Autobiography',
+  'Fantasy',
+  'Mystery',
+  'Romance',
+  'History',
+  'Self Help',
+  'Education',
+  'Technology',
+];
+
 const Books = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -482,14 +498,22 @@ const Books = () => {
 
               <div className="form-group">
                 <label htmlFor="category">Category *</label>
-                <input
+                <select
                   id="category"
                   className="form-control"
                   value={bookForm.category}
                   onChange={(e) => setBookForm((prev) => ({ ...prev, category: e.target.value }))}
                   disabled={addingBook}
                   required
-                />
+                >
+                  <option value="">Select a category</option>
+                  {CATEGORY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                  {bookForm.category && !CATEGORY_OPTIONS.includes(bookForm.category) && (
+                    <option value={bookForm.category}>{bookForm.category}</option>
+                  )}
+                </select>
               </div>
 
               <div className="form-row">

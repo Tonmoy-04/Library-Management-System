@@ -212,6 +212,25 @@
   box-shadow: 0 4px 12px rgba(15, 103, 248, 0.3);
 }
 
+:root.dark-mode .settings-section,
+:root.dark-mode .theme-option,
+:root.dark-mode .theme-preview,
+:root.dark-mode .preview-box.light,
+:root.dark-mode .form-group input,
+:root.dark-mode .tab-btn,
+:root.dark-mode .settings-header,
+:root.dark-mode .security-info-card,
+:root.dark-mode .danger-zone-card,
+:root.dark-mode .danger-item {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+:root.dark-mode .tab-btn:hover {
+  background: var(--bg-hover);
+}
+
 .btn-primary:hover {
   background: var(--primary-hover);
   transform: translateY(-2px);

@@ -242,3 +242,20 @@
 :root.dark-mode .transaction-item:hover {
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.35);
 }
+
+:root.dark-mode .recent-section,
+:root.dark-mode .recent-book-item,
+:root.dark-mode .transaction-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+:root.dark-mode .book-info h4,
+:root.dark-mode .transaction-info p,
+:root.dark-mode .copies,
+:root.dark-mode .available,
+:root.dark-mode .transaction-book,
+:root.dark-mode .transaction-reader,
+:root.dark-mode .transaction-date {
+  color: var(--text-main);
+}

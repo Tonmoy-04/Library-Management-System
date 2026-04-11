@@ -54,6 +54,8 @@ export const readerPortalAPI = {
   getHistory: (params) => api.get('/reader/history', { params }),
   purchaseBook: (bookId, payload = {}) => api.post(`/reader/books/${bookId}/purchase`, payload),
   downloadBook: (bookId) => api.post(`/reader/books/${bookId}/download`),
+  getBookFeedback: (bookId) => api.get(`/reader/books/${bookId}/feedback`),
+  submitBookFeedback: (bookId, payload) => api.post(`/reader/books/${bookId}/feedback`, payload),
   saveProgress: (bookId, payload) => api.post(`/reader/books/${bookId}/progress`, payload),
   continueReading: (bookId) => api.post(`/reader/books/${bookId}/continue`),
   getBookmarks: () => api.get('/reader/bookmarks'),
