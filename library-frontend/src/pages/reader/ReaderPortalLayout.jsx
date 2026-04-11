@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Navbar from '../../components/Navbar';
@@ -17,6 +17,7 @@ const ReaderPortalLayout = ({ children }) => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth > 768);
 
   const handleLogout = async () => {
     await logout();
@@ -33,9 +34,32 @@ const ReaderPortalLayout = ({ children }) => {
 
   return (
     <div className="app-container publisher-portal reader-portal">
-      <Navbar />
-      <div className="dashboard-layout">
-        <aside className="publisher-sidebar" aria-label="Reader navigation">
+      <Navbar
+        showMenuToggle
+        isMenuOpen={isSidebarOpen}
+        onMenuToggle={() => setIsSidebarOpen((prev) => !prev)}
+        menuTargetId="reader-sidebar"
+      />
+      <div className={`dashboard-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        <div
+          className={`sidebar-overlay ${isSidebarOpen ? 'visible' : ''}`}
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+        <aside
+          id="reader-sidebar"
+          className={`publisher-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}
+          aria-label="Reader navigation"
+        >
+          <div className="sidebar-header">
+            <div>
+              <div className="sidebar-title">LibraryMS</div>
+              <div className="sidebar-subtitle">Reader menu</div>
+            </div>
+            <button type="button" className="sidebar-close-btn" onClick={() => setIsSidebarOpen(false)} aria-label="Close reader menu">
+              ×
+            </button>
+          </div>
           <nav className="portal-tabs">
             {tabs.map((tab) => (
               <NavLink

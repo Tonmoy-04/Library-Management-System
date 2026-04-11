@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/global.css';
 
-const Navbar = () => {
+const Navbar = ({ showMenuToggle = false, isMenuOpen: isSidebarOpen = false, onMenuToggle, menuTargetId = 'admin-sidebar' }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const menuRef = useRef(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const displayName = user?.name || 'User';
   const subtitle = user?.email || 'Library Member';
   const initial = useMemo(() => displayName.charAt(0).toUpperCase(), [displayName]);
@@ -19,24 +19,24 @@ const Navbar = () => {
     }
 
     if (action === 'profile') {
-      setIsMenuOpen(false);
+      setIsProfileMenuOpen(false);
       navigate('/profile');
       return;
     }
 
     if (action === 'settings') {
-      setIsMenuOpen(false);
+      setIsProfileMenuOpen(false);
       navigate('/settings');
       return;
     }
 
-    setIsMenuOpen(false);
+    setIsProfileMenuOpen(false);
   };
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsMenuOpen(false);
+        setIsProfileMenuOpen(false);
       }
     };
 
@@ -45,7 +45,7 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = async () => {
-    setIsMenuOpen(false);
+    setIsProfileMenuOpen(false);
     await logout();
     navigate('/login', { replace: true });
   };
@@ -65,12 +65,28 @@ const Navbar = () => {
       zIndex: 1000,
       boxShadow: 'var(--shadow)'
     }}>
-      <div className="nav-brand" style={{
-        fontSize: '1.5rem',
-        fontWeight: 'bold',
-        color: 'var(--primary-color)'
-      }}>
-        Library<span style={{ color: 'var(--text-main)' }}>MS</span>
+      <div className="nav-brand-group">
+        {showMenuToggle && (
+          <button
+            type="button"
+            className="sidebar-toggle"
+            onClick={onMenuToggle}
+            aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isSidebarOpen}
+            aria-controls={menuTargetId}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        )}
+        <div className="nav-brand" style={{
+          fontSize: '1.5rem',
+          fontWeight: 'bold',
+          color: 'var(--primary-color)'
+        }}>
+          Library<span style={{ color: 'var(--text-main)' }}>MS</span>
+        </div>
       </div>
       <div className="nav-user" ref={menuRef} style={{
         display: 'flex',
@@ -84,8 +100,8 @@ const Navbar = () => {
         <button
           type="button"
           className="avatar"
-          onClick={() => setIsMenuOpen((prev) => !prev)}
-          aria-expanded={isMenuOpen}
+          onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+          aria-expanded={isProfileMenuOpen}
           aria-haspopup="menu"
           style={{
             width: '40px',
@@ -104,7 +120,7 @@ const Navbar = () => {
           {initial}
         </button>
 
-        {isMenuOpen && (
+        {isProfileMenuOpen && (
           <div className="profile-menu-panel" role="menu" aria-label="Profile menu">
             <div className="profile-menu-card">
               <div className="profile-menu-hero">
