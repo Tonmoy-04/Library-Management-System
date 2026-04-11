@@ -86,7 +86,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        if (token) {
+        // Avoid an extra /me request right after login when user data is already known.
+        if (token && !user) {
           await refreshUser();
         }
       } catch (error) {
@@ -97,7 +98,7 @@ export function AuthProvider({ children }) {
     };
 
     bootstrap();
-  }, [token, refreshUser, clearAuth]);
+  }, [token, user, refreshUser, clearAuth]);
 
   return (
     <AuthContext.Provider

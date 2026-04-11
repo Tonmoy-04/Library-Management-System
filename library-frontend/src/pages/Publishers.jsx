@@ -13,6 +13,7 @@ const Publishers = () => {
   const [viewMode, setViewMode] = useState('queue');
   const [searchTerm, setSearchTerm] = useState('');
   const [publisherList, setPublisherList] = useState([]);
+  const [publisherStatusHints, setPublisherStatusHints] = useState({});
   const [publisherListLoading, setPublisherListLoading] = useState(true);
   const [publisherActionId, setPublisherActionId] = useState(null);
   const [publisherError, setPublisherError] = useState('');
@@ -51,8 +52,13 @@ const Publishers = () => {
 
   useEffect(() => {
     fetchQueue(statusFilter);
-    fetchPublishers();
   }, [statusFilter]);
+
+  useEffect(() => {
+    if (viewMode === 'list' && publisherList.length === 0) {
+      fetchPublishers();
+    }
+  }, [viewMode]);
 
   const handlePublisherSuspension = async (publisher, suspended) => {
     if (!publisher?.id) {
@@ -71,6 +77,10 @@ const Publishers = () => {
       setPublisherActionId(publisher.id);
       setPublisherError('');
       await publisherAPI.setSuspension(publisher.id, suspended);
+      setPublisherStatusHints((prev) => ({
+        ...prev,
+        [publisher.id]: suspended ? 'suspended' : 'unsuspended',
+      }));
       await fetchPublishers();
     } catch (err) {
       setPublisherError(err.response?.data?.message || 'Failed to update publisher suspension.');
@@ -187,10 +197,10 @@ const Publishers = () => {
     },
   ];
 
-  const publisherListRows = useMemo(() => {
+  const filteredPublisherList = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
-    const filteredPublishers = publisherList.filter((publisher) => {
+    return publisherList.filter((publisher) => {
       if (!normalizedSearch) {
         return true;
       }
@@ -206,14 +216,18 @@ const Publishers = () => {
 
       return haystack.includes(normalizedSearch);
     });
+  }, [publisherList, searchTerm]);
 
-    return filteredPublishers.map((publisher) => ({
-      id: publisher.id,
-      is_suspended: publisher.is_suspended,
+  const publisherListRows = useMemo(() => {
+    return filteredPublisherList.map((publisher) => ({
       name: publisher.name,
       email: publisher.email || 'N/A',
       location: publisher.location || 'N/A',
-      status: publisher.is_suspended ? (
+      status: publisherStatusHints[publisher.id] === 'unsuspended' ? (
+        <span className="status-badge" style={{ backgroundColor: '#dcfce7', color: '#166534' }}>
+          Unsuspended
+        </span>
+      ) : publisher.is_suspended ? (
         <span className="status-badge" style={{ backgroundColor: '#fee2e2', color: '#991b1b' }}>
           Suspended
         </span>
@@ -223,22 +237,45 @@ const Publishers = () => {
         </span>
       ),
     }));
-  }, [publisherList, searchTerm]);
+  }, [filteredPublisherList, publisherStatusHints]);
 
   const publisherActions = [
     {
-      label: 'Suspend/Unsuspend',
+      label: (_row, rowIndex) => {
+        const target = filteredPublisherList[rowIndex];
+
+        if (!target) {
+          return 'Suspend';
+        }
+
+        if (publisherStatusHints[target.id] === 'suspended') {
+          return 'Suspended';
+        }
+
+        if (publisherStatusHints[target.id] === 'unsuspended') {
+          return 'Unsuspended';
+        }
+
+        return target.is_suspended ? 'Suspended' : 'Suspend';
+      },
       type: 'edit',
-      isDisabled: (row) => {
-        return !row?.id || publisherActionId === row.id;
+      isDisabled: (_row, rowIndex) => {
+        const target = filteredPublisherList[rowIndex];
+        return !target?.id || publisherActionId === target.id;
       },
       disabledTitle: 'Updating suspension status...',
-      onClick: (row) => {
-        if (!row?.id) {
+      onClick: (_row, rowIndex) => {
+        const target = filteredPublisherList[rowIndex];
+
+        if (!target?.id) {
           return;
         }
 
-        handlePublisherSuspension(row, !row.is_suspended);
+        const shouldSuspend = publisherStatusHints[target.id] === 'unsuspended'
+          ? true
+          : !target.is_suspended;
+
+        handlePublisherSuspension(target, shouldSuspend);
       },
     },
   ];
