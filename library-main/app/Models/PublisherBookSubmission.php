@@ -17,7 +17,6 @@ class PublisherBookSubmission extends Model
         'publisher_id',
         'description',
         'category',
-        'quantity',
         'free_to_read',
         'price',
         'file_url',
@@ -27,7 +26,6 @@ class PublisherBookSubmission extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
-        'quantity' => 'integer',
         'free_to_read' => 'boolean',
     ];
 

@@ -89,8 +89,6 @@ const Dashboard = ({ publisherId }) => {
                   <p className="book-date">Published: {new Date(book.created_at).toLocaleDateString()}</p>
                 </div>
                 <div className="book-stats">
-                  <span className="copies">{book.quantity} copies</span>
-                  <span className="available">{book.available_quantity} available</span>
                 </div>
               </div>
             ))}
