@@ -42,11 +42,6 @@ export const useReaderDashboard = () => {
     setBooks(response.data?.data || []);
   }, [filters]);
 
-  const fetchBookmarks = useCallback(async () => {
-    const response = await readerPortalAPI.getBookmarks();
-    setBookmarks(response.data?.data || []);
-  }, []);
-
   const refreshAll = useCallback(async (activeFilters = filters) => {
     setLoading(true);
     setError('');
@@ -54,14 +49,13 @@ export const useReaderDashboard = () => {
       await Promise.all([
         fetchDashboard(),
         fetchBooks(activeFilters),
-        fetchBookmarks(),
       ]);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load reader dashboard.');
     } finally {
       setLoading(false);
     }
-  }, [fetchBooks, fetchBookmarks, fetchDashboard, filters]);
+  }, [fetchBooks, fetchDashboard, filters]);
 
   useEffect(() => {
     refreshAll(filters);

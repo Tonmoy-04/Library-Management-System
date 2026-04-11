@@ -35,6 +35,12 @@ const Table = ({ columns, data, actions }) => {
                         const isDisabled = typeof action.isDisabled === 'function'
                           ? action.isDisabled(row, rowIndex)
                           : false;
+                        const actionLabel = typeof action.label === 'function'
+                          ? action.label(row, rowIndex)
+                          : action.label;
+                        const actionTitle = typeof action.disabledTitle === 'function'
+                          ? action.disabledTitle(row, rowIndex)
+                          : action.disabledTitle;
 
                         return (
                       <button
@@ -42,9 +48,9 @@ const Table = ({ columns, data, actions }) => {
                         onClick={() => action.onClick(row, rowIndex)}
                         disabled={isDisabled}
                         className={`table-action-btn ${getActionClassName(action.type)} ${isDisabled ? 'is-disabled' : ''}`}
-                        title={isDisabled ? (action.disabledTitle || 'Action unavailable') : ''}
+                        title={isDisabled ? (actionTitle || 'Action unavailable') : ''}
                       >
-                        {action.label}
+                        {actionLabel}
                       </button>
                         );
                       })()

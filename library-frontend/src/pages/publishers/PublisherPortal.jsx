@@ -1,23 +1,28 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import Dashboard from './components/Dashboard';
-import Bookshelf from './components/Bookshelf';
-import Reports from './components/Reports';
-import Feedback from './components/Feedback';
-import Settings from './Settings';
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const Bookshelf = lazy(() => import('./components/Bookshelf'));
+const Reports = lazy(() => import('./components/Reports'));
+const Feedback = lazy(() => import('./components/Feedback'));
+const Settings = lazy(() => import('./Settings'));
 import './PublisherPortal.css';
 
 const PublisherPortal = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth > 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
   const publisherUser = JSON.parse(localStorage.getItem('user') || '{}');
   const publisherId = publisherUser?.id;
   const publisherName = publisherUser?.name || '';
+  const renderWithFallback = (node) => (
+    <Suspense fallback={<div className="dashboard-loading">Loading...</div>}>
+      {node}
+    </Suspense>
+  );
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -30,17 +35,17 @@ const PublisherPortal = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard publisherId={publisherId} />;
+        return renderWithFallback(<Dashboard publisherId={publisherId} />);
       case 'bookshelf':
-        return <Bookshelf publisherId={publisherId} publisherName={publisherName} />;
+        return renderWithFallback(<Bookshelf publisherId={publisherId} publisherName={publisherName} />);
       case 'reports':
-        return <Reports publisherId={publisherId} />;
+        return renderWithFallback(<Reports publisherId={publisherId} />);
       case 'feedback':
-        return <Feedback publisherId={publisherId} />;
+        return renderWithFallback(<Feedback publisherId={publisherId} />);
       case 'settings':
-        return <Settings />;
+        return renderWithFallback(<Settings />);
       default:
-        return <Dashboard publisherId={publisherId} />;
+        return renderWithFallback(<Dashboard publisherId={publisherId} />);
     }
   };
 

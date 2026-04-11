@@ -1,32 +1,38 @@
-import React, { useMemo, useState } from 'react';
+import React, { Suspense, lazy, useMemo, useState } from 'react';
 import { RouterProvider, createBrowserRouter, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Footer from './components/Footer';
-import Dashboard from './pages/Dashboard';
-import Books from './pages/Books';
-import Readers from './pages/Readers';
-import Publishers from './pages/Publishers';
-import Transactions from './pages/Transactions';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ReaderHome from './pages/reader/Home';
-import ReaderLibrary from './pages/reader/Library';
-import ReaderMyLibrary from './pages/reader/MyLibrary';
-import ReaderHistory from './pages/reader/History';
-import ReaderBookDetails from './pages/reader/BookDetails';
-import ReaderPortalLayout from './pages/reader/ReaderPortalLayout';
-import ReaderSettings from './pages/reader/Settings';
-import PublisherPortal from './pages/publishers/PublisherPortal';
-import Profile from './pages/Profile';
-import Settings from './pages/Settings';
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Books = lazy(() => import('./pages/Books'));
+const Readers = lazy(() => import('./pages/Readers'));
+const Publishers = lazy(() => import('./pages/Publishers'));
+const Transactions = lazy(() => import('./pages/Transactions'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const ReaderHome = lazy(() => import('./pages/reader/Home'));
+const ReaderLibrary = lazy(() => import('./pages/reader/Library'));
+const ReaderMyLibrary = lazy(() => import('./pages/reader/MyLibrary'));
+const ReaderHistory = lazy(() => import('./pages/reader/History'));
+const ReaderBookDetails = lazy(() => import('./pages/reader/BookDetails'));
+const ReaderPortalLayout = lazy(() => import('./pages/reader/ReaderPortalLayout'));
+const ReaderSettings = lazy(() => import('./pages/reader/Settings'));
+const PublisherPortal = lazy(() => import('./pages/publishers/PublisherPortal'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Settings = lazy(() => import('./pages/Settings'));
 import './styles/global.css';
 import './styles/dashboard.css';
 import './pages/publishers/PublisherPortal.css';
 
 function App() {
   const { isAuthenticated, initializing, isReader, isPublisher } = useAuth();
+
+  const withSuspense = (node) => (
+    <Suspense fallback={<div style={{ padding: '1.5rem', textAlign: 'center' }}>Loading page...</div>}>
+      {node}
+    </Suspense>
+  );
 
   if (initializing) {
     return (
@@ -37,7 +43,7 @@ function App() {
   }
 
   const DashboardLayout = ({ children }) => {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth > 768);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     return (
       <div className="app-container publisher-portal">
@@ -72,7 +78,7 @@ function App() {
         path: '/',
         element: isAuthenticated && !isReader ? (
           <DashboardLayout>
-            <Dashboard />
+            {withSuspense(<Dashboard />)}
           </DashboardLayout>
         ) : (
           <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
@@ -82,7 +88,7 @@ function App() {
         path: '/books',
         element: isAuthenticated && !isReader ? (
           <DashboardLayout>
-            <Books />
+            {withSuspense(<Books />)}
           </DashboardLayout>
         ) : (
           <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
@@ -92,7 +98,7 @@ function App() {
         path: '/readers',
         element: isAuthenticated && !isReader ? (
           <DashboardLayout>
-            <Readers />
+            {withSuspense(<Readers />)}
           </DashboardLayout>
         ) : (
           <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
@@ -102,7 +108,7 @@ function App() {
         path: '/publishers',
         element: isAuthenticated && !isReader ? (
           <DashboardLayout>
-            <Publishers />
+            {withSuspense(<Publishers />)}
           </DashboardLayout>
         ) : (
           <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
@@ -112,7 +118,7 @@ function App() {
         path: '/transactions',
         element: isAuthenticated && !isReader ? (
           <DashboardLayout>
-            <Transactions />
+            {withSuspense(<Transactions />)}
           </DashboardLayout>
         ) : (
           <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
@@ -122,7 +128,7 @@ function App() {
         path: '/settings',
         element: isAuthenticated && !isReader ? (
           <DashboardLayout>
-            <Settings />
+            {withSuspense(<Settings />)}
           </DashboardLayout>
         ) : (
           <Navigate to={isAuthenticated ? '/reader/home' : '/login'} replace />
@@ -131,66 +137,84 @@ function App() {
       {
         path: '/reader/home',
         element: isAuthenticated && isReader ? (
-          <ReaderLayout>
-            <ReaderHome />
-          </ReaderLayout>
+          withSuspense(
+            <ReaderLayout>
+              <ReaderHome />
+            </ReaderLayout>
+          )
         ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
       {
         path: '/reader/library',
         element: isAuthenticated && isReader ? (
-          <ReaderLayout>
-            <ReaderLibrary />
-          </ReaderLayout>
+          withSuspense(
+            <ReaderLayout>
+              <ReaderLibrary />
+            </ReaderLayout>
+          )
         ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
       {
         path: '/reader/my-library',
         element: isAuthenticated && isReader ? (
-          <ReaderLayout>
-            <ReaderMyLibrary />
-          </ReaderLayout>
+          withSuspense(
+            <ReaderLayout>
+              <ReaderMyLibrary />
+            </ReaderLayout>
+          )
         ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
       {
         path: '/reader/history',
         element: isAuthenticated && isReader ? (
-          <ReaderLayout>
-            <ReaderHistory />
-          </ReaderLayout>
+          withSuspense(
+            <ReaderLayout>
+              <ReaderHistory />
+            </ReaderLayout>
+          )
         ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
       {
         path: '/reader/books/:bookId',
         element: isAuthenticated && isReader ? (
-          <ReaderLayout>
-            <ReaderBookDetails />
-          </ReaderLayout>
+          withSuspense(
+            <ReaderLayout>
+              <ReaderBookDetails />
+            </ReaderLayout>
+          )
         ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
       {
         path: '/reader/settings',
         element: isAuthenticated && isReader ? (
-          <ReaderLayout>
-            <ReaderSettings />
-          </ReaderLayout>
+          withSuspense(
+            <ReaderLayout>
+              <ReaderSettings />
+            </ReaderLayout>
+          )
         ) : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
       {
         path: '/publisher/portal',
-        element: isAuthenticated && isPublisher ? <PublisherPortal /> : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
+        element: isAuthenticated && isPublisher
+          ? withSuspense(<PublisherPortal />)
+          : <Navigate to={isAuthenticated ? '/' : '/login'} replace />,
       },
       {
         path: '/profile',
-        element: isAuthenticated ? <Profile /> : <Navigate to="/login" replace />,
+        element: isAuthenticated ? withSuspense(<Profile />) : <Navigate to="/login" replace />,
       },
       {
         path: '/login',
-        element: isAuthenticated ? <Navigate to={isReader ? '/reader/home' : isPublisher ? '/publisher/portal' : '/'} replace /> : <Login />,
+        element: isAuthenticated
+          ? <Navigate to={isReader ? '/reader/home' : isPublisher ? '/publisher/portal' : '/'} replace />
+          : withSuspense(<Login />),
       },
       {
         path: '/register',
-        element: isAuthenticated ? <Navigate to={isReader ? '/reader/home' : '/'} replace /> : <Register />,
+        element: isAuthenticated
+          ? <Navigate to={isReader ? '/reader/home' : '/'} replace />
+          : withSuspense(<Register />),
       },
       {
         path: '*',

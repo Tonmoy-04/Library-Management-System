@@ -921,7 +921,7 @@ class LibraryDataController extends Controller
 
     public function dashboardSummary(): JsonResponse
     {
-        \$totalBooks = (int) DB::table('books')->count();
+        $totalBooks = (int) DB::table('books')->count();
         $totalReaders = (int) DB::table('users')->count();
         $booksIssued = (int) DB::table('book_issues')
             ->where('status', 'issued')

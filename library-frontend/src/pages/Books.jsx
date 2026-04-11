@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Table from '../components/Table';
 import { bookAPI, readerAPI } from '../services/api';
 import '../styles/dashboard.css';
+import '../styles/form.css';
 
 const CATEGORY_OPTIONS = [
   'Fiction',
@@ -52,6 +53,7 @@ const Books = () => {
     publisher: '',
     category: '',
     price: '',
+    quantity: '1',
     free_to_read: false,
     pdf: null,
     pdf_url: '',
@@ -117,7 +119,7 @@ const Books = () => {
       setError('');
 
       try {
-        await Promise.all([fetchBooks(), fetchReaders()]);
+        await fetchBooks();
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load books.');
       } finally {
@@ -147,11 +149,20 @@ const Books = () => {
     }
   }, [books, location.state, showIssueModal]);
 
-  const openIssueModal = (book) => {
+  const openIssueModal = async (book) => {
     if (!book || Number(book.available) <= 0) {
       setIssueError('This book is currently unavailable.');
       setShowIssueModal(false);
       return;
+    }
+
+    if (readers.length === 0) {
+      try {
+        await fetchReaders();
+      } catch (err) {
+        setIssueError('Failed to load readers list.');
+        return;
+      }
     }
 
     setSelectedBook(book);
@@ -174,6 +185,7 @@ const Books = () => {
       publisher: '',
       category: '',
       price: '',
+      quantity: '1',
       free_to_read: false,
       pdf: null,
       pdf_url: '',
@@ -201,6 +213,7 @@ const Books = () => {
       publisher: book.publisher === 'N/A' ? '' : (book.publisher || ''),
       category: book.category === 'General' ? '' : (book.category || ''),
       price: Number(book.price || 0) === 0 ? '' : String(book.price ?? ''),
+      quantity: String(book.quantity ?? 1),
       free_to_read: Number(book.price || 0) === 0,
       pdf: null,
       pdf_url: book.pdf_url || '',
@@ -314,6 +327,7 @@ const Books = () => {
       payload.append('publisher', bookForm.publisher.trim() || '');
       payload.append('category', bookForm.category.trim());
       payload.append('price', String(bookForm.free_to_read ? 0 : Number(bookForm.price)));
+      payload.append('quantity', String(Number(bookForm.quantity || 1)));
       payload.append('free_to_read', bookForm.free_to_read ? '1' : '0');
 
       if (bookForm.pdf) {
@@ -339,6 +353,7 @@ const Books = () => {
           publisher: '',
           category: '',
           price: '',
+          quantity: '1',
           free_to_read: false,
           pdf: null,
           pdf_url: '',
@@ -442,7 +457,7 @@ const Books = () => {
 
       {showAddModal && (
         <div className="modal-backdrop" onClick={closeAddModal}>
-          <div className="issue-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="issue-modal add-book-modal" onClick={(e) => e.stopPropagation()}>
             <div className="issue-modal-header">
               <h3>{editingBook ? 'Edit Book' : 'Add New Book'}</h3>
               <button type="button" onClick={closeAddModal} disabled={addingBook}>
@@ -450,65 +465,65 @@ const Books = () => {
               </button>
             </div>
 
-            <form onSubmit={handleAddBookSubmit}>
-              <div className="form-group">
-                <label htmlFor="title">Title *</label>
-                <input
-                  id="title"
-                  className="form-control"
-                  value={bookForm.title}
-                  onChange={(e) => setBookForm((prev) => ({ ...prev, title: e.target.value }))}
-                  disabled={addingBook}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="author">Author *</label>
-                <input
-                  id="author"
-                  className="form-control"
-                  value={bookForm.author}
-                  onChange={(e) => setBookForm((prev) => ({ ...prev, author: e.target.value }))}
-                  disabled={addingBook}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="publisher">Publisher *</label>
-                <input
-                  id="publisher"
-                  className="form-control"
-                  value={bookForm.publisher}
-                  onChange={(e) => setBookForm((prev) => ({ ...prev, publisher: e.target.value }))}
-                  disabled={addingBook}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="category">Category *</label>
-                <select
-                  id="category"
-                  className="form-control"
-                  value={bookForm.category}
-                  onChange={(e) => setBookForm((prev) => ({ ...prev, category: e.target.value }))}
-                  disabled={addingBook}
-                  required
-                >
-                  <option value="">Select a category</option>
-                  {CATEGORY_OPTIONS.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                  {bookForm.category && !CATEGORY_OPTIONS.includes(bookForm.category) && (
-                    <option value={bookForm.category}>{bookForm.category}</option>
-                  )}
-                </select>
-              </div>
-
-              <div className="form-row">
+            <form onSubmit={handleAddBookSubmit} className="add-book-form">
+              <div className="add-book-grid">
                 <div className="form-group">
+                  <label htmlFor="title">Title *</label>
+                  <input
+                    id="title"
+                    className="form-control"
+                    value={bookForm.title}
+                    onChange={(e) => setBookForm((prev) => ({ ...prev, title: e.target.value }))}
+                    disabled={addingBook}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="author">Author *</label>
+                  <input
+                    id="author"
+                    className="form-control"
+                    value={bookForm.author}
+                    onChange={(e) => setBookForm((prev) => ({ ...prev, author: e.target.value }))}
+                    disabled={addingBook}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="publisher">Publisher *</label>
+                  <input
+                    id="publisher"
+                    className="form-control"
+                    value={bookForm.publisher}
+                    onChange={(e) => setBookForm((prev) => ({ ...prev, publisher: e.target.value }))}
+                    disabled={addingBook}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="category">Category *</label>
+                  <select
+                    id="category"
+                    className="form-control"
+                    value={bookForm.category}
+                    onChange={(e) => setBookForm((prev) => ({ ...prev, category: e.target.value }))}
+                    disabled={addingBook}
+                    required
+                  >
+                    <option value="">Select a category</option>
+                    {CATEGORY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                    {bookForm.category && !CATEGORY_OPTIONS.includes(bookForm.category) && (
+                      <option value={bookForm.category}>{bookForm.category}</option>
+                    )}
+                  </select>
+                </div>
+
+                <div className="form-group form-group-span-1">
                   <label htmlFor="price">Price (BDT) *</label>
                   <input
                     id="price"
@@ -536,8 +551,8 @@ const Books = () => {
                   />
                 </div>
 
-                <div className="form-group" style={{ justifyContent: 'flex-end' }}>
-                  <label htmlFor="free_to_read" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: 0 }}>
+                <div className="form-group form-group-check">
+                  <label htmlFor="free_to_read" className="check-label">
                     <input
                       id="free_to_read"
                       type="checkbox"
@@ -549,32 +564,32 @@ const Books = () => {
                       }))}
                       disabled={addingBook}
                     />
-                    Free to read
+                    <span>Free to read</span>
                   </label>
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label htmlFor="pdf">PDF Upload {!editingBook ? '*' : ''}</label>
-                <input
-                  id="pdf"
-                  name="pdf"
-                  type="file"
-                  accept=".pdf"
-                  className="form-control"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    setBookForm((prev) => ({ ...prev, pdf: file }));
-                  }}
-                  disabled={addingBook}
-                  required={!editingBook}
-                />
-                {bookForm.pdf && (
-                  <p style={{ marginTop: '0.4rem', fontSize: '0.875rem' }}>Selected: {bookForm.pdf.name}</p>
-                )}
-                {!bookForm.pdf && editingBook && bookForm.pdf_url && (
-                  <p style={{ marginTop: '0.4rem', fontSize: '0.875rem' }}>Current PDF is already attached.</p>
-                )}
+                <div className="form-group form-group-span-2">
+                  <label htmlFor="pdf">PDF Upload {!editingBook ? '*' : ''}</label>
+                  <input
+                    id="pdf"
+                    name="pdf"
+                    type="file"
+                    accept=".pdf"
+                    className="form-control"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setBookForm((prev) => ({ ...prev, pdf: file }));
+                    }}
+                    disabled={addingBook}
+                    required={!editingBook}
+                  />
+                  {bookForm.pdf && (
+                    <p style={{ marginTop: '0.4rem', fontSize: '0.875rem' }}>Selected: {bookForm.pdf.name}</p>
+                  )}
+                  {!bookForm.pdf && editingBook && bookForm.pdf_url && (
+                    <p style={{ marginTop: '0.4rem', fontSize: '0.875rem' }}>Current PDF is already attached.</p>
+                  )}
+                </div>
               </div>
 
               {addError && <p className="issue-message issue-error">{addError}</p>}
