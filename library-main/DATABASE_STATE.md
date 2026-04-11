@@ -76,6 +76,8 @@ System tables:
 2. Admin review actions are stored in admin_actions_log.
 3. Approved/active catalog stays in books.
 4. Issue/return transactions are stored in book_issues.
+   - Operational note: `book_issues.user_id` is FK-bound to `users.id`.
+   - Offline reader issuing flow now resolves selected `readers.id` to a valid `users.id` before insert (creates a linked users record when needed).
 5. Reader engagement and purchase history are stored in user_library and transactions.
 6. Reader feedback and publisher response are linked in feedback.
 
@@ -136,6 +138,15 @@ php artisan migrate --path=database/migrations/<migration_file>.php --force
 
 ## Change Log
 Add a new entry on each schema change.
+
+- 2026-04-12
+   - No schema migration was added in this update.
+   - Application-level validation standards enforced project-wide:
+      * Phone number must be exactly 11 digits.
+      * Card number must be exactly 15 digits for paid purchase flow.
+   - Issue flow compatibility update:
+      * Admin still selects from offline readers (`readers` table).
+      * Insert into `book_issues` now resolves to a valid `users.id` to satisfy existing FK `book_issues_user_id_fk`.
 
 - 2026-04-11
    - Added migration: `2026_04_11_140000_ensure_missing_operational_tables`.

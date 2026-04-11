@@ -239,6 +239,11 @@ const Readers = () => {
       return;
     }
 
+    if (readerForm.phone.trim() && !/^\d{11}$/.test(readerForm.phone.trim())) {
+      setFormError('Phone number must be exactly 11 digits.');
+      return;
+    }
+
     setSavingReader(true);
 
     try {
@@ -400,9 +405,12 @@ const Readers = () => {
                   id="readerPhone"
                   className="form-control"
                   value={readerForm.phone}
-                  onChange={(e) => setReaderForm((prev) => ({ ...prev, phone: e.target.value }))}
+                  onChange={(e) => setReaderForm((prev) => ({ ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 11) }))}
                   placeholder="01XXXXXXXXX"
                   disabled={savingReader}
+                  inputMode="numeric"
+                  pattern="\d{11}"
+                  maxLength={11}
                 />
               </div>
 

@@ -67,6 +67,7 @@ Route::prefix('publisher')->group(function () {
 
 Route::middleware('auth:api')->group(function () {
     Route::get('readers', [LibraryDataController::class, 'readers']);
+    Route::get('readers/issuable', [LibraryDataController::class, 'issuableReaders']);
     Route::get('readers/online', [LibraryDataController::class, 'onlineReaders']);
     Route::patch('readers/online/{id}/suspension', [LibraryDataController::class, 'setOnlineReaderSuspension']);
     Route::post('readers', [LibraryDataController::class, 'storeReader']);

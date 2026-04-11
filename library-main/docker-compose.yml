@@ -11,21 +11,40 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_URL: ${APP_URL:-http://localhost:8000}
+      DB_CONNECTION: sqlsrv
+      DB_HOST: db
+      DB_PORT: 1433
+      DB_DATABASE: ${DB_DATABASE:-Library_management}
+      DB_USERNAME: ${DB_USERNAME:-SA}
+      DB_PASSWORD: ${MSSQL_SA_PASSWORD:-ChangeThisStrongPassword!123}
+      DB_ENCRYPT: ${DB_ENCRYPT:-no}
+      DB_TRUST_SERVER_CERTIFICATE: ${DB_TRUST_SERVER_CERTIFICATE:-yes}
     command: php artisan serve --host=0.0.0.0 --port=8000
 
   db:
-    image: mysql:8.0
-    container_name: campusmart_db
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: campusmart_sqlserver
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: campusmart
-      
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-ChangeThisStrongPassword!123}
     ports:
-      - "3306:3306"
+      - "1433:1433"
     volumes:
-      - db_data:/var/lib/mysql
+      - mssql_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"${MSSQL_SA_PASSWORD:-ChangeThisStrongPassword!123}\" -Q \"SELECT 1\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
 
 volumes:
-  db_data:
+  mssql_data:

@@ -109,7 +109,7 @@ const Books = () => {
   const filteredBooksData = useMemo(() => mapBooksForTable(filteredBooks), [filteredBooks]);
 
   const fetchReaders = async () => {
-    const response = await readerAPI.getAll();
+    const response = await readerAPI.getIssuable();
     setReaders(response.data?.data || []);
   };
 

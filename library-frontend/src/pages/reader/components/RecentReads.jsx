@@ -30,21 +30,12 @@ const RecentReads = ({ reads }) => {
   }, [isModalOpen]);
 
   const renderRows = (rows) => rows.map((item) => {
-    const progress = Math.max(0, Math.min(100, Number(item.progress_percent || 0)));
     const openedAt = item.occurred_at ? new Date(item.occurred_at).toLocaleString() : 'Unknown';
 
     return (
       <tr key={`${item.book_id}-${item.id}`}>
         <td data-label="Title">{item.title || 'Untitled book'}</td>
         <td data-label="Author">{item.author || 'Unknown author'}</td>
-        <td data-label="Progress">
-          <div className="reader-table-progress">
-            <div className="reader-book-progress-bar">
-              <div style={{ width: `${progress}%` }} />
-            </div>
-            <span>{progress.toFixed(0)}%</span>
-          </div>
-        </td>
         <td data-label="Last Opened">{openedAt}</td>
       </tr>
     );
@@ -56,7 +47,6 @@ const RecentReads = ({ reads }) => {
         <tr>
           <th>Title</th>
           <th>Author</th>
-          <th>Progress</th>
           <th>Last Opened</th>
         </tr>
       </thead>
