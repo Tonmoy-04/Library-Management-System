@@ -118,23 +118,21 @@ input {
   top: calc(100% + 0.75rem);
   right: 0;
   width: 320px;
-  padding: 0.8rem;
+  padding: 0.5rem;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 22px;
-  box-shadow: var(--shadow-hover);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   z-index: 1200;
   animation: popIn 0.18s ease;
 }
 
 .profile-menu-card {
   padding: 0.95rem;
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, #f8fbff 0%, #eef7ff 100%),
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 42%);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
   color: var(--text-main);
-  border: 1px solid rgba(186, 213, 255, 0.78);
+  border: 1px solid #e5e7eb;
 }
 
 .profile-menu-managed {
@@ -156,17 +154,17 @@ input {
 }
 
 .profile-menu-avatar {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: linear-gradient(145deg, #38bdf8, #14b8a6);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.12rem;
-  font-weight: 900;
+  font-size: 1rem;
+  font-weight: 700;
   color: #fff;
-  box-shadow: 0 12px 24px rgba(56, 189, 248, 0.22);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   flex-shrink: 0;
 }
 
@@ -191,8 +189,8 @@ input {
 
 .profile-menu-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, #dbeafe, transparent);
-  margin: 0.75rem 0;
+  background: #e5e7eb;
+  margin: 0.5rem 0;
 }
 
 .profile-menu-item {
@@ -202,11 +200,15 @@ input {
   justify-content: flex-start;
   gap: 0.8rem;
   padding: 0.85rem 0.95rem;
-  border-radius: 12px;
+  border-radius: 8px;
   color: var(--text-main);
-  font-weight: 700;
-  transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   text-align: left;
+  border: none;
+  background: transparent;
+  cursor: pointer;
 }
 
 .profile-menu-icon {
@@ -216,15 +218,16 @@ input {
   justify-content: center;
   align-items: center;
   flex-shrink: 0;
-  border-radius: 999px;
-  background: #f3f4f6;
-  font-size: 0.86rem;
+  border-radius: 6px;
+  background: #e5e7eb;
+  font-size: 0.75rem;
+  color: #374151;
+  font-weight: 600;
 }
 
 .profile-menu-item:hover {
-  background: #f8fbff;
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+  background: #f3f4f6;
+  transform: translateX(4px);
 }
 
 .profile-menu-item-danger {
@@ -280,28 +283,26 @@ input {
 }
 
 :root.dark-mode .profile-menu-card {
-  background:
-    linear-gradient(180deg, #24344a 0%, #1e2d41 100%),
-    radial-gradient(circle at top right, rgba(91, 163, 255, 0.2), transparent 45%);
-  border-color: #4c6787;
-  color: #e9f1ff;
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+  border-color: #374151;
+  color: #f3f4f6;
 }
 
 :root.dark-mode .profile-menu-name {
-  color: #eaf2ff;
+  color: #f9fafb;
 }
 
 :root.dark-mode .profile-menu-email {
-  color: #c1d0e6;
+  color: #d1d5db;
 }
 
 :root.dark-mode .profile-menu-divider {
-  background: linear-gradient(90deg, transparent, #3d5575, transparent);
+  background: #374151;
 }
 
 :root.dark-mode .profile-menu-icon {
-  background: #2a3e57;
-  color: #dce9ff;
+  background: #374151;
+  color: #f3f4f6;
 }
 
 /* Project-wide dark hardening for legacy light surfaces */
