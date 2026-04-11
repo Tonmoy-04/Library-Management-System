@@ -1118,6 +1118,135 @@
   font-size: 0.875rem;
 }
 
+:root.dark-mode .reader-summary-card,
+:root.dark-mode .reader-section,
+:root.dark-mode .reader-table-wrap,
+:root.dark-mode .reader-recent-panel,
+:root.dark-mode .reader-progress-item,
+:root.dark-mode .reader-book-card,
+:root.dark-mode .reader-detail-card,
+:root.dark-mode .reader-detail-actions-card,
+:root.dark-mode .reader-detail-metadata > div,
+:root.dark-mode .reader-books-table,
+:root.dark-mode .reader-recent-table {
+  background: #141b24;
+  border-color: #2e3745;
+}
+
+:root.dark-mode .reader-section .card-header,
+:root.dark-mode .reader-section .card-body,
+:root.dark-mode .reader-section-header,
+:root.dark-mode .reader-books-table th,
+:root.dark-mode .reader-recent-table th {
+  background: #1b2430;
+  border-bottom-color: #2e3745;
+  color: #d8e4f7;
+}
+
+:root.dark-mode .reader-books-table td,
+:root.dark-mode .reader-recent-table td {
+  border-bottom-color: #2a3341;
+  color: #d5deee;
+}
+
+:root.dark-mode .reader-books-table tbody tr:hover,
+:root.dark-mode .reader-recent-table tbody tr:hover {
+  background: #1d2734;
+}
+
+:root.dark-mode .reader-summary-label,
+:root.dark-mode .reader-title-sub,
+:root.dark-mode .reader-summary-card small,
+:root.dark-mode .reader-progress-header p,
+:root.dark-mode .reader-library-description,
+:root.dark-mode .reader-empty,
+:root.dark-mode .reader-detail-metadata span {
+  color: #99a8c1;
+}
+
+:root.dark-mode .reader-summary-card h3,
+:root.dark-mode .reader-title-main,
+:root.dark-mode .reader-section .card-header h3,
+:root.dark-mode .reader-detail-metadata strong,
+:root.dark-mode .reader-progress-header h4 {
+  color: #edf3ff;
+}
+
+:root.dark-mode .reader-book-cover {
+  background: linear-gradient(150deg, #27364b, #1c2737);
+  color: #c6d8fb;
+}
+
+:root.dark-mode .reader-book-progress-bar,
+:root.dark-mode .reader-progress-bar {
+  background: #2a3547;
+}
+
+:root.dark-mode .bookmark-toggle {
+  background: #1a2432;
+  border-color: #3a4a63;
+  color: #c8d7f2;
+}
+
+:root.dark-mode .bookmark-toggle:hover {
+  border-color: #5d89d8;
+  box-shadow: 0 8px 18px rgba(67, 127, 219, 0.24);
+}
+
+:root.dark-mode .bookmark-toggle.active {
+  background: #24364f;
+  border-color: #5f8fdc;
+  color: #d9e8ff;
+}
+
+:root.dark-mode .reader-status-chip.purchased {
+  background: rgba(22, 163, 74, 0.2);
+  border-color: rgba(74, 222, 128, 0.35);
+  color: #8fe0b2;
+}
+
+:root.dark-mode .reader-status-chip.available {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(96, 165, 250, 0.38);
+  color: #a4cbff;
+}
+
+:root.dark-mode .reader-recent-modal .issue-modal-header {
+  background: #1c2736;
+  border-bottom-color: #314056;
+}
+
+:root.dark-mode .reader-modal-close {
+  background: #212f42;
+  border-color: #3f5472;
+  color: #d6e4ff;
+}
+
+:root.dark-mode .pdf-viewer-content {
+  background: #101821;
+  border: 1px solid #2d3a4d;
+}
+
+:root.dark-mode .pdf-viewer-header {
+  background: #1a2533;
+  border-bottom-color: #2d3a4d;
+}
+
+:root.dark-mode .pdf-viewer-header h3 {
+  color: #e9f1ff;
+}
+
+:root.dark-mode .pdf-viewer-close {
+  background: #1f2d40;
+  border-color: #405776;
+  color: #dbe8ff;
+}
+
+:root.dark-mode .pdf-viewer-footer {
+  background: #151f2b;
+  border-top-color: #2d3a4d;
+}
+
 @media (max-width: 720px) {
   .reader-detail-summary {
     grid-template-columns: 1fr;

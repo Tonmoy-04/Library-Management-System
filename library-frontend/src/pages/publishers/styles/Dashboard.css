@@ -209,3 +209,36 @@
     margin-top: 0.5rem;
   }
 }
+
+:root.dark-mode .dashboard-header h2,
+:root.dark-mode .book-info h4,
+:root.dark-mode .transaction-info p,
+:root.dark-mode .recent-section h3 {
+  color: #e2ebfb;
+}
+
+:root.dark-mode .dashboard-header p,
+:root.dark-mode .book-author,
+:root.dark-mode .book-date,
+:root.dark-mode .copies,
+:root.dark-mode .available,
+:root.dark-mode .transaction-reader,
+:root.dark-mode .transaction-date {
+  color: #a8b8cf;
+}
+
+:root.dark-mode .recent-section {
+  background: #1d2836;
+  border: 1px solid #324355;
+}
+
+:root.dark-mode .recent-book-item,
+:root.dark-mode .transaction-item {
+  background: #18212d;
+  border-color: #324355;
+}
+
+:root.dark-mode .recent-book-item:hover,
+:root.dark-mode .transaction-item:hover {
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.35);
+}

@@ -362,3 +362,56 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+:root.dark-mode .reports-header h2,
+:root.dark-mode .filter-group label,
+:root.dark-mode .metric-value,
+:root.dark-mode .report-section h3,
+:root.dark-mode .book-details h4,
+:root.dark-mode .sales,
+:root.dark-mode .revenue,
+:root.dark-mode .bar-value,
+:root.dark-mode .engagement-section h3 {
+  color: #e2ebfb;
+}
+
+:root.dark-mode .reports-loading,
+:root.dark-mode .reports-header p,
+:root.dark-mode .date-inputs span,
+:root.dark-mode .metric-content h4,
+:root.dark-mode .book-author,
+:root.dark-mode .bar-label,
+:root.dark-mode .no-data,
+:root.dark-mode .sales {
+  color: #a8b8cf;
+}
+
+:root.dark-mode .filters-section,
+:root.dark-mode .report-section,
+:root.dark-mode .engagement-section,
+:root.dark-mode .sales-trend-chart,
+:root.dark-mode .no-data,
+:root.dark-mode .book-ranking,
+:root.dark-mode .engagement-card,
+:root.dark-mode .filter-group select,
+:root.dark-mode .date-inputs input {
+  background: #18212d;
+  border: 1px solid #324355;
+}
+
+:root.dark-mode .metric-card {
+  background: linear-gradient(135deg, rgba(91, 163, 255, 0.22) 0%, rgba(0, 212, 170, 0.14) 100%);
+  border-left-color: #5ba3ff;
+}
+
+:root.dark-mode .book-ranking:hover {
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.35);
+}
+
+:root.dark-mode .bar-container {
+  background: #243244;
+}
+
+:root.dark-mode .engagement-value {
+  color: #7eb6ff;
+}
