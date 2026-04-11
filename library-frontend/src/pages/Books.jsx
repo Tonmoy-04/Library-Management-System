@@ -38,6 +38,8 @@ const Books = () => {
     price: '',
     quantity: 1,
     free_to_read: false,
+    pdf: null,
+    pdf_url: '',
   });
   const [issueForm, setIssueForm] = useState({
     user_id: '',
@@ -161,6 +163,8 @@ const Books = () => {
       price: '',
       quantity: 1,
       free_to_read: false,
+      pdf: null,
+      pdf_url: '',
     });
     setShowAddModal(true);
   };
@@ -187,6 +191,8 @@ const Books = () => {
       price: Number(book.price || 0) === 0 ? '' : String(book.price ?? ''),
       quantity: book.quantity || 1,
       free_to_read: Number(book.price || 0) === 0,
+      pdf: null,
+      pdf_url: book.pdf_url || '',
     });
     setShowAddModal(true);
   };
@@ -283,18 +289,26 @@ const Books = () => {
       return;
     }
 
+    if (!editingBook && !bookForm.pdf) {
+      setAddError('PDF file is required for new books.');
+      return;
+    }
+
     setAddingBook(true);
 
     try {
-      const payload = {
-        title: bookForm.title.trim(),
-        author: bookForm.author.trim(),
-        publisher: bookForm.publisher.trim() || null,
-        category: bookForm.category.trim(),
-        price: bookForm.free_to_read ? 0 : Number(bookForm.price),
-        quantity: Number(bookForm.quantity) || 1,
-        free_to_read: bookForm.free_to_read,
-      };
+      const payload = new FormData();
+      payload.append('title', bookForm.title.trim());
+      payload.append('author', bookForm.author.trim());
+      payload.append('publisher', bookForm.publisher.trim() || '');
+      payload.append('category', bookForm.category.trim());
+      payload.append('price', String(bookForm.free_to_read ? 0 : Number(bookForm.price)));
+      payload.append('quantity', String(Number(bookForm.quantity) || 1));
+      payload.append('free_to_read', bookForm.free_to_read ? '1' : '0');
+
+      if (bookForm.pdf) {
+        payload.append('pdf', bookForm.pdf);
+      }
 
       const response = editingBook
         ? await bookAPI.update(editingBook.id, payload)
@@ -317,6 +331,8 @@ const Books = () => {
           price: '',
           quantity: 1,
           free_to_read: false,
+          pdf: null,
+          pdf_url: '',
         });
       }, 900);
     } catch (err) {
@@ -521,6 +537,29 @@ const Books = () => {
                     Free to read
                   </label>
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="pdf">PDF Upload {!editingBook ? '*' : ''}</label>
+                <input
+                  id="pdf"
+                  name="pdf"
+                  type="file"
+                  accept=".pdf"
+                  className="form-control"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setBookForm((prev) => ({ ...prev, pdf: file }));
+                  }}
+                  disabled={addingBook}
+                  required={!editingBook}
+                />
+                {bookForm.pdf && (
+                  <p style={{ marginTop: '0.4rem', fontSize: '0.875rem' }}>Selected: {bookForm.pdf.name}</p>
+                )}
+                {!bookForm.pdf && editingBook && bookForm.pdf_url && (
+                  <p style={{ marginTop: '0.4rem', fontSize: '0.875rem' }}>Current PDF is already attached.</p>
+                )}
               </div>
 
               {addError && <p className="issue-message issue-error">{addError}</p>}

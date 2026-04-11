@@ -95,7 +95,7 @@ const Reports = ({ publisherId }) => {
         <div className="metric-card">
           <div className="metric-icon">💰</div>
           <div className="metric-content">
-            <h4>Total Revenue</h4>
+            <h4>Publisher Earnings</h4>
             <p className="metric-value">${chartData.totalRevenue?.toLocaleString() || 0}</p>
           </div>
         </div>

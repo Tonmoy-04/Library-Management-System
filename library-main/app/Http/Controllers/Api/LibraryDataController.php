@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -510,6 +511,7 @@ class LibraryDataController extends Controller
                 'b.price',
                 'b.quantity',
                 'b.available',
+                DB::raw(Schema::hasColumn('books', 'pdf_url') ? "COALESCE(b.pdf_url, '') as pdf_url" : "'' as pdf_url"),
                 DB::raw("COALESCE(p.name, 'N/A') as publisher")
             )
             ->orderByDesc('b.id')
@@ -528,6 +530,7 @@ class LibraryDataController extends Controller
             'price' => 'nullable|numeric|min:0',
             'free_to_read' => 'nullable|boolean',
             'quantity' => 'nullable|integer|min:1|max:9999',
+            'pdf' => 'nullable|file|mimes:pdf|max:51200',
         ]);
 
         $now = now();
@@ -561,7 +564,7 @@ class LibraryDataController extends Controller
             }
         }
 
-        $bookId = DB::table('books')->insertGetId([
+        $bookPayload = [
             'title' => $validated['title'],
             'author' => $validated['author'],
             'publisher_id' => $publisherId,
@@ -571,7 +574,21 @@ class LibraryDataController extends Controller
             'available' => $quantity,
             'created_at' => $now,
             'updated_at' => $now,
-        ]);
+        ];
+
+        if (Schema::hasColumn('books', 'pdf_url')) {
+            if ($request->hasFile('pdf')) {
+                $file = $request->file('pdf');
+                $fileName = time() . '_admin_' . Str::slug($validated['title']) . '_' . $file->getClientOriginalName();
+                $bookPayload['pdf_url'] = $file->storeAs('books/pdfs', $fileName, 'public');
+            }
+        } elseif ($request->hasFile('pdf')) {
+            return response()->json([
+                'message' => 'PDF storage is not enabled in books table. Run migrations first.',
+            ], 422);
+        }
+
+        $bookId = DB::table('books')->insertGetId($bookPayload);
 
         $book = DB::table('books as b')
             ->leftJoin('publishers as p', 'b.publisher_id', '=', 'p.id')
@@ -583,6 +600,7 @@ class LibraryDataController extends Controller
                 'b.price',
                 'b.quantity',
                 'b.available',
+                DB::raw(Schema::hasColumn('books', 'pdf_url') ? "COALESCE(b.pdf_url, '') as pdf_url" : "'' as pdf_url"),
                 DB::raw("COALESCE(p.name, 'N/A') as publisher")
             )
             ->where('b.id', $bookId)
@@ -610,6 +628,7 @@ class LibraryDataController extends Controller
             'price' => 'nullable|numeric|min:0',
             'free_to_read' => 'nullable|boolean',
             'quantity' => 'nullable|integer|min:1|max:9999',
+            'pdf' => 'nullable|file|mimes:pdf|max:51200',
         ]);
 
         $now = now();
@@ -653,18 +672,34 @@ class LibraryDataController extends Controller
 
         $newAvailable = $newQuantity - $issuedCount;
 
+        $updatePayload = [
+            'title' => $validated['title'],
+            'author' => $validated['author'],
+            'publisher_id' => $publisherId,
+            'category' => $validated['category'],
+            'price' => $price,
+            'quantity' => $newQuantity,
+            'available' => $newAvailable,
+            'updated_at' => $now,
+        ];
+
+        if (Schema::hasColumn('books', 'pdf_url') && $request->hasFile('pdf')) {
+            if (! empty($book->pdf_url) && ! Str::startsWith((string) $book->pdf_url, ['http://', 'https://'])) {
+                Storage::disk('public')->delete(ltrim((string) $book->pdf_url, '/'));
+            }
+
+            $file = $request->file('pdf');
+            $fileName = time() . '_admin_' . Str::slug($validated['title']) . '_' . $file->getClientOriginalName();
+            $updatePayload['pdf_url'] = $file->storeAs('books/pdfs', $fileName, 'public');
+        } elseif (! Schema::hasColumn('books', 'pdf_url') && $request->hasFile('pdf')) {
+            return response()->json([
+                'message' => 'PDF storage is not enabled in books table. Run migrations first.',
+            ], 422);
+        }
+
         DB::table('books')
             ->where('id', $id)
-            ->update([
-                'title' => $validated['title'],
-                'author' => $validated['author'],
-                'publisher_id' => $publisherId,
-                'category' => $validated['category'],
-                'price' => $price,
-                'quantity' => $newQuantity,
-                'available' => $newAvailable,
-                'updated_at' => $now,
-            ]);
+            ->update($updatePayload);
 
         $updatedBook = DB::table('books as b')
             ->leftJoin('publishers as p', 'b.publisher_id', '=', 'p.id')
@@ -676,6 +711,7 @@ class LibraryDataController extends Controller
                 'b.price',
                 'b.quantity',
                 'b.available',
+                DB::raw(Schema::hasColumn('books', 'pdf_url') ? "COALESCE(b.pdf_url, '') as pdf_url" : "'' as pdf_url"),
                 DB::raw("COALESCE(p.name, 'N/A') as publisher")
             )
             ->where('b.id', $id)
@@ -720,6 +756,9 @@ class LibraryDataController extends Controller
                 'u.name as reader',
                 'b.title as book',
                 DB::raw('NULL as amount'),
+                DB::raw('NULL as admin_share'),
+                DB::raw('NULL as publisher_share'),
+                DB::raw("'N/A' as publisher"),
                 DB::raw('NULL as payment_status'),
                 'bi.issued_at',
                 'bi.due_at',
@@ -731,15 +770,28 @@ class LibraryDataController extends Controller
 
         $paymentTransactions = collect();
         if (Schema::hasTable('transactions')) {
-            $paymentTransactions = DB::table('transactions as t')
+            $hasPublisherId = Schema::hasColumn('transactions', 'publisher_id');
+            $hasAdminShare = Schema::hasColumn('transactions', 'admin_share');
+            $hasPublisherShare = Schema::hasColumn('transactions', 'publisher_share');
+
+            $paymentQuery = DB::table('transactions as t')
                 ->join('users as u', 't.user_id', '=', 'u.id')
-                ->leftJoin('books as b', 't.book_id', '=', 'b.id')
+                ->leftJoin('books as b', 't.book_id', '=', 'b.id');
+
+            if ($hasPublisherId) {
+                $paymentQuery->leftJoin('publishers as p', 't.publisher_id', '=', 'p.id');
+            }
+
+            $paymentTransactions = $paymentQuery
                 ->select(
                     't.id',
                     DB::raw("'payment' as transaction_type"),
                     'u.name as reader',
                     DB::raw("COALESCE(b.title, 'N/A') as book"),
                     't.amount',
+                    DB::raw($hasAdminShare ? 'COALESCE(t.admin_share, 0) as admin_share' : '0 as admin_share'),
+                    DB::raw($hasPublisherShare ? 'COALESCE(t.publisher_share, 0) as publisher_share' : '0 as publisher_share'),
+                    DB::raw($hasPublisherId ? "COALESCE(p.name, 'N/A') as publisher" : "'N/A' as publisher"),
                     't.payment_status',
                     DB::raw('NULL as issued_at'),
                     DB::raw('NULL as due_at'),

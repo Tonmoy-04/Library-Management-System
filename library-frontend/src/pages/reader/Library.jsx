@@ -18,6 +18,15 @@ const Library = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedBookForPayment, setSelectedBookForPayment] = useState(null);
+  const [paymentForm, setPaymentForm] = useState({
+    card_holder: '',
+    card_number: '',
+    expiry: '',
+    cvv: '',
+    payment_method: 'card',
+  });
 
   const loadLibrary = async (nextFilters = filters) => {
     setLoading(true);
@@ -88,10 +97,54 @@ const Library = () => {
     'Book bookmarked.'
   );
 
-  const handleBuy = (bookId) => withAction(
-    () => readerPortalAPI.purchaseBook(bookId),
-    'Book purchased.'
-  );
+  const handleBuy = (book) => {
+    setError('');
+    setMessage('');
+    setSelectedBookForPayment(book);
+    setPaymentForm({
+      card_holder: '',
+      card_number: '',
+      expiry: '',
+      cvv: '',
+      payment_method: 'card',
+    });
+    setShowPaymentModal(true);
+  };
+
+  const closePaymentModal = () => {
+    if (actionLoading) return;
+    setShowPaymentModal(false);
+    setSelectedBookForPayment(null);
+  };
+
+  const handlePaymentSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!selectedBookForPayment) {
+      return;
+    }
+
+    const amount = Number(selectedBookForPayment.price || 0);
+    const isPaidBook = amount > 0;
+
+    if (isPaidBook) {
+      if (!paymentForm.card_holder.trim() || !paymentForm.card_number.trim() || !paymentForm.expiry.trim() || !paymentForm.cvv.trim()) {
+        setError('Please fill all payment fields to complete purchase.');
+        return;
+      }
+    }
+
+    await withAction(
+      () => readerPortalAPI.purchaseBook(selectedBookForPayment.id, {
+        payment_method: isPaidBook ? paymentForm.payment_method : 'free',
+        payment_reference: `WEB-${Date.now()}`,
+      }),
+      isPaidBook ? 'Payment successful. Book purchased.' : 'Book unlocked successfully.'
+    );
+
+    setShowPaymentModal(false);
+    setSelectedBookForPayment(null);
+  };
 
   const renderBooksTable = (rows) => (
     <div className="reader-table-wrap">
@@ -158,7 +211,7 @@ const Library = () => {
                     <button
                       type="button"
                       className="btn btn-primary"
-                      onClick={() => handleBuy(book.id)}
+                      onClick={() => handleBuy(book)}
                       disabled={actionLoading || isPurchased}
                     >
                       {isPurchased ? 'Purchased' : 'Buy'}
@@ -259,6 +312,96 @@ const Library = () => {
           )}
         </div>
       </section>
+
+      {showPaymentModal && selectedBookForPayment && (
+        <div className="modal-backdrop" onClick={closePaymentModal}>
+          <div className="issue-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="issue-modal-header">
+              <h3>Complete Payment</h3>
+              <button type="button" onClick={closePaymentModal} disabled={actionLoading}>x</button>
+            </div>
+
+            <p className="issue-book-title" style={{ marginBottom: '0.5rem' }}>
+              {selectedBookForPayment.title} by {selectedBookForPayment.author || 'Unknown author'}
+            </p>
+
+            <ul className="account-list" style={{ marginBottom: '1rem' }}>
+              <li><span>Total</span><strong>${Number(selectedBookForPayment.price || 0).toFixed(2)}</strong></li>
+              <li><span>Library Admin (10%)</span><strong>${(Number(selectedBookForPayment.price || 0) * 0.1).toFixed(2)}</strong></li>
+              <li><span>Publisher (90%)</span><strong>${(Number(selectedBookForPayment.price || 0) * 0.9).toFixed(2)}</strong></li>
+            </ul>
+
+            <form onSubmit={handlePaymentSubmit}>
+              {Number(selectedBookForPayment.price || 0) > 0 ? (
+                <>
+                  <div className="form-group">
+                    <label htmlFor="card_holder">Card Holder Name</label>
+                    <input
+                      id="card_holder"
+                      className="form-control"
+                      value={paymentForm.card_holder}
+                      onChange={(e) => setPaymentForm((prev) => ({ ...prev, card_holder: e.target.value }))}
+                      disabled={actionLoading}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="card_number">Card Number</label>
+                    <input
+                      id="card_number"
+                      className="form-control"
+                      value={paymentForm.card_number}
+                      onChange={(e) => setPaymentForm((prev) => ({ ...prev, card_number: e.target.value }))}
+                      disabled={actionLoading}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="expiry">Expiry</label>
+                      <input
+                        id="expiry"
+                        className="form-control"
+                        placeholder="MM/YY"
+                        value={paymentForm.expiry}
+                        onChange={(e) => setPaymentForm((prev) => ({ ...prev, expiry: e.target.value }))}
+                        disabled={actionLoading}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="cvv">CVV</label>
+                      <input
+                        id="cvv"
+                        className="form-control"
+                        value={paymentForm.cvv}
+                        onChange={(e) => setPaymentForm((prev) => ({ ...prev, cvv: e.target.value }))}
+                        disabled={actionLoading}
+                        required
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="reader-empty" style={{ marginBottom: '1rem' }}>
+                  This title is free. Confirm to unlock reading and download access.
+                </p>
+              )}
+
+              <div className="issue-modal-actions">
+                <button type="button" className="btn" onClick={closePaymentModal} disabled={actionLoading}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={actionLoading}>
+                  {actionLoading ? 'Processing...' : (Number(selectedBookForPayment.price || 0) > 0 ? 'Pay & Unlock' : 'Unlock Book')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

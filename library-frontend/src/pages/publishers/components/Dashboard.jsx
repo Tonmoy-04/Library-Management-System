@@ -55,7 +55,7 @@ const Dashboard = ({ publisherId }) => {
       color: '#f59e0b'
     },
     {
-      title: 'Revenue',
+      title: 'Your Earnings',
       value: `$${stats.revenue.toLocaleString()}`,
       icon: '💵',
       color: '#8b5cf6'
@@ -112,6 +112,9 @@ const Dashboard = ({ publisherId }) => {
                   <span className={`status-badge ${transaction.status}`}>
                     {transaction.status}
                   </span>
+                  <p className="transaction-date">
+                    Earned: ${Number(transaction.publisher_earning || 0).toFixed(2)}
+                  </p>
                   <p className="transaction-date">
                     {new Date(transaction.issued_at).toLocaleDateString()}
                   </p>

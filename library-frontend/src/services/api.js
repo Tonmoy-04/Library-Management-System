@@ -52,7 +52,7 @@ export const readerPortalAPI = {
   removeLibraryStatus: (bookId, status) => api.delete(`/reader/library/${bookId}/status/${status}`),
   getMyLibrary: () => api.get('/reader/my-library'),
   getHistory: (params) => api.get('/reader/history', { params }),
-  purchaseBook: (bookId) => api.post(`/reader/books/${bookId}/purchase`),
+  purchaseBook: (bookId, payload = {}) => api.post(`/reader/books/${bookId}/purchase`, payload),
   downloadBook: (bookId) => api.post(`/reader/books/${bookId}/download`),
   saveProgress: (bookId, payload) => api.post(`/reader/books/${bookId}/progress`, payload),
   continueReading: (bookId) => api.post(`/reader/books/${bookId}/continue`),
@@ -75,7 +75,13 @@ export const bookAPI = {
   getAll: () => api.get('/books'),
   getByPublisher: (publisherId) => api.get(`/publishers/${publisherId}/books`),
   create: (payload) => api.post('/books', payload),
-  update: (id, payload) => api.put(`/books/${id}`, payload),
+  update: (id, payload) => {
+    if (payload instanceof FormData) {
+      payload.append('_method', 'PUT');
+      return api.post(`/books/${id}`, payload);
+    }
+    return api.put(`/books/${id}`, payload);
+  },
   remove: (id) => api.delete(`/books/${id}`),
   issueBook: (payload) => api.post('/transactions/issue', payload),
 };
