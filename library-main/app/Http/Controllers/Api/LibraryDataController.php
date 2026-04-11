@@ -69,7 +69,7 @@ class LibraryDataController extends Controller
                         'publisher_id' => $submission->publisher_id,
                         'description' => $submission->description,
                         'price' => $submission->price,
-                        'pdf_url' => $submission->file_url,
+                        'category' => null,
                         'quantity' => 1,
                         'available' => 1,
                     ]);
@@ -351,6 +351,8 @@ class LibraryDataController extends Controller
                 'b.id',
                 'b.title',
                 'b.author',
+                'b.category',
+                'b.price',
                 'b.quantity',
                 'b.available',
                 DB::raw("COALESCE(p.name, 'N/A') as publisher")
@@ -367,11 +369,27 @@ class LibraryDataController extends Controller
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'publisher' => 'nullable|string|max:255',
-            'quantity' => 'required|integer|min:1|max:9999',
+            'category' => 'required|string|max:120',
+            'price' => 'nullable|numeric|min:0',
+            'free_to_read' => 'nullable|boolean',
+            'quantity' => 'nullable|integer|min:1|max:9999',
         ]);
 
         $now = now();
         $publisherId = null;
+        $freeToRead = filter_var($validated['free_to_read'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if (! $freeToRead && (! array_key_exists('price', $validated) || $validated['price'] === null || $validated['price'] === '')) {
+            return response()->json([
+                'message' => 'Price is required when the book is not marked as free to read.',
+                'errors' => [
+                    'price' => ['Price is required when free to read is disabled.'],
+                ],
+            ], 422);
+        }
+
+        $price = $freeToRead ? 0 : (float) $validated['price'];
+        $quantity = max(1, (int) ($validated['quantity'] ?? 1));
 
         if (! empty($validated['publisher'])) {
             $publisherName = trim($validated['publisher']);
@@ -392,8 +410,10 @@ class LibraryDataController extends Controller
             'title' => $validated['title'],
             'author' => $validated['author'],
             'publisher_id' => $publisherId,
-            'quantity' => $validated['quantity'],
-            'available' => $validated['quantity'],
+            'category' => $validated['category'],
+            'price' => $price,
+            'quantity' => $quantity,
+            'available' => $quantity,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -404,6 +424,8 @@ class LibraryDataController extends Controller
                 'b.id',
                 'b.title',
                 'b.author',
+                'b.category',
+                'b.price',
                 'b.quantity',
                 'b.available',
                 DB::raw("COALESCE(p.name, 'N/A') as publisher")
@@ -429,11 +451,27 @@ class LibraryDataController extends Controller
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'publisher' => 'nullable|string|max:255',
-            'quantity' => 'required|integer|min:1|max:9999',
+            'category' => 'required|string|max:120',
+            'price' => 'nullable|numeric|min:0',
+            'free_to_read' => 'nullable|boolean',
+            'quantity' => 'nullable|integer|min:1|max:9999',
         ]);
 
         $now = now();
         $publisherId = null;
+        $freeToRead = filter_var($validated['free_to_read'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if (! $freeToRead && (! array_key_exists('price', $validated) || $validated['price'] === null || $validated['price'] === '')) {
+            return response()->json([
+                'message' => 'Price is required when the book is not marked as free to read.',
+                'errors' => [
+                    'price' => ['Price is required when free to read is disabled.'],
+                ],
+            ], 422);
+        }
+
+        $price = $freeToRead ? 0 : (float) $validated['price'];
+        $newQuantity = max(1, (int) ($validated['quantity'] ?? $book->quantity ?? 1));
 
         if (! empty($validated['publisher'])) {
             $publisherName = trim($validated['publisher']);
@@ -451,7 +489,6 @@ class LibraryDataController extends Controller
         }
 
         $issuedCount = max(0, (int) $book->quantity - (int) $book->available);
-        $newQuantity = (int) $validated['quantity'];
 
         if ($newQuantity < $issuedCount) {
             return response()->json([
@@ -467,6 +504,8 @@ class LibraryDataController extends Controller
                 'title' => $validated['title'],
                 'author' => $validated['author'],
                 'publisher_id' => $publisherId,
+                'category' => $validated['category'],
+                'price' => $price,
                 'quantity' => $newQuantity,
                 'available' => $newAvailable,
                 'updated_at' => $now,
@@ -478,6 +517,8 @@ class LibraryDataController extends Controller
                 'b.id',
                 'b.title',
                 'b.author',
+                'b.category',
+                'b.price',
                 'b.quantity',
                 'b.available',
                 DB::raw("COALESCE(p.name, 'N/A') as publisher")

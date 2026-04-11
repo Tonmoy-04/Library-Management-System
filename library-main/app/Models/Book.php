@@ -14,11 +14,11 @@ class Book extends Model
         'description',
         'publisher_id',
         'author',
+        'category',
         'quantity',
         'available_quantity',
         'price',
         'available',
-        'pdf_url',
     ];
 
     public function publisher()
