@@ -28,9 +28,10 @@ const Register = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const nextValue = name === 'phone' ? value.replace(/\D/g, '').slice(0, 11) : value;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: nextValue
     }));
   };
 
@@ -55,6 +56,11 @@ const Register = () => {
 
     if (isReader && (!formData.phone || !formData.address)) {
       setError('Please fill in phone and address');
+      return;
+    }
+
+    if ((isReader || isPublisher) && !/^\d{11}$/.test(formData.phone)) {
+      setError('Phone number must be exactly 11 digits');
       return;
     }
 
@@ -208,6 +214,9 @@ const Register = () => {
                   placeholder="017XXXXXXXX"
                   value={formData.phone}
                   onChange={handleChange}
+                  inputMode="numeric"
+                  pattern="\d{11}"
+                  maxLength={11}
                 />
               </div>
 
@@ -254,6 +263,9 @@ const Register = () => {
                   placeholder="017XXXXXXXX"
                   value={formData.phone}
                   onChange={handleChange}
+                  inputMode="numeric"
+                  pattern="\d{11}"
+                  maxLength={11}
                 />
               </div>
 

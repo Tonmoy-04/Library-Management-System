@@ -202,6 +202,7 @@ class ReaderPortalController extends Controller
         $validated = request()->validate([
             'payment_method' => 'nullable|string|max:40',
             'payment_reference' => 'nullable|string|max:120',
+            'card_number' => 'nullable|digits:15',
         ]);
 
         $readerId = (int) auth('reader')->id();
@@ -218,6 +219,15 @@ class ReaderPortalController extends Controller
                 'message' => 'Payment method is required for paid books.',
                 'errors' => [
                     'payment_method' => ['Payment method is required for paid books.'],
+                ],
+            ], 422);
+        }
+
+        if ($amount > 0 && empty($validated['card_number'])) {
+            return response()->json([
+                'message' => 'Card number must be exactly 15 digits for paid books.',
+                'errors' => [
+                    'card_number' => ['Card number must be exactly 15 digits for paid books.'],
                 ],
             ], 422);
         }

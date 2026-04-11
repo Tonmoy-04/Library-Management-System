@@ -98,6 +98,7 @@ export const transactionAPI = {
 
 export const readerAPI = {
   getAll: () => api.get('/readers'),
+  getIssuable: () => api.get('/readers/issuable'),
   getOnline: () => api.get('/readers/online'),
   setSuspension: (id, suspended) => api.patch(`/readers/online/${id}/suspension`, { suspended }),
   create: (payload) => api.post('/readers', payload),

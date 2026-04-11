@@ -174,7 +174,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:50',
+            'phone' => 'nullable|digits:11',
         ]);
 
         $payload = [

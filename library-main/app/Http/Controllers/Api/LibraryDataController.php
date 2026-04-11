@@ -150,6 +150,24 @@ class LibraryDataController extends Controller
         return response()->json(['data' => $readers]);
     }
 
+    public function issuableReaders(): JsonResponse
+    {
+        $query = DB::table('readers')
+            ->select('id', 'name', 'email')
+            ->orderByDesc('id');
+
+        if (Schema::hasColumn('readers', 'is_online_registered')) {
+            $query->where(function ($builder) {
+                $builder->where('is_online_registered', false)
+                    ->orWhereNull('is_online_registered');
+            });
+        }
+
+        $users = $query->get();
+
+        return response()->json(['data' => $users]);
+    }
+
     public function onlineReaders(): JsonResponse
     {
         if (! Schema::hasColumn('readers', 'is_online_registered')) {
@@ -214,7 +232,7 @@ class LibraryDataController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:readers,name',
             'email' => 'nullable|email|max:255|unique:readers,email',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|digits:11',
             'address' => 'nullable|string|max:500',
         ]);
 
@@ -276,7 +294,7 @@ class LibraryDataController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:readers,name,' . $id,
             'email' => 'nullable|email|max:255|unique:readers,email,' . $id,
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|digits:11',
             'address' => 'nullable|string|max:500',
         ]);
 
@@ -801,17 +819,34 @@ class LibraryDataController extends Controller
     {
         $validated = $request->validate([
             'book_id' => 'required|integer|exists:books,id',
-            'user_id' => 'required|integer|exists:users,id',
+            'user_id' => 'required|integer|exists:readers,id',
             'due_at' => 'nullable|date|after:today',
         ]);
 
         $issued = DB::transaction(function () use ($validated) {
-            $book = DB::table('books')
-                ->where('id', $validated['book_id'])
-                ->lockForUpdate()
-                ->first();
+            $issueUserId = $this->resolveIssueUserIdFromOfflineReader((int) $validated['user_id']);
 
-            if (!$book || (int) $book->available < 1) {
+            $stockColumn = Schema::hasColumn('books', 'available')
+                ? 'available'
+                : (Schema::hasColumn('books', 'available_quantity') ? 'available_quantity' : null);
+
+            $bookQuery = DB::table('books')
+                ->where('id', $validated['book_id'])
+                ->lockForUpdate();
+
+            if ($stockColumn) {
+                $bookQuery->select('id', DB::raw($stockColumn . ' as stock_available'));
+            }
+
+            $book = $bookQuery->first();
+
+            if (! $book) {
+                throw ValidationException::withMessages([
+                    'book_id' => ['Book not found.'],
+                ]);
+            }
+
+            if ($stockColumn && (int) ($book->stock_available ?? 0) < 1) {
                 throw ValidationException::withMessages([
                     'book_id' => ['This book is currently not available for issue.'],
                 ]);
@@ -820,7 +855,7 @@ class LibraryDataController extends Controller
             $now = now();
 
             $issueId = DB::table('book_issues')->insertGetId([
-                'user_id' => $validated['user_id'],
+                'user_id' => $issueUserId,
                 'book_id' => $validated['book_id'],
                 'issued_at' => $now,
                 'due_at' => $validated['due_at'] ?? null,
@@ -830,12 +865,14 @@ class LibraryDataController extends Controller
                 'updated_at' => $now,
             ]);
 
-            DB::table('books')
-                ->where('id', $validated['book_id'])
-                ->update([
-                    'available' => DB::raw('available - 1'),
-                    'updated_at' => $now,
-                ]);
+            if ($stockColumn) {
+                DB::table('books')
+                    ->where('id', $validated['book_id'])
+                    ->update([
+                        $stockColumn => DB::raw($stockColumn . ' - 1'),
+                        'updated_at' => $now,
+                    ]);
+            }
 
             return DB::table('book_issues as bi')
                 ->join('users as u', 'bi.user_id', '=', 'u.id')
@@ -862,6 +899,10 @@ class LibraryDataController extends Controller
     public function returnBook(int $id): JsonResponse
     {
         $returned = DB::transaction(function () use ($id) {
+            $stockColumn = Schema::hasColumn('books', 'available')
+                ? 'available'
+                : (Schema::hasColumn('books', 'available_quantity') ? 'available_quantity' : null);
+
             $issue = DB::table('book_issues')
                 ->where('id', $id)
                 ->lockForUpdate()
@@ -887,12 +928,14 @@ class LibraryDataController extends Controller
                     'updated_at' => $now,
                 ]);
 
-            DB::table('books')
-                ->where('id', $issue->book_id)
-                ->update([
-                    'available' => DB::raw('available + 1'),
-                    'updated_at' => $now,
-                ]);
+            if ($stockColumn) {
+                DB::table('books')
+                    ->where('id', $issue->book_id)
+                    ->update([
+                        $stockColumn => DB::raw($stockColumn . ' + 1'),
+                        'updated_at' => $now,
+                    ]);
+            }
 
             return DB::table('book_issues as bi')
                 ->join('users as u', 'bi.user_id', '=', 'u.id')
@@ -921,8 +964,8 @@ class LibraryDataController extends Controller
 
     public function dashboardSummary(): JsonResponse
     {
-        \$totalBooks = (int) DB::table('books')->count();
-        $totalReaders = (int) DB::table('users')->count();
+        $totalBooks = (int) DB::table('books')->count();
+        $totalReaders = (int) DB::table('readers')->count();
         $booksIssued = (int) DB::table('book_issues')
             ->where('status', 'issued')
             ->count();
@@ -984,6 +1027,48 @@ class LibraryDataController extends Controller
                 'gross_sales' => $grossSales,
             ],
             'recent_transactions' => $recentTransactions,
+        ]);
+    }
+
+    private function resolveIssueUserIdFromOfflineReader(int $readerId): int
+    {
+        $reader = DB::table('readers')
+            ->select('id', 'name', 'email')
+            ->where('id', $readerId)
+            ->first();
+
+        if (! $reader) {
+            throw ValidationException::withMessages([
+                'user_id' => ['Selected reader not found.'],
+            ]);
+        }
+
+        if (! empty($reader->email)) {
+            $existingUserId = DB::table('users')
+                ->where('email', $reader->email)
+                ->value('id');
+
+            if ($existingUserId) {
+                return (int) $existingUserId;
+            }
+        }
+
+        $email = ! empty($reader->email)
+            ? (string) $reader->email
+            : sprintf('offline.reader.%d.%s@local.library', $readerId, Str::lower(Str::random(8)));
+
+        while (DB::table('users')->where('email', $email)->exists()) {
+            $email = sprintf('offline.reader.%d.%s@local.library', $readerId, Str::lower(Str::random(8)));
+        }
+
+        $now = now();
+
+        return (int) DB::table('users')->insertGetId([
+            'name' => trim((string) ($reader->name ?? 'Offline Reader ' . $readerId)),
+            'email' => $email,
+            'password' => Hash::make(Str::random(40)),
+            'created_at' => $now,
+            'updated_at' => $now,
         ]);
     }
 
