@@ -83,17 +83,14 @@ const Settings = () => {
       setError('');
       setMessage('');
 
-      await authAPI.updateProfile(profile);
+      const response = await authAPI.updateProfile(profile);
+      const updatedUser = response.data?.user;
+      if (updatedUser) {
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
       setMessage('Profile updated successfully!');
     } catch (err) {
-      // Fallback so settings still works even if backend endpoint is unavailable.
-      if (err?.response?.status === 404 || err?.response?.status === 405) {
-        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-        localStorage.setItem('user', JSON.stringify({ ...currentUser, ...profile }));
-        setMessage('Profile saved locally. Backend profile endpoint is not available yet.');
-      } else {
-        setError(err.response?.data?.message || 'Failed to update profile');
-      }
+      setError(err.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
       setTimeout(() => {
@@ -138,11 +135,7 @@ const Settings = () => {
         confirm_password: '',
       });
     } catch (err) {
-      if (err?.response?.status === 404 || err?.response?.status === 405) {
-        setMessage('Password change endpoint is not available yet.');
-      } else {
-        setError(err.response?.data?.message || 'Failed to change password');
-      }
+      setError(err.response?.data?.message || 'Failed to change password');
     } finally {
       setLoading(false);
       setTimeout(() => {

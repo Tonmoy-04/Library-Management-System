@@ -65,3 +65,14 @@
   transform: translateY(-2px);
   box-shadow: var(--shadow);
 }
+
+:root.dark-mode .form-control {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+:root.dark-mode .form-control:focus {
+  background-color: var(--bg-hover);
+  border-color: var(--primary-color);
+}

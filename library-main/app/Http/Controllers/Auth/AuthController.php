@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
@@ -150,5 +151,64 @@ class AuthController extends Controller
             'token' => $token,
             'user' => auth('api')->user()
         ]);
+    }
+
+    public function forgotPasswordReset(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'new_password' => 'required|string|min:8',
+        ]);
+
+        $user = User::query()->where('email', $validated['email'])->firstOrFail();
+        $user->password = Hash::make($validated['new_password']);
+        $user->save();
+
+        return response()->json(['message' => 'Password reset successful. You can now log in with your new password.']);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth('api')->user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:50',
+        ]);
+
+        $payload = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ];
+
+        if (Schema::hasColumn('users', 'phone')) {
+            $payload['phone'] = $validated['phone'] ?? null;
+        }
+
+        $user->update($payload);
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+            'user' => $user->fresh(),
+        ]);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8',
+        ]);
+
+        $user = auth('api')->user();
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            return response()->json(['message' => 'Current password is incorrect.'], 422);
+        }
+
+        $user->password = Hash::make($validated['new_password']);
+        $user->save();
+
+        return response()->json(['message' => 'Password changed successfully.']);
     }
 }

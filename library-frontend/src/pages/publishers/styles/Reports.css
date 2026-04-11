@@ -363,6 +363,37 @@
   }
 }
 
+:root.dark-mode .reports-loading,
+:root.dark-mode .reports-header h2,
+:root.dark-mode .reports-header p,
+:root.dark-mode .filter-group label,
+:root.dark-mode .metric-value,
+:root.dark-mode .report-section h3,
+:root.dark-mode .book-details h4,
+:root.dark-mode .book-author,
+:root.dark-mode .bar-value,
+:root.dark-mode .bar-label,
+:root.dark-mode .engagement-section h3,
+:root.dark-mode .engagement-card h4,
+:root.dark-mode .sales,
+:root.dark-mode .revenue {
+  color: var(--text-main);
+}
+
+:root.dark-mode .filters-section,
+:root.dark-mode .report-section,
+:root.dark-mode .no-data,
+:root.dark-mode .book-ranking,
+:root.dark-mode .sales-trend-chart,
+:root.dark-mode .engagement-section,
+:root.dark-mode .engagement-card,
+:root.dark-mode .filter-group select,
+:root.dark-mode .date-inputs input,
+:root.dark-mode .bar-container {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
 :root.dark-mode .reports-header h2,
 :root.dark-mode .filter-group label,
 :root.dark-mode .metric-value,

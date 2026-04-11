@@ -15,7 +15,9 @@ const PublisherPortal = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth > 768);
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const publisherId = JSON.parse(localStorage.getItem('user'))?.id;
+  const publisherUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const publisherId = publisherUser?.id;
+  const publisherName = publisherUser?.name || '';
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -30,7 +32,7 @@ const PublisherPortal = () => {
       case 'dashboard':
         return <Dashboard publisherId={publisherId} />;
       case 'bookshelf':
-        return <Bookshelf publisherId={publisherId} />;
+        return <Bookshelf publisherId={publisherId} publisherName={publisherName} />;
       case 'reports':
         return <Reports publisherId={publisherId} />;
       case 'feedback':

@@ -713,3 +713,20 @@
     justify-content: center;
   }
 }
+
+:root.dark-mode .settings-section,
+:root.dark-mode .theme-option,
+:root.dark-mode .theme-preview,
+:root.dark-mode .preview-box.light,
+:root.dark-mode .tab-btn,
+:root.dark-mode .form-group input,
+:root.dark-mode .danger-zone,
+:root.dark-mode .danger-action-card {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+:root.dark-mode .tab-btn:hover {
+  background: var(--bg-hover) !important;
+}

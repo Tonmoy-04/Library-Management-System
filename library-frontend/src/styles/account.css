@@ -234,6 +234,37 @@
   transform: translateX(26px);
 }
 
+:root.dark-mode .account-shell-profile {
+  background:
+    radial-gradient(circle at 12% 16%, rgba(45, 212, 191, 0.12), transparent 38%),
+    radial-gradient(circle at 88% 12%, rgba(251, 113, 133, 0.08), transparent 34%),
+    radial-gradient(circle at 50% 100%, rgba(59, 130, 246, 0.08), transparent 42%),
+    var(--bg-main);
+}
+
+:root.dark-mode .account-hero,
+:root.dark-mode .account-hero-profile,
+:root.dark-mode .account-hero-settings,
+:root.dark-mode .account-card,
+:root.dark-mode .account-card-accent,
+:root.dark-mode .account-toast,
+:root.dark-mode .setting-switch span {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+:root.dark-mode .account-kicker,
+:root.dark-mode .account-hero-profile .account-kicker,
+:root.dark-mode .account-hero-profile .account-hero-copy h1,
+:root.dark-mode .account-hero-profile .account-hero-copy p {
+  color: var(--text-main);
+}
+
+:root.dark-mode .setting-switch {
+  background: #2d3f57;
+}
+
 @media (max-width: 900px) {
   .account-hero,
   .account-grid {

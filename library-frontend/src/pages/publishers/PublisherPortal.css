@@ -5,6 +5,7 @@
   padding-top: 64px;
   gap: 0;
   position: relative;
+  overflow-x: clip;
 }
 
 .publisher-portal .publisher-sidebar {
@@ -13,6 +14,7 @@
   padding: 1rem 0;
   min-height: calc(100vh - 64px);
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 0 0 250px;
   min-width: 250px;
   display: flex;
@@ -55,6 +57,7 @@
 
 .publisher-portal .main-content {
   flex: 1;
+  min-width: 0;
   margin-left: 260px;
   padding: 2rem;
   background-color: var(--bg-main);
@@ -67,7 +70,7 @@
 }
 
 .publisher-portal .dashboard-layout.sidebar-closed .main-content,
-.publisher-portal .dashboard-layout.sidebar-closed .footer {
+.publisher-portal .dashboard-layout.sidebar-closed + .footer {
   margin-left: 0;
   width: 100%;
 }
@@ -76,7 +79,7 @@
   padding-left: 2rem;
 }
 
-.publisher-portal .dashboard-layout.sidebar-closed .footer {
+.publisher-portal .dashboard-layout.sidebar-closed + .footer {
   padding-left: 2rem;
 }
 
@@ -86,11 +89,15 @@
   gap: 0.5rem;
   padding: 0 1rem;
   flex: 1;
+  min-width: 0;
 }
 
 .publisher-portal .logout-btn {
   margin: 1rem;
   margin-top: auto;
+  width: calc(100% - 2rem);
+  min-width: 0;
+  box-sizing: border-box;
   padding: 0.75rem 1rem;
   background: transparent;
   border: 1px solid var(--border-color);
@@ -118,6 +125,8 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
   padding: 0.75rem 1rem;
   background: transparent;
   border: none;
@@ -181,6 +190,9 @@
 
 .publisher-portal .tab-label {
   display: inline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Loading and Error States */
@@ -229,19 +241,32 @@
 /* Responsive Design */
 @media (max-width: 1024px) {
   .publisher-portal .publisher-sidebar {
-    width: 250px;
-    min-width: 250px;
+    width: min(84vw, 300px);
+    min-width: 0;
+    transform: translateX(-102%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .publisher-portal .publisher-sidebar.open {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .publisher-portal .main-content {
     margin-left: 0;
-    padding-left: calc(250px + 2rem);
+    padding: 1.25rem;
   }
 
   .publisher-portal .footer {
     margin-left: 0;
     width: 100%;
-    padding-left: 250px;
+    padding-left: 0;
+  }
+
+  .publisher-portal .sidebar-overlay {
+    display: block;
   }
 }
 

@@ -460,3 +460,18 @@
   background: rgba(16, 185, 129, 0.18);
   border-color: rgba(52, 211, 153, 0.45);
 }
+
+:root.dark-mode .feedback-list,
+:root.dark-mode .feedback-item,
+:root.dark-mode .feedback-detail,
+:root.dark-mode .detail-header,
+:root.dark-mode .feedback-text-full,
+:root.dark-mode .reply-section,
+:root.dark-mode .reply-text,
+:root.dark-mode .reply-box,
+:root.dark-mode .filter-select,
+:root.dark-mode .reply-box textarea {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}

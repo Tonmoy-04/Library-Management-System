@@ -20,6 +20,7 @@ const Login = () => {
   const [role, setRole] = useState(initialRole);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
     const syncAutofillValues = () => {
@@ -104,60 +105,78 @@ const Login = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    setError('');
+
+    if (!email) {
+      setError('Enter your email first, then click Forgot password.');
+      return;
+    }
+
+    const nextPassword = window.prompt('Enter your new password (minimum 8 characters):', '');
+    if (!nextPassword) {
+      return;
+    }
+
+    const confirmPassword = window.prompt('Confirm your new password:', '');
+    if (!confirmPassword) {
+      return;
+    }
+
+    if (nextPassword !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    if (nextPassword.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+
+    try {
+      setForgotLoading(true);
+
+      const payload = { email, new_password: nextPassword };
+      if (role === 'reader') {
+        await readerAuthAPI.forgotPasswordReset(payload);
+      } else if (role === 'publisher') {
+        await publisherAuthAPI.forgotPasswordReset(payload);
+      } else {
+        await authAPI.forgotPasswordReset(payload);
+      }
+
+      window.alert('Password reset successful. Please log in with your new password.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to reset password.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   return (
-    <div className="login-page" style={{
-      height: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'var(--bg-main)'
-    }}>
-      <div className="login-card" style={{
-        backgroundColor: 'var(--bg-card)',
-        padding: '2.5rem',
-        borderRadius: 'var(--radius)',
-        boxShadow: 'var(--shadow-hover)',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ color: 'var(--primary-color)', fontSize: '2rem', marginBottom: '0.5rem' }}>LibraryMS</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Welcome back! Please login to your account.</p>
+    <div className="login-page auth-page">
+      <div className="login-card auth-card">
+        <div className="auth-header">
+          <h1 className="auth-brand">LibraryMS</h1>
+          <p className="auth-subtitle">Welcome back! Please login to your account.</p>
         </div>
 
         <form onSubmit={handleSubmit} autoComplete="on">
           {error && (
-            <div style={{
-              color: '#ef4444',
-              marginBottom: '1rem',
-              fontSize: '0.875rem',
-              textAlign: 'center',
-              padding: '0.75rem',
-              backgroundColor: '#fee2e2',
-              borderRadius: '0.375rem'
-            }}>
+            <div className="auth-error">
               {error}
             </div>
           )}
 
           <div className="form-group">
             <label>Login As</label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="auth-role-grid">
               {['admin', 'publisher', 'reader'].map((option) => (
                 <button
                   key={option}
                   type="button"
                   onClick={() => setRole(option)}
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem',
-                    borderRadius: '0.5rem',
-                    border: '1px solid var(--border-color)',
-                    backgroundColor: role === option ? 'var(--primary-color)' : 'transparent',
-                    color: role === option ? '#fff' : 'var(--text-main)',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
+                  className={`auth-role-btn ${role === option ? 'active' : ''}`}
                 >
                   {option === 'admin' ? 'Admin' : option === 'publisher' ? 'Publisher' : 'Reader'}
                 </button>
@@ -213,36 +232,30 @@ const Login = () => {
 
           <button 
             type="submit" 
-            className="btn btn-primary" 
-            style={{ width: '100%', marginTop: '1rem' }}
+            className="btn btn-primary auth-submit"
             disabled={loading}
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+        <div className="auth-footer">
+          <p className="auth-meta-text">
             Don't have an account?{' '}
             <Link
               to={role === 'reader' ? '/register?role=reader' : role === 'publisher' ? '/register?role=publisher' : '/register?role=admin'}
-              style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}
+              className="auth-link"
             >
               Register here
             </Link>
           </p>
           <button
             type="button"
-            style={{
-              color: 'var(--primary-color)',
-              fontSize: '0.875rem',
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer'
-            }}
+            className="auth-link-btn"
+            onClick={handleForgotPassword}
+            disabled={forgotLoading}
           >
-            Forgot password?
+            {forgotLoading ? 'Resetting...' : 'Forgot password?'}
           </button>
         </div>
       </div>

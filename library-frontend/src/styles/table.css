@@ -4,6 +4,95 @@
   border: 1px solid var(--border-color);
 }
 
+.modern-table-container {
+  overflow-x: auto;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 0.7rem;
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+.modern-table thead tr {
+  border-bottom: 2px solid var(--secondary-color);
+}
+
+.modern-table th {
+  padding: 0.9rem 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 0.79rem;
+  letter-spacing: 0.06em;
+  background: linear-gradient(180deg, #f7faff 0%, #edf4ff 100%);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.modern-table td {
+  padding: 0.84rem 0.8rem;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--secondary-color);
+}
+
+.modern-table tbody tr {
+  transition: var(--transition);
+}
+
+.modern-table tbody tr:hover {
+  background: #f1f6ff;
+}
+
+.cell-center {
+  text-align: center;
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.45rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.table-action-btn {
+  padding: 0.42rem 0.78rem;
+  border-radius: 8px;
+  font-size: 0.77rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+
+.table-action-btn:hover {
+  transform: translateY(-1px);
+}
+
+.table-action-btn.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.table-action-delete {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.table-action-issue {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.table-action-default {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
 .custom-table {
   border-spacing: 0;
 }
@@ -52,4 +141,22 @@
 
 .custom-table button:hover {
   box-shadow: 0 6px 14px rgba(15, 103, 248, 0.14);
+}
+
+:root.dark-mode .modern-table-container {
+  background: linear-gradient(180deg, #1a2638 0%, #172232 100%);
+  border-color: var(--border-color);
+}
+
+:root.dark-mode .modern-table th {
+  background: linear-gradient(180deg, #223147 0%, #1e2b3f 100%);
+  color: #b7c8e3;
+}
+
+:root.dark-mode .modern-table td {
+  border-bottom-color: #2f435d;
+}
+
+:root.dark-mode .modern-table tbody tr:hover {
+  background: #223247;
 }

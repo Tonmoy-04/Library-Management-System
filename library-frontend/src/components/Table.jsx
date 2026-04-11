@@ -4,58 +4,32 @@ import '../styles/table.css';
 const Table = ({ columns, data, actions }) => {
   const actionColumnIndex = columns.findIndex((column) => column.toLowerCase() === 'actions');
 
+  const getActionClassName = (type) => {
+    if (type === 'delete') return 'table-action-delete';
+    if (type === 'issue') return 'table-action-issue';
+    return 'table-action-default';
+  };
+
   return (
-    <div className="table-container" style={{
-      overflowX: 'auto',
-      backgroundColor: 'var(--bg-card)',
-      borderRadius: 'var(--radius)',
-      boxShadow: 'var(--shadow)',
-      padding: '1rem'
-    }}>
-      <table className="custom-table" style={{
-        width: '100%',
-        borderCollapse: 'collapse',
-        textAlign: 'left'
-      }}>
+    <div className="table-container modern-table-container">
+      <table className="custom-table modern-table">
         <thead>
-          <tr style={{ borderBottom: '2px solid var(--secondary-color)' }}>
+          <tr>
             {columns.map((col, index) => (
-              <th key={index} style={{
-                padding: '1rem',
-                fontWeight: '600',
-                color: 'var(--text-muted)',
-                fontSize: '0.875rem',
-                textAlign: index === actionColumnIndex ? 'center' : 'left'
-              }}>{col}</th>
+              <th key={index} className={index === actionColumnIndex ? 'cell-center' : ''}>{col}</th>
             ))}
-            {actions && <th style={{
-              padding: '1rem',
-              fontWeight: '600',
-              color: 'var(--text-muted)',
-              fontSize: '0.875rem',
-              textAlign: 'center'
-            }}>Actions</th>}
+            {actions && <th className="cell-center">Actions</th>}
           </tr>
         </thead>
         <tbody>
           {data.map((row, rowIndex) => (
-            <tr key={rowIndex} style={{
-              borderBottom: '1px solid var(--secondary-color)',
-              transition: 'var(--transition)'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-main)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            >
+            <tr key={rowIndex}>
               {Object.values(row).map((val, cellIndex) => (
-                <td key={cellIndex} style={{
-                  padding: '1rem',
-                  fontSize: '0.9rem',
-                  textAlign: cellIndex === actionColumnIndex ? 'center' : 'left'
-                }}>{val}</td>
+                <td key={cellIndex} className={cellIndex === actionColumnIndex ? 'cell-center' : ''}>{val}</td>
               ))}
               {actions && (
-                <td style={{ padding: '1rem', textAlign: 'center' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                <td className="cell-center">
+                  <div className="table-actions">
                     {actions.map((action, actionIndex) => (
                       (() => {
                         const isDisabled = typeof action.isDisabled === 'function'
@@ -67,35 +41,8 @@ const Table = ({ columns, data, actions }) => {
                         key={actionIndex}
                         onClick={() => action.onClick(row, rowIndex)}
                         disabled={isDisabled}
-                        style={{
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '6px',
-                          fontSize: '0.8rem',
-                          fontWeight: '600',
-                          backgroundColor:
-                            action.type === 'delete'
-                              ? '#fee2e2'
-                              : action.type === 'issue'
-                              ? '#dcfce7'
-                              : '#e0f2fe',
-                          color:
-                            action.type === 'delete'
-                              ? '#991b1b'
-                              : action.type === 'issue'
-                              ? '#166534'
-                              : '#075985',
-                          transition: 'var(--transition)',
-                          opacity: isDisabled ? 0.45 : 1,
-                          cursor: isDisabled ? 'not-allowed' : 'pointer'
-                        }}
+                        className={`table-action-btn ${getActionClassName(action.type)} ${isDisabled ? 'is-disabled' : ''}`}
                         title={isDisabled ? (action.disabledTitle || 'Action unavailable') : ''}
-                        onMouseEnter={(e) => {
-                          if (isDisabled) return;
-                          e.currentTarget.style.transform = 'scale(1.05)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'scale(1)';
-                        }}
                       >
                         {action.label}
                       </button>

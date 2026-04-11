@@ -12,6 +12,9 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PublisherPortalController extends Controller
 {
@@ -35,6 +38,7 @@ class PublisherPortalController extends Controller
     public function dashboard($publisherId)
     {
         $publisher = Publisher::findOrFail($publisherId);
+        $publisherBookIds = Book::where('publisher_id', $publisherId)->pluck('id')->toArray();
 
         $hasPublisherRevenueSplit = Schema::hasTable('transactions')
             && Schema::hasColumn('transactions', 'publisher_id')
@@ -43,15 +47,22 @@ class PublisherPortalController extends Controller
         $totalBooks = Book::where('publisher_id', $publisherId)->count();
 
         if ($hasPublisherRevenueSplit) {
-            $totalOrders = DB::table('transactions')
-                ->where('publisher_id', $publisherId)
-                ->where('payment_status', 'paid')
-                ->count();
+            $splitTransactionsBase = DB::table('transactions as t')
+                ->where(function ($query) use ($publisherId, $publisherBookIds) {
+                    $query->where('t.publisher_id', $publisherId);
 
-            $totalRevenue = (float) DB::table('transactions')
-                ->where('publisher_id', $publisherId)
+                    if (! empty($publisherBookIds)) {
+                        $query->orWhereIn('t.book_id', $publisherBookIds);
+                    }
+                })
                 ->where('payment_status', 'paid')
-                ->sum('publisher_share');
+                ->distinct('t.id');
+
+            $totalOrders = (clone $splitTransactionsBase)->count('t.id');
+
+            $totalRevenue = (float) (clone $splitTransactionsBase)
+                ->selectRaw('SUM(CASE WHEN COALESCE(t.publisher_share, 0) > 0 THEN t.publisher_share ELSE COALESCE(t.amount, 0) * 0.90 END) as total')
+                ->value('total');
         } else {
             $totalOrders = BookIssue::whereIn('book_id', Book::where('publisher_id', $publisherId)->pluck('id'))
                 ->where('status', 'issued')
@@ -72,7 +83,13 @@ class PublisherPortalController extends Controller
             $recentTransactions = DB::table('transactions as t')
                 ->leftJoin('books as b', 'b.id', '=', 't.book_id')
                 ->leftJoin('users as u', 'u.id', '=', 't.user_id')
-                ->where('t.publisher_id', $publisherId)
+                ->where(function ($query) use ($publisherId, $publisherBookIds) {
+                    $query->where('t.publisher_id', $publisherId);
+
+                    if (! empty($publisherBookIds)) {
+                        $query->orWhereIn('t.book_id', $publisherBookIds);
+                    }
+                })
                 ->where('t.payment_status', 'paid')
                 ->orderByDesc('t.transaction_date')
                 ->limit(5)
@@ -82,7 +99,7 @@ class PublisherPortalController extends Controller
                     DB::raw("COALESCE(u.name, 'Unknown Reader') as reader_name"),
                     DB::raw("COALESCE(t.payment_status, 'paid') as status"),
                     't.transaction_date as issued_at',
-                    DB::raw('COALESCE(t.publisher_share, 0) as publisher_earning'),
+                    DB::raw('CASE WHEN COALESCE(t.publisher_share, 0) > 0 THEN t.publisher_share ELSE COALESCE(t.amount, 0) * 0.90 END as publisher_earning'),
                 ]);
         } else {
             $recentTransactions = BookIssue::whereIn('book_id', Book::where('publisher_id', $publisherId)->pluck('id'))
@@ -138,14 +155,17 @@ class PublisherPortalController extends Controller
             if (!empty($publisherBooks) && $hasPublisherRevenueSplit) {
                 $paymentRows = DB::table('transactions as t')
                     ->leftJoin('books as b', 'b.id', '=', 't.book_id')
-                    ->where('t.publisher_id', $publisherId)
+                    ->where(function ($query) use ($publisherId, $publisherBooks) {
+                        $query->where('t.publisher_id', $publisherId)
+                            ->orWhereIn('t.book_id', $publisherBooks);
+                    })
                     ->where('t.payment_status', 'paid')
                     ->whereBetween('t.transaction_date', [$startDate, $endDate])
                     ->select(
                         't.id',
                         't.book_id',
                         't.transaction_date',
-                        DB::raw('COALESCE(t.publisher_share, 0) as publisher_share'),
+                        DB::raw('CASE WHEN COALESCE(t.publisher_share, 0) > 0 THEN t.publisher_share ELSE COALESCE(t.amount, 0) * 0.90 END as publisher_share'),
                         DB::raw("COALESCE(b.title, 'Unknown') as title"),
                         DB::raw("COALESCE(b.author, 'Unknown') as author")
                     )
@@ -236,23 +256,60 @@ class PublisherPortalController extends Controller
                     ->toArray();
             }
 
-            // Performance metrics
+            // Performance metrics (computed from feedback when available)
+            $totalReviews = 0;
+            $avgRating = 0.0;
+            if (! empty($publisherBooks) && Schema::hasTable('feedback')) {
+                $feedbackQuery = DB::table('feedback')
+                    ->whereIn('book_id', $publisherBooks)
+                    ->whereBetween('created_at', [$startDate, $endDate]);
+
+                $totalReviews = (int) (clone $feedbackQuery)->count();
+                $avgRating = (float) ((clone $feedbackQuery)->avg('rating') ?? 0);
+            }
+
             $performanceMetrics = [
-                'avgRating' => 4.5, // Placeholder
-                'totalReviews' => 0,
+                'avgRating' => round($avgRating, 2),
+                'totalReviews' => $totalReviews,
             ];
 
             // User engagement
+            $views = BookIssue::whereIn('book_id', $publisherBooks)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+
+            $downloads = BookIssue::whereIn('book_id', $publisherBooks)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->where('status', 'returned')
+                ->count();
+
+            $repeatReaders = 0;
+            $avgReadingTime = 0;
+
+            if (! empty($publisherBooks) && Schema::hasTable('reader_book_purchases')) {
+                $repeatReaders = (int) DB::table('reader_book_purchases')
+                    ->whereIn('book_id', $publisherBooks)
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->select('reader_id')
+                    ->groupBy('reader_id')
+                    ->havingRaw('COUNT(*) > 1')
+                    ->count();
+            }
+
+            if (! empty($publisherBooks) && Schema::hasTable('reader_reading_progress')) {
+                $avgProgress = (float) (DB::table('reader_reading_progress')
+                    ->whereIn('book_id', $publisherBooks)
+                    ->whereBetween('updated_at', [$startDate, $endDate])
+                    ->avg('progress_percent') ?? 0);
+                // Convert average progress % to a coarse minutes estimate for UI continuity.
+                $avgReadingTime = (int) round(($avgProgress / 100) * 60);
+            }
+
             $userEngagement = [
-                'views' => BookIssue::whereIn('book_id', $publisherBooks)
-                    ->whereBetween('created_at', [$startDate, $endDate])
-                    ->count(),
-                'downloads' => BookIssue::whereIn('book_id', $publisherBooks)
-                    ->whereBetween('created_at', [$startDate, $endDate])
-                    ->where('status', 'returned')
-                    ->count(),
-                'avgReadingTime' => 45,
-                'repeatReaders' => 0,
+                'views' => $views,
+                'downloads' => $downloads,
+                'avgReadingTime' => $avgReadingTime,
+                'repeatReaders' => $repeatReaders,
             ];
 
             return response()->json([
@@ -363,9 +420,14 @@ class PublisherPortalController extends Controller
             $request->validate([
                 'title' => 'required|string|max:255',
                 'author' => 'required|string|max:255',
-                'description' => 'nullable|string',
+                'publisher' => 'required|string|max:255',
+                'category' => 'required|string|max:120',
                 'price' => 'required|numeric|min:0',
+                'quantity' => 'nullable|integer|min:1|max:9999',
+                'free_to_read' => 'nullable|boolean',
                 'pdf' => 'nullable|file|mimes:pdf|max:51200', // 50MB max for PDF
+                'pdf_base64' => 'nullable|string',
+                'pdf_name' => 'nullable|string|max:255|required_with:pdf_base64',
             ]);
 
             $publisher = auth('publisher')->user();
@@ -375,21 +437,26 @@ class PublisherPortalController extends Controller
                 ], 403);
             }
 
-            // Handle PDF upload if provided
-            $fileUrl = null;
-            if ($request->hasFile('pdf')) {
-                $file = $request->file('pdf');
-                $fileName = time() . '_' . $publisherId . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs('publisher_submissions/pdfs', $fileName, 'public');
-                $fileUrl = $path;
+            if (! $request->hasFile('pdf') && ! $request->filled('pdf_base64')) {
+                throw ValidationException::withMessages([
+                    'pdf' => ['PDF file is required.'],
+                ]);
             }
+
+            $fileUrl = $this->storePublisherPdf($request, (int) $publisherId);
+
+            $freeToRead = filter_var($request->input('free_to_read', false), FILTER_VALIDATE_BOOLEAN);
+            $price = $freeToRead ? 0 : (float) $request->input('price', 0);
 
             $book = PublisherBookSubmission::create([
                 'title' => $request->title,
                 'author' => $request->author,
                 'publisher_id' => $publisherId,
-                'description' => $request->description,
-                'price' => $request->price,
+                'description' => null,
+                'category' => $request->category,
+                'quantity' => max(1, (int) $request->input('quantity', 1)),
+                'free_to_read' => $freeToRead,
+                'price' => $price,
                 'file_url' => $fileUrl,
                 'status' => 'pending',
             ]);
@@ -415,9 +482,14 @@ class PublisherPortalController extends Controller
             $request->validate([
                 'title' => 'required|string|max:255',
                 'author' => 'required|string|max:255',
-                'description' => 'nullable|string',
+                'publisher' => 'required|string|max:255',
+                'category' => 'required|string|max:120',
                 'price' => 'required|numeric|min:0',
+                'quantity' => 'nullable|integer|min:1|max:9999',
+                'free_to_read' => 'nullable|boolean',
                 'pdf' => 'nullable|file|mimes:pdf|max:51200',
+                'pdf_base64' => 'nullable|string',
+                'pdf_name' => 'nullable|string|max:255|required_with:pdf_base64',
             ]);
 
             $publisher = auth('publisher')->user();
@@ -439,18 +511,21 @@ class PublisherPortalController extends Controller
 
             // Handle PDF upload if provided
             $fileUrl = $book->file_url;
-            if ($request->hasFile('pdf')) {
-                $file = $request->file('pdf');
-                $fileName = time() . '_' . $publisherId . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs('publisher_submissions/pdfs', $fileName, 'public');
-                $fileUrl = $path;
+            if ($request->hasFile('pdf') || $request->filled('pdf_base64')) {
+                $fileUrl = $this->storePublisherPdf($request, (int) $publisherId);
             }
+
+            $freeToRead = filter_var($request->input('free_to_read', false), FILTER_VALIDATE_BOOLEAN);
+            $price = $freeToRead ? 0 : (float) $request->input('price', 0);
 
             $book->update([
                 'title' => $request->title,
                 'author' => $request->author,
-                'description' => $request->description,
-                'price' => $request->price,
+                'description' => null,
+                'category' => $request->category,
+                'quantity' => max(1, (int) $request->input('quantity', 1)),
+                'free_to_read' => $freeToRead,
+                'price' => $price,
                 'file_url' => $fileUrl,
             ]);
 
@@ -474,5 +549,54 @@ class PublisherPortalController extends Controller
         return response()->json([
             'error' => 'Submissions are retained for history and cannot be deleted.',
         ], 422);
+    }
+
+    private function storePublisherPdf(Request $request, int $publisherId): ?string
+    {
+        if ($request->hasFile('pdf')) {
+            $file = $request->file('pdf');
+            $fileName = time() . '_' . $publisherId . '_' . $file->getClientOriginalName();
+            return $file->storeAs('publisher_submissions/pdfs', $fileName, 'public');
+        }
+
+        if (! $request->filled('pdf_base64')) {
+            return null;
+        }
+
+        $rawBase64 = (string) $request->input('pdf_base64');
+        if (Str::contains($rawBase64, ',')) {
+            [, $rawBase64] = explode(',', $rawBase64, 2);
+        }
+
+        $binary = base64_decode($rawBase64, true);
+        if ($binary === false) {
+            throw ValidationException::withMessages([
+                'pdf' => ['Invalid PDF encoding.'],
+            ]);
+        }
+
+        if (strlen($binary) > 7 * 1024 * 1024) {
+            throw ValidationException::withMessages([
+                'pdf' => ['PDF is too large. Please upload a file smaller than 7 MB.'],
+            ]);
+        }
+
+        if (substr($binary, 0, 5) !== '%PDF-') {
+            throw ValidationException::withMessages([
+                'pdf' => ['Uploaded file is not a valid PDF.'],
+            ]);
+        }
+
+        $providedName = (string) $request->input('pdf_name', 'uploaded.pdf');
+        $safeName = preg_replace('/[^A-Za-z0-9._-]/', '_', $providedName) ?: 'uploaded.pdf';
+        if (! Str::endsWith(Str::lower($safeName), '.pdf')) {
+            $safeName .= '.pdf';
+        }
+
+        $fileName = time() . '_' . $publisherId . '_' . $safeName;
+        $path = 'publisher_submissions/pdfs/' . $fileName;
+        Storage::disk('public')->put($path, $binary);
+
+        return $path;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Feedback;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -185,7 +186,7 @@ class ReaderPortalController extends Controller
             return response()->json(['message' => 'Book not found.'], 404);
         }
 
-        $book->pdf_url = $this->resolvePublicFileUrl($book->pdf_url ?? null);
+        $book->pdf_url = $this->resolvePublicFileUrl($this->resolveBookPdfPath($bookId));
 
         return response()->json(['data' => $book]);
     }
@@ -265,6 +266,33 @@ class ReaderPortalController extends Controller
                 $transactionId = DB::table('transactions')->insertGetId($transactionPayload);
 
                 $existingTransaction = DB::table('transactions')->where('id', $transactionId)->first();
+            } else {
+                $transactionBackfill = [];
+
+                if (Schema::hasColumn('transactions', 'publisher_id') && empty($existingTransaction->publisher_id) && ! empty($book->publisher_id)) {
+                    $transactionBackfill['publisher_id'] = $book->publisher_id;
+                }
+
+                if (Schema::hasColumn('transactions', 'admin_share') && (! isset($existingTransaction->admin_share) || (float) $existingTransaction->admin_share <= 0) && $amount > 0) {
+                    $transactionBackfill['admin_share'] = $adminShare;
+                }
+
+                if (Schema::hasColumn('transactions', 'publisher_share') && (! isset($existingTransaction->publisher_share) || (float) $existingTransaction->publisher_share <= 0) && $amount > 0) {
+                    $transactionBackfill['publisher_share'] = $publisherShare;
+                }
+
+                if (Schema::hasColumn('transactions', 'payment_method') && empty($existingTransaction->payment_method)) {
+                    $transactionBackfill['payment_method'] = $validated['payment_method'] ?? ($amount > 0 ? 'card' : 'free');
+                }
+
+                if (Schema::hasColumn('transactions', 'payment_reference') && empty($existingTransaction->payment_reference)) {
+                    $transactionBackfill['payment_reference'] = $validated['payment_reference'] ?? ('TXN-' . strtoupper(Str::random(10)));
+                }
+
+                if (! empty($transactionBackfill)) {
+                    DB::table('transactions')->where('id', $existingTransaction->id)->update($transactionBackfill);
+                    $existingTransaction = DB::table('transactions')->where('id', $existingTransaction->id)->first();
+                }
             }
 
             DB::table('user_library')->updateOrInsert(
@@ -328,6 +356,15 @@ class ReaderPortalController extends Controller
             return response()->json(['message' => 'Please purchase the book before download.'], 403);
         }
 
+        $pdfPath = $this->resolveBookPdfPath($bookId);
+        $downloadUrl = $this->resolvePublicFileUrl($pdfPath);
+
+        if (! $downloadUrl) {
+            return response()->json([
+                'message' => 'This book does not have a downloadable PDF yet.',
+            ], 404);
+        }
+
         DB::table('reader_book_purchases')
             ->where('id', $purchase->id)
             ->update([
@@ -342,7 +379,138 @@ class ReaderPortalController extends Controller
             'data' => [
                 'book_id' => $bookId,
                 'downloaded_at' => now()->toDateTimeString(),
+                'download_url' => $downloadUrl,
             ],
+        ]);
+    }
+
+    public function bookFeedback(int $bookId): JsonResponse
+    {
+        $readerId = (int) auth('reader')->id();
+
+        if (! Schema::hasTable('feedback')) {
+            return response()->json(['data' => ['my_feedback' => null, 'items' => []]]);
+        }
+
+        if (! DB::table('books')->where('id', $bookId)->exists()) {
+            return response()->json(['message' => 'Book not found.'], 404);
+        }
+
+        $myFeedback = DB::table('feedback')
+            ->where('book_id', $bookId)
+            ->where('reader_id', $readerId)
+            ->select('id', 'rating', 'comment', 'reply', 'replied_at', 'status', 'created_at', 'updated_at')
+            ->latest('id')
+            ->first();
+
+        $items = DB::table('feedback as f')
+            ->leftJoin('readers as r', 'f.reader_id', '=', 'r.id')
+            ->where('f.book_id', $bookId)
+            ->select(
+                'f.id',
+                'f.rating',
+                'f.comment',
+                'f.reply',
+                'f.replied_at',
+                'f.status',
+                'f.created_at',
+                DB::raw("COALESCE(r.name, 'Anonymous Reader') as reader_name")
+            )
+            ->orderByDesc('f.created_at')
+            ->limit(25)
+            ->get();
+
+        return response()->json([
+            'data' => [
+                'my_feedback' => $myFeedback,
+                'items' => $items,
+            ],
+        ]);
+    }
+
+    public function submitFeedback(Request $request, int $bookId): JsonResponse
+    {
+        if (! Schema::hasTable('feedback')) {
+            return response()->json([
+                'message' => 'Feedback table is not available. Please run migrations.',
+            ], 503);
+        }
+
+        $readerId = (int) auth('reader')->id();
+
+        $validated = $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'required|string|min:2|max:1500',
+        ]);
+
+        $book = DB::table('books')->where('id', $bookId)->first();
+        if (! $book) {
+            return response()->json(['message' => 'Book not found.'], 404);
+        }
+
+        if (empty($book->publisher_id)) {
+            return response()->json([
+                'message' => 'This book has no publisher account linked, so feedback cannot be submitted yet.',
+            ], 422);
+        }
+
+        $hasPurchased = DB::table('user_library')
+            ->where('user_id', $readerId)
+            ->where('book_id', $bookId)
+            ->where('status', 'purchased')
+            ->exists();
+
+        if (! $hasPurchased && $this->hasReaderBookPurchasesTable()) {
+            $hasPurchased = DB::table('reader_book_purchases')
+                ->where('reader_id', $readerId)
+                ->where('book_id', $bookId)
+                ->exists();
+        }
+
+        if (! $hasPurchased) {
+            return response()->json([
+                'message' => 'Please purchase the book before submitting rating and feedback.',
+            ], 403);
+        }
+
+        $now = now();
+
+        $existing = Feedback::query()
+            ->where('book_id', $bookId)
+            ->where('reader_id', $readerId)
+            ->first();
+
+        if ($existing) {
+            $existing->update([
+                'publisher_id' => (int) $book->publisher_id,
+                'rating' => (int) $validated['rating'],
+                'comment' => trim((string) $validated['comment']),
+                'status' => 'pending',
+                'reply' => null,
+                'replied_at' => null,
+                'updated_at' => $now,
+            ]);
+            $feedback = $existing->fresh();
+        } else {
+            $feedback = Feedback::query()->create([
+                'book_id' => $bookId,
+                'reader_id' => $readerId,
+                'publisher_id' => (int) $book->publisher_id,
+                'rating' => (int) $validated['rating'],
+                'comment' => trim((string) $validated['comment']),
+                'status' => 'pending',
+            ]);
+        }
+
+        $this->refreshBookRating($bookId);
+
+        $this->recordActivity($readerId, $bookId, 'feedback_submitted', [
+            'rating' => (int) $validated['rating'],
+        ]);
+
+        return response()->json([
+            'message' => 'Rating and feedback submitted successfully.',
+            'data' => $feedback,
         ]);
     }
 
@@ -955,6 +1123,52 @@ class ReaderPortalController extends Controller
         return request()->getSchemeAndHttpHost() . '/storage/' . ltrim($trimmed, '/');
     }
 
+    private function resolveBookPdfPath(int $bookId): ?string
+    {
+        $book = DB::table('books')->where('id', $bookId)->first();
+        if (! $book) {
+            return null;
+        }
+
+        $currentPdf = Schema::hasColumn('books', 'pdf_url')
+            ? trim((string) ($book->pdf_url ?? ''))
+            : '';
+
+        if ($currentPdf !== '') {
+            return $currentPdf;
+        }
+
+        if (! Schema::hasTable('publisher_book_submissions')) {
+            return null;
+        }
+
+        $submissionQuery = DB::table('publisher_book_submissions')
+            ->where('title', $book->title)
+            ->where('author', $book->author)
+            ->where('status', 'accepted');
+
+        if (isset($book->publisher_id) && $book->publisher_id !== null) {
+            $submissionQuery->where('publisher_id', $book->publisher_id);
+        }
+
+        $submissionPdf = trim((string) ($submissionQuery->orderByDesc('id')->value('file_url') ?? ''));
+
+        if ($submissionPdf === '') {
+            return null;
+        }
+
+        if (Schema::hasColumn('books', 'pdf_url')) {
+            DB::table('books')
+                ->where('id', $bookId)
+                ->update([
+                    'pdf_url' => $submissionPdf,
+                    'updated_at' => now(),
+                ]);
+        }
+
+        return $submissionPdf;
+    }
+
     private function hasReaderBookPurchasesTable(): bool
     {
         return Schema::hasTable('reader_book_purchases');
@@ -1148,5 +1362,23 @@ class ReaderPortalController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    private function refreshBookRating(int $bookId): void
+    {
+        if (! Schema::hasTable('feedback') || ! Schema::hasColumn('books', 'rating')) {
+            return;
+        }
+
+        $avgRating = (float) DB::table('feedback')
+            ->where('book_id', $bookId)
+            ->avg('rating');
+
+        DB::table('books')
+            ->where('id', $bookId)
+            ->update([
+                'rating' => round($avgRating, 2),
+                'updated_at' => now(),
+            ]);
     }
 }

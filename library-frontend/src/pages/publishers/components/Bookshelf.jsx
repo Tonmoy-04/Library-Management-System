@@ -2,13 +2,39 @@ import React, { useEffect, useMemo, useState } from 'react';
 import '../styles/Bookshelf.css';
 import { publisherAPI } from '../../../services/api';
 
+const CATEGORY_OPTIONS = [
+  'Fiction',
+  'Science Fiction',
+  'Documentary',
+  'Story',
+  'Biography',
+  'Autobiography',
+  'Fantasy',
+  'Mystery',
+  'Romance',
+  'History',
+  'Self Help',
+  'Education',
+  'Technology',
+];
+
+const PHP_UPLOAD_LIMIT_BYTES = 2 * 1024 * 1024;
+const BASE64_SAFE_MAX_BYTES = 5.5 * 1024 * 1024;
+
+const fileToBase64 = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result || ''));
+  reader.onerror = () => reject(new Error('Unable to read selected file.'));
+  reader.readAsDataURL(file);
+});
+
 const statusConfig = {
   pending: { label: 'Pending', icon: '🟡', className: 'pending' },
   accepted: { label: 'Accepted', icon: '🟢', className: 'accepted' },
   declined: { label: 'Declined', icon: '🔴', className: 'declined' },
 };
 
-const Bookshelf = ({ publisherId }) => {
+const Bookshelf = ({ publisherId, publisherName }) => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,8 +44,11 @@ const Bookshelf = ({ publisherId }) => {
   const [formData, setFormData] = useState({
     title: '',
     author: '',
-    description: '',
+    publisher: '',
+    category: '',
     price: '',
+    quantity: 1,
+    free_to_read: false,
     pdf: null,
   });
   const [saving, setSaving] = useState(false);
@@ -80,8 +109,11 @@ const Bookshelf = ({ publisherId }) => {
     setFormData({
       title: '',
       author: '',
-      description: '',
+      publisher: publisherName || '',
+      category: '',
       price: '',
+      quantity: 1,
+      free_to_read: false,
       pdf: null,
     });
     setShowModal(true);
@@ -97,8 +129,18 @@ const Bookshelf = ({ publisherId }) => {
     setError('');
     setSuccess('');
 
-    if (!formData.title.trim() || !formData.author.trim() || !formData.price) {
-      setError('Title, author, and price are required.');
+    if (!formData.title.trim() || !formData.author.trim() || !formData.publisher.trim() || !formData.category.trim()) {
+      setError('Title, author, publisher, and category are required.');
+      return;
+    }
+
+    if (!formData.free_to_read && !formData.price) {
+      setError('Price is required unless the book is free to read.');
+      return;
+    }
+
+    if (!formData.pdf) {
+      setError('PDF file is required.');
       return;
     }
 
@@ -107,9 +149,23 @@ const Bookshelf = ({ publisherId }) => {
       const payload = new FormData();
       payload.append('title', formData.title.trim());
       payload.append('author', formData.author.trim());
-      payload.append('description', formData.description.trim() || '');
-      payload.append('price', Number(formData.price));
-      if (formData.pdf) {
+      payload.append('publisher', formData.publisher.trim());
+      payload.append('category', formData.category.trim());
+      payload.append('price', String(formData.free_to_read ? 0 : Number(formData.price)));
+      payload.append('quantity', String(Number(formData.quantity) || 1));
+      payload.append('free_to_read', formData.free_to_read ? '1' : '0');
+
+      if (formData.pdf.size > BASE64_SAFE_MAX_BYTES) {
+        setError('PDF is too large. Please upload a file smaller than 5.5 MB.');
+        setSaving(false);
+        return;
+      }
+
+      if (formData.pdf.size > PHP_UPLOAD_LIMIT_BYTES) {
+        const pdfBase64 = await fileToBase64(formData.pdf);
+        payload.append('pdf_base64', pdfBase64);
+        payload.append('pdf_name', formData.pdf.name || 'uploaded.pdf');
+      } else {
         payload.append('pdf', formData.pdf);
       }
 
@@ -119,8 +175,11 @@ const Bookshelf = ({ publisherId }) => {
       setFormData({
         title: '',
         author: '',
-        description: '',
+        publisher: publisherName || '',
+        category: '',
         price: '',
+        quantity: 1,
+        free_to_read: false,
         pdf: null,
       });
       setTimeout(() => {
@@ -192,31 +251,61 @@ const Bookshelf = ({ publisherId }) => {
             </div>
 
             <form onSubmit={handleSubmit} className="book-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="title">Title *</label>
-                  <input 
-                    id="title" 
-                    name="title" 
-                    className="form-control" 
-                    value={formData.title} 
-                    onChange={handleChange}
-                    disabled={saving}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="author">Author *</label>
-                  <input 
-                    id="author" 
-                    name="author" 
-                    className="form-control" 
-                    value={formData.author} 
-                    onChange={handleChange}
-                    disabled={saving}
-                    required
-                  />
-                </div>
+              <div className="form-group">
+                <label htmlFor="title">Title *</label>
+                <input
+                  id="title"
+                  name="title"
+                  className="form-control"
+                  value={formData.title}
+                  onChange={handleChange}
+                  disabled={saving}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="author">Author *</label>
+                <input
+                  id="author"
+                  name="author"
+                  className="form-control"
+                  value={formData.author}
+                  onChange={handleChange}
+                  disabled={saving}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="publisher">Publisher *</label>
+                <input
+                  id="publisher"
+                  name="publisher"
+                  className="form-control"
+                  value={formData.publisher}
+                  onChange={handleChange}
+                  disabled
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="category">Category *</label>
+                <select
+                  id="category"
+                  name="category"
+                  className="form-control"
+                  value={formData.category}
+                  onChange={handleChange}
+                  disabled={saving}
+                  required
+                >
+                  <option value="">Select a category</option>
+                  {CATEGORY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-row">
@@ -227,14 +316,29 @@ const Bookshelf = ({ publisherId }) => {
                     name="price" 
                     type="number" 
                     min="0" 
-                    step="1" 
+                    step="0.01" 
                     className="form-control" 
                     value={formData.price} 
                     onChange={handleChange}
-                    disabled={saving}
-                    required
+                    disabled={saving || formData.free_to_read}
+                    required={!formData.free_to_read}
                   />
                 </div>
+
+                <div className="form-group">
+                  <label htmlFor="quantity">Quantity</label>
+                  <input 
+                    id="quantity"
+                    name="quantity"
+                    type="number" 
+                    min="1"
+                    className="form-control" 
+                    value={formData.quantity}
+                    onChange={handleChange}
+                    disabled={saving}
+                  />
+                </div>
+
                 <div className="form-group">
                   <label htmlFor="pdf">PDF Upload *</label>
                   <input 
@@ -249,20 +353,24 @@ const Bookshelf = ({ publisherId }) => {
                   />
                   {formData.pdf && <p className="file-name">📄 {formData.pdf.name}</p>}
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label htmlFor="description">Description</label>
-                <textarea 
-                  id="description" 
-                  name="description" 
-                  rows="4" 
-                  className="form-control" 
-                  value={formData.description} 
-                  onChange={handleChange}
-                  disabled={saving}
-                  placeholder="Tell readers about your book..."
-                />
+                <div className="form-group" style={{ justifyContent: 'flex-end' }}>
+                  <label htmlFor="free_to_read" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: 0 }}>
+                    <input
+                      id="free_to_read"
+                      name="free_to_read"
+                      type="checkbox"
+                      checked={formData.free_to_read}
+                      onChange={(e) => setFormData((prev) => ({
+                        ...prev,
+                        free_to_read: e.target.checked,
+                        price: e.target.checked ? '0' : '',
+                      }))}
+                      disabled={saving}
+                    />
+                    Free to read
+                  </label>
+                </div>
               </div>
 
               {error && <div className="alert alert-error">{error}</div>}
