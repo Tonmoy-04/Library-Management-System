@@ -48,7 +48,10 @@ const Transactions = () => {
       type: isIssue ? 'Book Issue' : 'Payment',
       reader: tx.reader,
       book: tx.book,
+      publisher: tx.publisher || '-',
       amount: tx.amount != null ? `$${Number(tx.amount).toFixed(2)}` : '-',
+      adminShare: tx.admin_share != null ? `$${Number(tx.admin_share).toFixed(2)}` : '-',
+      publisherShare: tx.publisher_share != null ? `$${Number(tx.publisher_share).toFixed(2)}` : '-',
       issueDate: tx.issued_at ? new Date(tx.issued_at).toLocaleDateString() : '-',
       dueDate: tx.due_at ? new Date(tx.due_at).toLocaleDateString() : '-',
       returnDate: tx.returned_at ? new Date(tx.returned_at).toLocaleDateString() : (isIssue ? 'Not returned' : '-'),
@@ -160,7 +163,7 @@ const Transactions = () => {
 
       {transactionsData.length > 0 ? (
         <Table
-          columns={['Transaction ID', 'Type', 'Reader', 'Book', 'Amount', 'Issue Date', 'Due Date', 'Return Date', 'Fine', 'Status', 'Actions']}
+          columns={['Transaction ID', 'Type', 'Reader', 'Book', 'Publisher', 'Amount', 'Admin Share', 'Publisher Share', 'Issue Date', 'Due Date', 'Return Date', 'Fine', 'Status', 'Actions']}
           data={transactionsData}
         />
       ) : (
@@ -179,7 +182,10 @@ const Transactions = () => {
               <li><span>Type</span><strong>{selectedTransaction.transaction_type === 'issue' ? 'Book Issue' : 'Payment'}</strong></li>
               <li><span>Reader</span><strong>{selectedTransaction.reader || 'N/A'}</strong></li>
               <li><span>Book</span><strong>{selectedTransaction.book || 'N/A'}</strong></li>
+              <li><span>Publisher</span><strong>{selectedTransaction.publisher || 'N/A'}</strong></li>
               <li><span>Amount</span><strong>{selectedTransaction.amount != null ? `$${Number(selectedTransaction.amount).toFixed(2)}` : '-'}</strong></li>
+              <li><span>Admin Share</span><strong>{selectedTransaction.admin_share != null ? `$${Number(selectedTransaction.admin_share).toFixed(2)}` : '-'}</strong></li>
+              <li><span>Publisher Share</span><strong>{selectedTransaction.publisher_share != null ? `$${Number(selectedTransaction.publisher_share).toFixed(2)}` : '-'}</strong></li>
               <li><span>Payment Status</span><strong>{selectedTransaction.payment_status || '-'}</strong></li>
               <li><span>Transaction Date</span><strong>{formatDate(selectedTransaction.transaction_date)}</strong></li>
               <li><span>Issued At</span><strong>{formatDate(selectedTransaction.issued_at)}</strong></li>

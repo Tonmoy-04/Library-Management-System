@@ -67,6 +67,7 @@ System tables:
 15. publisher_book_submissions.publisher_id -> publishers.id
 16. user_reader_profiles.user_id -> users.id
 17. user_roles.user_id -> users.id
+18. transactions.publisher_id -> publishers.id
 
 ---
 
@@ -99,7 +100,7 @@ System tables:
 16. reader_book_purchases: reader purchase transaction history.
 17. reader_bookmarks: reader bookmarks/saved positions.
 18. reader_reading_progress: reader reading progress per book.
-19. transactions: general transaction history.
+19. transactions: payment and settlement history (includes admin and publisher revenue splits).
 20. user_library: reader personal library/reading list.
 21. user_reader_profiles: extended reader profile metadata.
 22. user_roles: user role assignment records.
@@ -140,6 +141,17 @@ Add a new entry on each schema change.
    - Removed `cover_image_url` and `pdf_url` from the final books schema with a new cleanup migration.
    - Updated the admin add/edit book form to collect title, author, publisher, category, price, and free-to-read instead of ISBN/quantity.
    - Updated the books API to store category and price, and to treat free-to-read books as zero-priced.
+
+- 2026-04-11
+   - Added payment split support for reader purchases.
+   - Added migration: `2026_04_11_010000_add_payment_split_columns_to_transactions_table`.
+   - `transactions` now stores `publisher_id`, `admin_share` (10%), `publisher_share` (90%), `payment_method`, and `payment_reference`.
+   - Reader purchase flow now records split amounts and payment metadata.
+   - Admin transaction list and publisher dashboard/reports now read publisher earnings from split transaction records.
+
+- 2026-04-11
+   - Added migration: `2026_04_11_020000_add_pdf_url_to_books_table`.
+   - Re-enabled `books.pdf_url` to support PDF upload in admin add/edit book form.
 
 - 2026-04-11 (prior sync)
     - Live DB sync after applying pending migrations and reconciling the schema inventory.

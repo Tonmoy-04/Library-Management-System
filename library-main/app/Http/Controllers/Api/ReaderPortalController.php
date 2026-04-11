@@ -198,6 +198,11 @@ class ReaderPortalController extends Controller
             ], 503);
         }
 
+        $validated = request()->validate([
+            'payment_method' => 'nullable|string|max:40',
+            'payment_reference' => 'nullable|string|max:120',
+        ]);
+
         $readerId = (int) auth('reader')->id();
 
         $book = DB::table('books')->where('id', $bookId)->first();
@@ -205,8 +210,21 @@ class ReaderPortalController extends Controller
             return response()->json(['message' => 'Book not found.'], 404);
         }
 
-        $purchase = DB::transaction(function () use ($readerId, $bookId, $book) {
+        $amount = (float) ($book->price ?? 0);
+
+        if ($amount > 0 && empty($validated['payment_method'])) {
+            return response()->json([
+                'message' => 'Payment method is required for paid books.',
+                'errors' => [
+                    'payment_method' => ['Payment method is required for paid books.'],
+                ],
+            ], 422);
+        }
+
+        $purchase = DB::transaction(function () use ($readerId, $bookId, $book, $validated, $amount) {
             $now = now();
+            $adminShare = round($amount * 0.10, 2);
+            $publisherShare = round($amount - $adminShare, 2);
 
             $existingTransaction = DB::table('transactions')
                 ->where('user_id', $readerId)
@@ -216,13 +234,35 @@ class ReaderPortalController extends Controller
                 ->first();
 
             if (! $existingTransaction) {
-                $transactionId = DB::table('transactions')->insertGetId([
+                $transactionPayload = [
                     'user_id' => $readerId,
                     'book_id' => $bookId,
-                    'amount' => $book->price ?? 0,
+                    'amount' => $amount,
                     'payment_status' => 'paid',
                     'transaction_date' => $now,
-                ]);
+                ];
+
+                if (Schema::hasColumn('transactions', 'publisher_id')) {
+                    $transactionPayload['publisher_id'] = $book->publisher_id ?? null;
+                }
+
+                if (Schema::hasColumn('transactions', 'admin_share')) {
+                    $transactionPayload['admin_share'] = $adminShare;
+                }
+
+                if (Schema::hasColumn('transactions', 'publisher_share')) {
+                    $transactionPayload['publisher_share'] = $publisherShare;
+                }
+
+                if (Schema::hasColumn('transactions', 'payment_method')) {
+                    $transactionPayload['payment_method'] = $validated['payment_method'] ?? ($amount > 0 ? 'card' : 'free');
+                }
+
+                if (Schema::hasColumn('transactions', 'payment_reference')) {
+                    $transactionPayload['payment_reference'] = $validated['payment_reference'] ?? ('TXN-' . strtoupper(Str::random(10)));
+                }
+
+                $transactionId = DB::table('transactions')->insertGetId($transactionPayload);
 
                 $existingTransaction = DB::table('transactions')->where('id', $transactionId)->first();
             }
@@ -245,7 +285,7 @@ class ReaderPortalController extends Controller
                         'book_id' => $bookId,
                     ],
                     [
-                        'price' => $book->price ?? 0,
+                        'price' => $amount,
                         'purchased_at' => $now,
                         'downloaded_at' => null,
                         'created_at' => $now,
@@ -255,7 +295,9 @@ class ReaderPortalController extends Controller
             }
 
             $this->recordActivity($readerId, $bookId, 'book_purchased', [
-                'price' => (float) ($book->price ?? 0),
+                'price' => $amount,
+                'admin_share' => $adminShare,
+                'publisher_share' => $publisherShare,
             ]);
 
             return $existingTransaction;

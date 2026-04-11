@@ -10,6 +10,8 @@ use App\Models\Feedback;
 use App\Models\Publisher;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PublisherPortalController extends Controller
 {
@@ -34,36 +36,71 @@ class PublisherPortalController extends Controller
     {
         $publisher = Publisher::findOrFail($publisherId);
 
+        $hasPublisherRevenueSplit = Schema::hasTable('transactions')
+            && Schema::hasColumn('transactions', 'publisher_id')
+            && Schema::hasColumn('transactions', 'publisher_share');
+
         $totalBooks = Book::where('publisher_id', $publisherId)->count();
-        $totalOrders = BookIssue::whereIn('book_id', Book::where('publisher_id', $publisherId)->pluck('id'))
-            ->where('status', 'issued')
-            ->count();
-        
-        // Calculate total revenue
-        $totalRevenue = BookIssue::whereIn('book_id', Book::where('publisher_id', $publisherId)->pluck('id'))
-            ->where('status', 'issued')
-            ->join('books', 'book_issues.book_id', '=', 'books.id')
-            ->sum('books.price');
+
+        if ($hasPublisherRevenueSplit) {
+            $totalOrders = DB::table('transactions')
+                ->where('publisher_id', $publisherId)
+                ->where('payment_status', 'paid')
+                ->count();
+
+            $totalRevenue = (float) DB::table('transactions')
+                ->where('publisher_id', $publisherId)
+                ->where('payment_status', 'paid')
+                ->sum('publisher_share');
+        } else {
+            $totalOrders = BookIssue::whereIn('book_id', Book::where('publisher_id', $publisherId)->pluck('id'))
+                ->where('status', 'issued')
+                ->count();
+
+            $totalRevenue = (float) BookIssue::whereIn('book_id', Book::where('publisher_id', $publisherId)->pluck('id'))
+                ->where('status', 'issued')
+                ->join('books', 'book_issues.book_id', '=', 'books.id')
+                ->sum('books.price');
+        }
 
         $recentBooks = Book::where('publisher_id', $publisherId)
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
-        $recentTransactions = BookIssue::whereIn('book_id', Book::where('publisher_id', $publisherId)->pluck('id'))
-            ->with(['book', 'user'])
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function ($transaction) {
-                return [
-                    'id' => $transaction->id,
-                    'book_title' => $transaction->book->title ?? 'Unknown',
-                    'reader_name' => $transaction->user->name ?? 'Unknown Reader',
-                    'status' => $transaction->status,
-                    'issued_at' => $transaction->issued_at,
-                ];
-            });
+        if ($hasPublisherRevenueSplit) {
+            $recentTransactions = DB::table('transactions as t')
+                ->leftJoin('books as b', 'b.id', '=', 't.book_id')
+                ->leftJoin('users as u', 'u.id', '=', 't.user_id')
+                ->where('t.publisher_id', $publisherId)
+                ->where('t.payment_status', 'paid')
+                ->orderByDesc('t.transaction_date')
+                ->limit(5)
+                ->get([
+                    't.id',
+                    DB::raw("COALESCE(b.title, 'Unknown') as book_title"),
+                    DB::raw("COALESCE(u.name, 'Unknown Reader') as reader_name"),
+                    DB::raw("COALESCE(t.payment_status, 'paid') as status"),
+                    't.transaction_date as issued_at',
+                    DB::raw('COALESCE(t.publisher_share, 0) as publisher_earning'),
+                ]);
+        } else {
+            $recentTransactions = BookIssue::whereIn('book_id', Book::where('publisher_id', $publisherId)->pluck('id'))
+                ->with(['book', 'user'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get()
+                ->map(function ($transaction) {
+                    return [
+                        'id' => $transaction->id,
+                        'book_title' => $transaction->book->title ?? 'Unknown',
+                        'reader_name' => $transaction->user->name ?? 'Unknown Reader',
+                        'status' => $transaction->status,
+                        'issued_at' => $transaction->issued_at,
+                        'publisher_earning' => 0,
+                    ];
+                });
+        }
 
         return response()->json([
             'stats' => [
@@ -86,6 +123,10 @@ class PublisherPortalController extends Controller
             $endDate = $request->query('endDate') ? Carbon::parse($request->query('endDate')) : Carbon::now();
             $filterType = $request->query('filterType', 'sales');
 
+            $hasPublisherRevenueSplit = Schema::hasTable('transactions')
+                && Schema::hasColumn('transactions', 'publisher_id')
+                && Schema::hasColumn('transactions', 'publisher_share');
+
             $publisherBooks = Book::where('publisher_id', $publisherId)->pluck('id')->toArray();
 
             // Initialize default values
@@ -94,7 +135,55 @@ class PublisherPortalController extends Controller
             $topBooks = [];
             $salesTrend = [];
 
-            if (!empty($publisherBooks)) {
+            if (!empty($publisherBooks) && $hasPublisherRevenueSplit) {
+                $paymentRows = DB::table('transactions as t')
+                    ->leftJoin('books as b', 'b.id', '=', 't.book_id')
+                    ->where('t.publisher_id', $publisherId)
+                    ->where('t.payment_status', 'paid')
+                    ->whereBetween('t.transaction_date', [$startDate, $endDate])
+                    ->select(
+                        't.id',
+                        't.book_id',
+                        't.transaction_date',
+                        DB::raw('COALESCE(t.publisher_share, 0) as publisher_share'),
+                        DB::raw("COALESCE(b.title, 'Unknown') as title"),
+                        DB::raw("COALESCE(b.author, 'Unknown') as author")
+                    )
+                    ->get();
+
+                $booksSold = $paymentRows->count();
+                $totalRevenue = (float) $paymentRows->sum('publisher_share');
+
+                $topBooks = $paymentRows
+                    ->groupBy('book_id')
+                    ->map(function ($rows, $bookId) {
+                        $first = $rows->first();
+                        return [
+                            'id' => $bookId,
+                            'title' => $first->title ?? 'Unknown',
+                            'author' => $first->author ?? 'Unknown',
+                            'copies_sold' => $rows->count(),
+                            'revenue' => (float) $rows->sum('publisher_share'),
+                        ];
+                    })
+                    ->sortByDesc('revenue')
+                    ->values()
+                    ->toArray();
+
+                $salesTrend = $paymentRows
+                    ->groupBy(function ($item) {
+                        return Carbon::parse($item->transaction_date)->format('Y-m-d');
+                    })
+                    ->map(function ($items, $date) {
+                        return [
+                            'date' => $date,
+                            'sales' => (float) collect($items)->sum('publisher_share'),
+                            'count' => count($items),
+                        ];
+                    })
+                    ->values()
+                    ->toArray();
+            } elseif (!empty($publisherBooks)) {
                 // Sales data
                 $booksSold = BookIssue::whereIn('book_id', $publisherBooks)
                     ->whereBetween('created_at', [$startDate, $endDate])
