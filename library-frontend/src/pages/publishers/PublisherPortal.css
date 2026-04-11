@@ -142,6 +142,39 @@
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
+:root.dark-mode .publisher-portal .tab-button {
+  color: #c9d7eb;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.01);
+}
+
+:root.dark-mode .publisher-portal .tab-button:hover {
+  background: #26364a;
+  border-color: #41556f;
+  color: #e8f1ff;
+  transform: translateY(-1px);
+}
+
+:root.dark-mode .publisher-portal .tab-button.active {
+  background: linear-gradient(180deg, #3b638f 0%, #34597f 100%);
+  border-color: #5d84ac;
+  color: #f4f8ff;
+  box-shadow: 0 8px 18px rgba(8, 15, 27, 0.3);
+}
+
+:root.dark-mode .publisher-portal .logout-btn {
+  background: #223145;
+  border-color: #3b4f67;
+  color: #d4e0f2;
+}
+
+:root.dark-mode .publisher-portal .logout-btn:hover {
+  background: #2a3c53;
+  border-color: #915566;
+  color: #ffd5de;
+  box-shadow: 0 8px 18px rgba(8, 15, 27, 0.32);
+}
+
 .publisher-portal .tab-icon {
   font-size: 1.25rem;
 }

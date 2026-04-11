@@ -54,13 +54,17 @@
 }
 
 .sidebar-close-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  background: #eef4ff;
+  padding: 0.1rem 0.3rem;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
   color: var(--text-main);
   font-size: 1.35rem;
   line-height: 1;
+}
+
+.sidebar-close-btn:hover {
+  background: rgba(15, 103, 248, 0.08);
 }
 
 .nav-brand-group {
@@ -89,6 +93,11 @@
   height: 2px;
   border-radius: 999px;
   background: var(--primary-color);
+}
+
+.sidebar-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(15, 103, 248, 0.12);
 }
 
 .sidebar-overlay {
@@ -414,6 +423,35 @@
 :root.dark-mode .stats-grid .card {
   background: #1b2532;
   border-color: #324355;
+}
+
+:root.dark-mode .sidebar-toggle {
+  background: linear-gradient(180deg, #25364b 0%, #1e2d40 100%);
+  border-color: #3a4e66;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+:root.dark-mode .sidebar-toggle:hover {
+  background: linear-gradient(180deg, #2b3f56 0%, #23354a 100%);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+}
+
+:root.dark-mode .sidebar-toggle span {
+  background: #8bb8ff;
+}
+
+:root.dark-mode .sidebar-close-btn {
+  background: transparent;
+  border-color: transparent;
+  color: #dbe8ff;
+}
+
+:root.dark-mode .sidebar-close-btn:hover {
+  background: rgba(139, 184, 255, 0.12);
+}
+
+:root.dark-mode .sidebar-overlay {
+  background: rgba(4, 12, 24, 0.5);
 }
 
 :root.dark-mode .stats-grid .card {
