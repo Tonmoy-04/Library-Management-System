@@ -3,11 +3,22 @@ import { authAPI, readerAuthAPI, publisherAuthAPI } from '../services/api';
 
 export const AuthContext = createContext();
 
+const getStoredUser = () => {
+  const storedUser = localStorage.getItem('user');
+  if (!storedUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(storedUser);
+  } catch (error) {
+    localStorage.removeItem('user');
+    return null;
+  }
+};
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem('user');
-    return storedUser ? JSON.parse(storedUser) : null;
-  });
+  const [user, setUser] = useState(getStoredUser);
   const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [role, setRole] = useState(() => localStorage.getItem('role') || 'admin');
   const [initializing, setInitializing] = useState(true);

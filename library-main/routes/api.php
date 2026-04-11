@@ -56,10 +56,13 @@ Route::prefix('publisher')->group(function () {
 
 Route::middleware('auth:api')->group(function () {
     Route::get('readers', [LibraryDataController::class, 'readers']);
+    Route::get('readers/online', [LibraryDataController::class, 'onlineReaders']);
+    Route::patch('readers/online/{id}/suspension', [LibraryDataController::class, 'setOnlineReaderSuspension']);
     Route::post('readers', [LibraryDataController::class, 'storeReader']);
     Route::put('readers/{id}', [LibraryDataController::class, 'updateReader']);
     Route::delete('readers/{id}', [LibraryDataController::class, 'destroyReader']);
     Route::get('publishers', [LibraryDataController::class, 'publishers']);
+    Route::patch('publishers/{id}/suspension', [LibraryDataController::class, 'setPublisherSuspension']);
     Route::post('publishers', [LibraryDataController::class, 'storePublisher']);
     Route::put('publishers/{id}', [LibraryDataController::class, 'updatePublisher']);
     Route::delete('publishers/{id}', [LibraryDataController::class, 'destroyPublisher']);

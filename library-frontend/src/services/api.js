@@ -87,6 +87,8 @@ export const transactionAPI = {
 
 export const readerAPI = {
   getAll: () => api.get('/readers'),
+  getOnline: () => api.get('/readers/online'),
+  setSuspension: (id, suspended) => api.patch(`/readers/online/${id}/suspension`, { suspended }),
   create: (payload) => api.post('/readers', payload),
   update: (id, payload) => api.put(`/readers/${id}`, payload),
   remove: (id) => api.delete(`/readers/${id}`),
@@ -94,6 +96,7 @@ export const readerAPI = {
 
 export const publisherAPI = {
   getAll: () => api.get('/publishers'),
+  setSuspension: (id, suspended) => api.patch(`/publishers/${id}/suspension`, { suspended }),
   create: (payload) => api.post('/publishers', payload),
   update: (id, payload) => api.put(`/publishers/${id}`, payload),
   remove: (id) => api.delete(`/publishers/${id}`),

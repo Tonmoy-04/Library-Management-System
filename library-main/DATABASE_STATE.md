@@ -12,16 +12,16 @@ Purpose:
 ---
 
 ## Last Verified
-- Date: 2026-04-11 (updated after live DB sync + PDF workflow migrations)
+- Date: 2026-04-11 (updated after reader/publisher suspension schema updates)
 - Environment: SQL Server (Laravel project)
-- Verification source: check_tables.php output + sys.foreign_keys query + migrate:status (live DB connection)
+- Verification source: check_tables.php output + sys.foreign_keys query + migrate:status (live DB connection) + targeted migration apply logs
 
 ---
 
 ## Current Core Tables
 1. users (authentication/system users)
-2. readers (reader authentication & profile)
-3. publishers (publisher authentication & profile)
+2. readers (reader authentication/profile + online registration/suspension state)
+3. publishers (publisher authentication/profile + suspension state)
 4. books (published book catalog with core metadata)
 5. bookshelf (publisher book collections)
 6. book_issues (book issue/return transactions)
@@ -82,8 +82,8 @@ System tables:
 
 ## Table Responsibilities
 1. users: system/admin authentication entities.
-2. readers: reader account/auth profile.
-3. publishers: publisher account data.
+2. readers: reader account/auth profile with online-registration and suspension controls (`is_online_registered`, `is_suspended`, `suspended_at`).
+3. publishers: publisher account data with admin suspension controls (`is_suspended`, `suspended_at`).
 4. books: final visible library catalog (core metadata only; cover/pdf files are no longer stored on the book row).
 5. bookshelf: publisher book collections for organizing/curating published books.
 6. book_issues: issuing and return transaction history.
@@ -135,6 +135,18 @@ php artisan migrate --path=database/migrations/<migration_file>.php --force
 
 ## Change Log
 Add a new entry on each schema change.
+
+- 2026-04-11
+    - Added reader status/suspension schema migration: `2026_04_11_120000_add_online_and_suspension_columns_to_readers_table`.
+    - Added publisher suspension schema migration: `2026_04_11_130000_add_suspension_columns_to_publishers_table`.
+    - Reader table now includes:
+       * `is_online_registered` (boolean)
+       * `is_suspended` (boolean)
+       * `suspended_at` (nullable timestamp)
+    - Publisher table now includes:
+       * `is_suspended` (boolean)
+       * `suspended_at` (nullable timestamp)
+    - Admin flow now supports suspend/unsuspend actions for online readers and publishers, and suspended reader/publisher login is blocked at auth layer.
 
 - 2026-04-11
    - Removed `cover_image_url` and `pdf_url` from the final books schema with a new cleanup migration.

@@ -7,8 +7,10 @@ use App\Models\AdminActionLog;
 use App\Models\Book;
 use App\Models\Bookshelf;
 use App\Models\PublisherBookSubmission;
+use App\Models\Reader;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -123,12 +125,79 @@ class LibraryDataController extends Controller
 
     public function readers(): JsonResponse
     {
-        $readers = DB::table('readers')
+        $query = DB::table('readers')
             ->select('id', 'name', 'email', 'phone', 'address')
-            ->orderByDesc('id')
-            ->get();
+            ->orderByDesc('id');
+
+        if (Schema::hasColumn('readers', 'is_online_registered')) {
+            $query->where(function ($builder) {
+                $builder->where('is_online_registered', false)
+                    ->orWhereNull('is_online_registered');
+            });
+        }
+
+        $readers = $query->get();
 
         return response()->json(['data' => $readers]);
+    }
+
+    public function onlineReaders(): JsonResponse
+    {
+        if (! Schema::hasColumn('readers', 'is_online_registered')) {
+            return response()->json(['data' => []]);
+        }
+
+        $query = Reader::query()
+            ->select('id', 'name', 'email', 'phone', 'address', 'created_at')
+            ->where('is_online_registered', true)
+            ->orderByDesc('id');
+
+        if (Schema::hasColumn('readers', 'is_suspended')) {
+            $query->addSelect('is_suspended');
+        }
+
+        $onlineReaders = $query->get()->map(function ($reader) {
+            if (! isset($reader->is_suspended)) {
+                $reader->is_suspended = false;
+            }
+
+            return $reader;
+        });
+
+        return response()->json(['data' => $onlineReaders]);
+    }
+
+    public function setOnlineReaderSuspension(Request $request, int $id): JsonResponse
+    {
+        if (! Schema::hasColumn('readers', 'is_online_registered') || ! Schema::hasColumn('readers', 'is_suspended')) {
+            return response()->json([
+                'message' => 'Reader suspension feature is not available. Please run latest migrations.',
+            ], 409);
+        }
+
+        $validated = $request->validate([
+            'suspended' => 'required|boolean',
+        ]);
+
+        $reader = Reader::query()
+            ->where('id', $id)
+            ->where('is_online_registered', true)
+            ->first();
+
+        if (! $reader) {
+            return response()->json(['message' => 'Online reader not found.'], 404);
+        }
+
+        $reader->is_suspended = $validated['suspended'];
+        $reader->suspended_at = $validated['suspended'] ? now() : null;
+        $reader->save();
+
+        return response()->json([
+            'message' => $validated['suspended']
+                ? 'Reader suspended successfully.'
+                : 'Reader reactivated successfully.',
+            'data' => $reader,
+        ]);
     }
 
     public function storeReader(Request $request): JsonResponse
@@ -142,14 +211,39 @@ class LibraryDataController extends Controller
 
         $now = now();
 
-        $readerId = DB::table('readers')->insertGetId([
+        $insertData = [
             'name' => trim($validated['name']),
             'email' => $validated['email'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'address' => $validated['address'] ?? null,
             'created_at' => $now,
             'updated_at' => $now,
-        ]);
+        ];
+
+        if (Schema::hasColumn('readers', 'password')) {
+            // Offline readers are created by admin, so assign a random hashed password placeholder.
+            $insertData['password'] = Hash::make(Str::random(40));
+        }
+
+        $readerId = DB::table('readers')->insertGetId($insertData);
+
+        if (Schema::hasColumn('readers', 'is_online_registered')) {
+            DB::table('readers')->where('id', $readerId)->update([
+                'is_online_registered' => false,
+            ]);
+        }
+
+        if (Schema::hasColumn('readers', 'is_suspended')) {
+            DB::table('readers')->where('id', $readerId)->update([
+                'is_suspended' => false,
+            ]);
+        }
+
+        if (Schema::hasColumn('readers', 'suspended_at')) {
+            DB::table('readers')->where('id', $readerId)->update([
+                'suspended_at' => null,
+            ]);
+        }
 
         $reader = DB::table('readers')
             ->select('id', 'name', 'email', 'phone', 'address')
@@ -207,9 +301,17 @@ class LibraryDataController extends Controller
         }
 
         DB::transaction(function () use ($id) {
-            DB::table('book_issues')
-                ->where('reader_id', $id)
-                ->delete();
+            if (Schema::hasTable('book_issues')) {
+                if (Schema::hasColumn('book_issues', 'reader_id')) {
+                    DB::table('book_issues')
+                        ->where('reader_id', $id)
+                        ->delete();
+                } elseif (Schema::hasColumn('book_issues', 'user_id')) {
+                    DB::table('book_issues')
+                        ->where('user_id', $id)
+                        ->delete();
+                }
+            }
 
             DB::table('readers')->where('id', $id)->delete();
         });
@@ -221,12 +323,65 @@ class LibraryDataController extends Controller
 
     public function publishers(): JsonResponse
     {
-        $publishers = DB::table('publishers')
+        $query = DB::table('publishers')
             ->select('id', 'name', 'email', 'website', 'location')
-            ->orderByDesc('id')
-            ->get();
+            ->orderByDesc('id');
+
+        if (Schema::hasColumn('publishers', 'is_suspended')) {
+            $query->addSelect('is_suspended');
+        }
+
+        $publishers = $query->get()->map(function ($publisher) {
+            if (! isset($publisher->is_suspended)) {
+                $publisher->is_suspended = false;
+            }
+
+            return $publisher;
+        });
 
         return response()->json(['data' => $publishers]);
+    }
+
+    public function setPublisherSuspension(Request $request, int $id): JsonResponse
+    {
+        if (! Schema::hasColumn('publishers', 'is_suspended')) {
+            return response()->json([
+                'message' => 'Publisher suspension feature is not available. Please run latest migrations.',
+            ], 409);
+        }
+
+        $validated = $request->validate([
+            'suspended' => 'required|boolean',
+        ]);
+
+        $publisher = DB::table('publishers')->where('id', $id)->first();
+
+        if (! $publisher) {
+            return response()->json(['message' => 'Publisher not found.'], 404);
+        }
+
+        $updateData = [
+            'is_suspended' => $validated['suspended'],
+            'updated_at' => now(),
+        ];
+
+        if (Schema::hasColumn('publishers', 'suspended_at')) {
+            $updateData['suspended_at'] = $validated['suspended'] ? now() : null;
+        }
+
+        DB::table('publishers')->where('id', $id)->update($updateData);
+
+        $updatedPublisher = DB::table('publishers')
+            ->select('id', 'name', 'email', 'website', 'location', 'is_suspended')
+            ->where('id', $id)
+            ->first();
+
+        return response()->json([
+            'message' => $validated['suspended']
+                ? 'Publisher suspended successfully.'
+                : 'Publisher reactivated successfully.',
+            'data' => $updatedPublisher,
+        ]);
     }
 
     public function storePublisher(Request $request): JsonResponse

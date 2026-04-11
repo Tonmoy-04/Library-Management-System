@@ -18,6 +18,15 @@ class Reader extends Authenticatable implements JWTSubject
         'phone',
         'address',
         'password',
+        'is_online_registered',
+        'is_suspended',
+        'suspended_at',
+    ];
+
+    protected $casts = [
+        'is_online_registered' => 'boolean',
+        'is_suspended' => 'boolean',
+        'suspended_at' => 'datetime',
     ];
 
     protected $hidden = [
