@@ -22,7 +22,7 @@ Purpose:
 1. users (authentication/system users)
 2. readers (reader authentication & profile)
 3. publishers (publisher authentication & profile)
-4. books (published book catalog with pdf_url)
+4. books (published book catalog with core metadata)
 5. bookshelf (publisher book collections)
 6. book_issues (book issue/return transactions)
 7. feedback (reader feedback & publisher replies)
@@ -84,7 +84,7 @@ System tables:
 1. users: system/admin authentication entities.
 2. readers: reader account/auth profile.
 3. publishers: publisher account data.
-4. books: final visible library catalog (includes pdf_url for published PDFs).
+4. books: final visible library catalog (core metadata only; cover/pdf files are no longer stored on the book row).
 5. bookshelf: publisher book collections for organizing/curating published books.
 6. book_issues: issuing and return transaction history.
 7. feedback: reader feedback and publisher reply tracking.
@@ -136,7 +136,12 @@ php artisan migrate --path=database/migrations/<migration_file>.php --force
 ## Change Log
 Add a new entry on each schema change.
 
-- 2026-04-11 (LATEST)
+- 2026-04-11
+   - Removed `cover_image_url` and `pdf_url` from the final books schema with a new cleanup migration.
+   - Updated the admin add/edit book form to collect title, author, publisher, category, price, and free-to-read instead of ISBN/quantity.
+   - Updated the books API to store category and price, and to treat free-to-read books as zero-priced.
+
+- 2026-04-11 (prior sync)
     - Live DB sync after applying pending migrations and reconciling the schema inventory.
     - Added migrations to the live database:
        * 2026_04_10_184017_create_publisher_book_submissions_table

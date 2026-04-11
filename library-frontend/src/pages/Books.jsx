@@ -32,9 +32,11 @@ const Books = () => {
   const [bookForm, setBookForm] = useState({
     title: '',
     author: '',
-    isbn: '',
     publisher: '',
+    category: '',
+    price: '',
     quantity: 1,
+    free_to_read: false,
   });
   const [issueForm, setIssueForm] = useState({
     user_id: '',
@@ -48,12 +50,13 @@ const Books = () => {
   }, []);
 
   const mapBooksForTable = (rows) => rows.map((book) => ({
-    isbn: book.isbn || 'N/A',
     title: book.title,
     author: book.author,
+    publisher: book.publisher,
+    category: book.category || 'General',
+    price: Number(book.price || 0) === 0 ? 'Free' : `$${Number(book.price || 0).toFixed(2)}`,
     quantity: book.quantity,
     available: book.available,
-    publisher: book.publisher,
   }));
 
   const fetchBooks = async () => {
@@ -128,9 +131,11 @@ const Books = () => {
     setBookForm({
       title: '',
       author: '',
-      isbn: '',
       publisher: '',
+      category: '',
+      price: '',
       quantity: 1,
+      free_to_read: false,
     });
     setShowAddModal(true);
   };
@@ -152,9 +157,11 @@ const Books = () => {
     setBookForm({
       title: book.title || '',
       author: book.author || '',
-      isbn: book.isbn === 'N/A' ? '' : (book.isbn || ''),
       publisher: book.publisher === 'N/A' ? '' : (book.publisher || ''),
+      category: book.category === 'General' ? '' : (book.category || ''),
+      price: Number(book.price || 0) === 0 ? '' : String(book.price ?? ''),
       quantity: book.quantity || 1,
+      free_to_read: Number(book.price || 0) === 0,
     });
     setShowAddModal(true);
   };
@@ -241,15 +248,27 @@ const Books = () => {
       return;
     }
 
+    if (!bookForm.category.trim()) {
+      setAddError('Category is required.');
+      return;
+    }
+
+    if (!bookForm.free_to_read && !bookForm.price) {
+      setAddError('Price is required unless the book is free to read.');
+      return;
+    }
+
     setAddingBook(true);
 
     try {
       const payload = {
         title: bookForm.title.trim(),
         author: bookForm.author.trim(),
-        isbn: bookForm.isbn.trim() || null,
         publisher: bookForm.publisher.trim() || null,
+        category: bookForm.category.trim(),
+        price: bookForm.free_to_read ? 0 : Number(bookForm.price),
         quantity: Number(bookForm.quantity) || 1,
+        free_to_read: bookForm.free_to_read,
       };
 
       const response = editingBook
@@ -265,6 +284,15 @@ const Books = () => {
         setShowAddModal(false);
         setAddSuccess('');
         setEditingBook(null);
+        setBookForm({
+          title: '',
+          author: '',
+          publisher: '',
+          category: '',
+          price: '',
+          quantity: 1,
+          free_to_read: false,
+        });
       }, 900);
     } catch (err) {
       const validationMessage = err.response?.data?.errors
@@ -337,7 +365,7 @@ const Books = () => {
 
       {booksData.length > 0 ? (
         <Table
-          columns={['ISBN', 'Title', 'Author', 'Quantity', 'Available', 'Publisher']}
+          columns={['Title', 'Author', 'Publisher', 'Category', 'Price', 'Quantity', 'Available']}
           data={booksData}
           actions={actions}
         />
@@ -357,60 +385,98 @@ const Books = () => {
 
             <form onSubmit={handleAddBookSubmit}>
               <div className="form-group">
-                <label htmlFor="title">Title</label>
+                <label htmlFor="title">Title *</label>
                 <input
                   id="title"
                   className="form-control"
                   value={bookForm.title}
                   onChange={(e) => setBookForm((prev) => ({ ...prev, title: e.target.value }))}
                   disabled={addingBook}
+                  required
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="author">Author</label>
+                <label htmlFor="author">Author *</label>
                 <input
                   id="author"
                   className="form-control"
                   value={bookForm.author}
                   onChange={(e) => setBookForm((prev) => ({ ...prev, author: e.target.value }))}
                   disabled={addingBook}
+                  required
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="isbn">ISBN</label>
-                <input
-                  id="isbn"
-                  className="form-control"
-                  value={bookForm.isbn}
-                  onChange={(e) => setBookForm((prev) => ({ ...prev, isbn: e.target.value }))}
-                  disabled={addingBook}
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="publisher">Publisher</label>
+                <label htmlFor="publisher">Publisher *</label>
                 <input
                   id="publisher"
                   className="form-control"
                   value={bookForm.publisher}
                   onChange={(e) => setBookForm((prev) => ({ ...prev, publisher: e.target.value }))}
                   disabled={addingBook}
+                  required
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="quantity">Quantity</label>
+                <label htmlFor="category">Category *</label>
                 <input
-                  id="quantity"
-                  type="number"
-                  min="1"
+                  id="category"
                   className="form-control"
-                  value={bookForm.quantity}
-                  onChange={(e) => setBookForm((prev) => ({ ...prev, quantity: e.target.value }))}
+                  value={bookForm.category}
+                  onChange={(e) => setBookForm((prev) => ({ ...prev, category: e.target.value }))}
                   disabled={addingBook}
+                  required
                 />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="price">Price (BDT) *</label>
+                  <input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className="form-control"
+                    value={bookForm.price}
+                    onChange={(e) => setBookForm((prev) => ({ ...prev, price: e.target.value }))}
+                    disabled={addingBook || bookForm.free_to_read}
+                    required={!bookForm.free_to_read}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="quantity">Quantity</label>
+                  <input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    className="form-control"
+                    value={bookForm.quantity}
+                    onChange={(e) => setBookForm((prev) => ({ ...prev, quantity: e.target.value }))}
+                    disabled={addingBook}
+                  />
+                </div>
+
+                <div className="form-group" style={{ justifyContent: 'flex-end' }}>
+                  <label htmlFor="free_to_read" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: 0 }}>
+                    <input
+                      id="free_to_read"
+                      type="checkbox"
+                      checked={bookForm.free_to_read}
+                      onChange={(e) => setBookForm((prev) => ({
+                        ...prev,
+                        free_to_read: e.target.checked,
+                        price: e.target.checked ? '0' : '',
+                      }))}
+                      disabled={addingBook}
+                    />
+                    Free to read
+                  </label>
+                </div>
               </div>
 
               {addError && <p className="issue-message issue-error">{addError}</p>}
