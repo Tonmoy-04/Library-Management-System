@@ -12,9 +12,9 @@ Purpose:
 ---
 
 ## Last Verified
-- Date: 2026-04-11 (updated after missing operational table recovery migration)
+- Date: 2026-04-13 (updated after adding relationship diagram and application-level FK map)
 - Environment: SQL Server (Laravel project)
-- Verification source: check_tables.php output + sys.foreign_keys query + migrate:status (live DB connection) + targeted migration apply logs
+- Verification source: check_tables.php output + sys.foreign_keys query + migrate:status (live DB connection) + targeted migration apply logs + migration source review
 
 ---
 
@@ -49,7 +49,49 @@ System tables:
 
 ---
 
+## Table Relationship Diagram
+
+```mermaid
+erDiagram
+    users ||--o{ book_issues : "issues books"
+    users ||--o{ admin_actions_log : "performs admin actions"
+    users ||--o{ borrow_requests : "submits borrow requests"
+    users ||--o{ borrowed_books : "borrows books"
+    users ||--o{ user_reader_profiles : "has reader profile"
+    users ||--o{ user_roles : "has roles"
+
+    publishers ||--o{ books : "publishes books"
+    publishers ||--o{ publisher_book_submissions : "submits books for review"
+    publishers ||--o{ feedback : "receives feedback"
+    publishers ||--o{ transactions : "earns from transactions"
+    publishers ||--o{ bookshelf : "curates bookshelf (legacy)"
+
+    books ||--o{ book_issues : "issued via"
+    books ||--o{ feedback : "receives feedback"
+    books ||--o{ borrow_requests : "requested for borrowing"
+    books ||--o{ borrowed_books : "tracked as borrowed"
+    books ||--o{ user_library : "saved to user library"
+    books ||--o{ reader_book_purchases : "purchased by readers"
+    books ||--o{ reader_reading_progress : "read by readers"
+    books ||--o{ reader_bookmarks : "bookmarked by readers"
+    books ||--o{ reader_activities : "triggers reader activity"
+
+    readers ||--o{ feedback : "gives feedback"
+    readers ||--o{ reader_book_purchases : "purchases books"
+    readers ||--o{ reader_reading_progress : "tracks reading progress"
+    readers ||--o{ reader_bookmarks : "creates bookmarks"
+    readers ||--o{ reader_activities : "generates activities"
+
+    publisher_book_submissions ||--o{ admin_actions_log : "reviewed by admin"
+
+    book_issues ||--o{ borrowed_books : "linked to borrowed record"
+```
+
+---
+
 ## Foreign Key Map (Confirmed)
+
+### Enforced Foreign Keys (DB-level constraints)
 1. admin_actions_log.admin_id -> users.id
 2. admin_actions_log.submission_id -> publisher_book_submissions.id *(updated: was book_id -> bookshelf.id)*
 3. book_issues.book_id -> books.id
@@ -68,6 +110,18 @@ System tables:
 16. user_reader_profiles.user_id -> users.id
 17. user_roles.user_id -> users.id
 18. transactions.publisher_id -> publishers.id
+
+### Application-Level Relationships (indexed columns, no DB-level FK constraint)
+19. reader_book_purchases.reader_id -> readers.id
+20. reader_book_purchases.book_id -> books.id
+21. reader_reading_progress.reader_id -> readers.id
+22. reader_reading_progress.book_id -> books.id
+23. reader_bookmarks.reader_id -> readers.id
+24. reader_bookmarks.book_id -> books.id
+25. reader_activities.reader_id -> readers.id
+26. reader_activities.book_id -> books.id (nullable)
+27. user_library.user_id -> users.id
+28. user_library.book_id -> books.id
 
 ---
 
@@ -138,6 +192,12 @@ php artisan migrate --path=database/migrations/<migration_file>.php --force
 
 ## Change Log
 Add a new entry on each schema change.
+
+- 2026-04-13
+   - Documentation update: added Table Relationship Diagram (Mermaid ER diagram) to DATABASE_STATE.md.
+   - Diagram covers all named relationships: users, publishers, books, readers, publisher_book_submissions, and book_issues to their related tables.
+   - Split Foreign Key Map into Enforced Foreign Keys (DB-level constraints) and Application-Level Relationships (indexed columns without formal FK constraints).
+   - Added application-level relationships for reader portal tables (reader_book_purchases, reader_reading_progress, reader_bookmarks, reader_activities) and user_library.
 
 - 2026-04-12
    - No schema migration was added in this update.
